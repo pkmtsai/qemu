@@ -18,31 +18,38 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HW_SIFIVE_PLIC_H
-#define HW_SIFIVE_PLIC_H
+#ifndef HW_RISCV_PLIC_H
+#define HW_RISCV_PLIC_H
 
 #include "hw/sysbus.h"
 #include "qom/object.h"
 
-#define TYPE_SIFIVE_PLIC "riscv.sifive.plic"
+typedef struct RISCVPLICClass {
+    /*< private >*/
+    SysBusDeviceClass parent_class;
+    /*< public >*/
+} RISCVPLICClass;
 
-typedef struct SiFivePLICState SiFivePLICState;
-DECLARE_INSTANCE_CHECKER(SiFivePLICState, SIFIVE_PLIC,
-                         TYPE_SIFIVE_PLIC)
+#define TYPE_RISCV_PLIC "riscv.plic"
 
-typedef enum SifivePLICMode {
+typedef struct RISCVPLICState RISCVPLICState;
+DECLARE_INSTANCE_CHECKER(RISCVPLICState, RISCV_PLIC,
+                         TYPE_RISCV_PLIC)
+
+typedef enum PLICMode {
     PLICMode_U,
     PLICMode_S,
+    PLICMode_H,
     PLICMode_M
-} SifivePLICMode;
+} PLICMode;
 
-typedef struct SifivePLICAddr {
+typedef struct PLICAddr {
     uint32_t addrid;
     uint32_t hartid;
-    SifivePLICMode mode;
-} SifivePLICAddr;
+    PLICMode mode;
+} PLICAddr;
 
-struct SiFivePLICState {
+struct RISCVPLICState {
     /*< private >*/
     SysBusDevice parent_obj;
 
@@ -52,7 +59,7 @@ struct SiFivePLICState {
     uint32_t num_harts;
     uint32_t bitfield_words;
     uint32_t num_enables;
-    SifivePLICAddr *addr_config;
+    PLICAddr *addr_config;
     uint32_t *source_priority;
     uint32_t *target_priority;
     uint32_t *pending;
@@ -72,16 +79,39 @@ struct SiFivePLICState {
     uint32_t context_stride;
     uint32_t aperture_size;
 
-    qemu_irq *m_external_irqs;
-    qemu_irq *s_external_irqs;
+    /* interface */
+    uint64_t (*riscv_plic_read_priority)(void *opaque,
+        hwaddr addr, unsigned size);
+    uint64_t (*riscv_plic_read_pending)(void *opaque,
+        hwaddr addr, unsigned size);
+    uint64_t (*riscv_plic_read_enable)(void *opaque,
+        hwaddr addr, unsigned size);
+    uint64_t (*riscv_plic_read_threshold)(void *opaque,
+        hwaddr addr, unsigned size);
+    uint64_t (*riscv_plic_read_claim)(void *opaque,
+        hwaddr addr, unsigned size);
+
+    void (*riscv_plic_write_priority)(void *opaque,
+        hwaddr addr, uint64_t value, unsigned size);
+    void (*riscv_plic_write_pending)(void *opaque,
+        hwaddr addr, uint64_t value, unsigned size);
+    void (*riscv_plic_write_enable)(void *opaque,
+        hwaddr addr, uint64_t value, unsigned size);
+    void (*riscv_plic_write_threshold)(void *opaque,
+        hwaddr addr, uint64_t value, unsigned size);
+    void (*riscv_plic_write_complete)(void *opaque,
+        hwaddr addr, uint64_t value, unsigned size);
+
+    void (*riscv_plic_update)(void *opaque);
 };
 
-DeviceState *sifive_plic_create(hwaddr addr, char *hart_config,
-    uint32_t num_harts,
+DeviceState *riscv_plic_create(hwaddr addr, char *hart_config,
     uint32_t hartid_base, uint32_t num_sources,
     uint32_t num_priorities, uint32_t priority_base,
     uint32_t pending_base, uint32_t enable_base,
     uint32_t enable_stride, uint32_t context_base,
     uint32_t context_stride, uint32_t aperture_size);
+
+int riscv_plic_irqs_pending(RISCVPLICState *plic, uint32_t addrid);
 
 #endif

@@ -37,7 +37,7 @@ static bool addr_between(uint32_t addr, uint32_t base, uint32_t num)
     return addr >= base && addr - base < num;
 }
 
-static PLICMode char_to_mode(char c)
+static SifivePLICMode char_to_mode(char c)
 {
     switch (c) {
     case 'U': return PLICMode_U;
@@ -119,7 +119,7 @@ static void sifive_plic_update(SiFivePLICState *plic)
     /* raise irq on harts where this irq is enabled */
     for (addrid = 0; addrid < plic->num_addrs; addrid++) {
         uint32_t hartid = plic->addr_config[addrid].hartid;
-        PLICMode mode = plic->addr_config[addrid].mode;
+        SifivePLICMode mode = plic->addr_config[addrid].mode;
         bool level = !!sifive_plic_claimed(plic, addrid);
 
         switch (mode) {
@@ -325,7 +325,7 @@ static void parse_hart_config(SiFivePLICState *plic)
     plic->num_harts = hartid;
 
     /* store hart/mode combinations */
-    plic->addr_config = g_new(PLICAddr, plic->num_addrs);
+    plic->addr_config = g_new(SifivePLICAddr, plic->num_addrs);
     addrid = 0, hartid = plic->hartid_base;
     p = plic->hart_config;
     while ((c = *p++)) {
