@@ -5,6 +5,12 @@ config IBEX
     bool
 
 # RISC-V machines in alphabetical order
+config ANDES_AE350
+    bool
+    select SERIAL
+    select VIRTIO_MMIO
+    select ANDES_PLIC
+    select ANDES_PLMT
 
 config MICROCHIP_PFSOC
     bool
