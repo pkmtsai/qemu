@@ -25,6 +25,7 @@
 #include "qom/object.h"
 
 #include "hw/dma/atcdmac300.h"
+#include "hw/net/atfmac100.h"
 
 #define ANDES_CPUS_MAX 4
 
@@ -42,6 +43,7 @@ typedef struct AndesAe350SocState {
     DeviceState *plic_sw;
 
     ATCDMAC300State dma;
+    ATFMAC100State atfmac100;
 } AndesAe350SocState;
 
 #define TYPE_ANDES_AE350_MACHINE MACHINE_TYPE_NAME("andes_ae350")

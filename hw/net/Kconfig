@@ -107,6 +107,9 @@ config LASI_82596
 config SUNHME
     bool
 
+config ATFMAC100
+    bool
+
 config FTGMAC100
     bool
 

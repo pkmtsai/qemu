@@ -296,6 +296,7 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     MemoryRegion *system_memory = get_system_memory();
     AndesAe350SocState *s = ANDES_AE350_SOC(dev_soc);
     char *plic_hart_config, *plicsw_hart_config;
+    NICInfo *nd = &nd_table[0];
 
     plicsw_hart_config =
         init_hart_config(ANDES_PLICSW_HART_CONFIG, machine->smp.cpus);
@@ -381,6 +382,11 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
                 memmap[ANDES_AE350_DMAC].base,
                 memmap[ANDES_AE350_DMAC].size,
                 qdev_get_gpio_in(DEVICE(s->plic), ANDES_AE350_DMAC_IRQ));
+
+    /* NIC */
+    atfmac100_create(&s->atfmac100, "atfmac100",
+                 nd, memmap[ANDES_AE350_MAC].base,
+                 qdev_get_gpio_in(DEVICE(s->plic), ANDES_AE350_MAC_IRQ));
 
     /* UART */
     serial_mm_init(system_memory,
