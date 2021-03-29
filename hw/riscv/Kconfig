@@ -11,6 +11,7 @@ config ANDES_AE350
     select ANDES_PLMT
     select ATCDMAC300
     select ATFMAC100
+    select ATFSDC010
     select SERIAL
     select VIRTIO_MMIO
 

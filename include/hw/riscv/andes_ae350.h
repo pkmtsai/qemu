@@ -26,6 +26,7 @@
 
 #include "hw/dma/atcdmac300.h"
 #include "hw/net/atfmac100.h"
+#include "hw/sd/atfsdc010.h"
 
 #define ANDES_CPUS_MAX 4
 

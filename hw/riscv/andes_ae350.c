@@ -388,6 +388,11 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
                  nd, memmap[ANDES_AE350_MAC].base,
                  qdev_get_gpio_in(DEVICE(s->plic), ANDES_AE350_MAC_IRQ));
 
+    /* SDC */
+    atfsdc010_create(memmap[ANDES_AE350_SDC].base,
+                qdev_get_gpio_in(DEVICE(s->plic), ANDES_AE350_SDC_IRQ));
+
+
     /* UART */
     serial_mm_init(system_memory,
         memmap[ANDES_AE350_UART1].base + ANDES_UART_REG_OFFSET,
