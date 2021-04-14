@@ -1,6 +1,10 @@
 config ANDES_PLMT
     bool
 
+config ATCPIT100
+    bool
+    select PTIMER
+
 config ARM_TIMER
     bool
     select PTIMER

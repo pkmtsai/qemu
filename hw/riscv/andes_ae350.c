@@ -45,7 +45,9 @@
 
 #include "hw/intc/andes_plic.h"
 #include "hw/timer/andes_plmt.h"
+#include "hw/timer/atcpit100.h"
 #include "hw/riscv/andes_ae350.h"
+#include "hw/sd/atfsdc010.h"
 
 #define BIOS_FILENAME ""
 
@@ -387,6 +389,10 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     atfmac100_create(&s->atfmac100, "atfmac100",
                  nd, memmap[ANDES_AE350_MAC].base,
                  qdev_get_gpio_in(DEVICE(s->plic), ANDES_AE350_MAC_IRQ));
+
+    /* PIT */
+    atcpit100_create(memmap[ANDES_AE350_PIT].base,
+                qdev_get_gpio_in(DEVICE(s->plic), ANDES_AE350_PIT_IRQ));
 
     /* SDC */
     atfsdc010_create(memmap[ANDES_AE350_SDC].base,
