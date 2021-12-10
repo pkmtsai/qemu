@@ -5,12 +5,16 @@ config IBEX
     bool
 
 # RISC-V machines in alphabetical order
+config ATCSMU
+    bool
+
 config ANDES_AE350
     bool
     select ANDES_PLIC
     select ANDES_PLMT
     select ATCDMAC300
     select ATCPIT100
+    select ATCSMU
     select ATFMAC100
     select ATFSDC010
     select SERIAL

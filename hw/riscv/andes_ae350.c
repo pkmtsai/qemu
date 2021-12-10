@@ -47,6 +47,7 @@
 #include "hw/timer/andes_plmt.h"
 #include "hw/timer/atcpit100.h"
 #include "hw/riscv/andes_ae350.h"
+#include "hw/riscv/andes_atcsmu.h"
 #include "hw/sd/atfsdc010.h"
 
 #define BIOS_FILENAME ""
@@ -356,8 +357,8 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     }
 
     /* SMU */
-    create_unimplemented_device("riscv.andes.ae350.smu",
-        memmap[ANDES_AE350_SMU].base, memmap[ANDES_AE350_SMU].size);
+    andes_atcsmu_create(memmap[ANDES_AE350_SMU].base,
+                        memmap[ANDES_AE350_SMU].size);
 
     /* SMC */
     create_unimplemented_device("riscv.andes.ae350.smc",
