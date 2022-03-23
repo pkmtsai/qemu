@@ -64,11 +64,27 @@ void andes_plichw_update(void *plic)
         }
         int level = riscv_plic_irqs_pending(riscv_plic, target_id);
 
+        AndesCsr *csr = &env->andes_csr;
+        AndesVec *vec = &env->andes_vec;
         switch (mode) {
         case PlicMode_M:
+            if (!vec->vectored_irq_m &&
+                (csr->mmisc_ctl & (1UL << V5_MMISC_CTL_VEC_PLIC)) &&
+                (andes_plic->feature_enable & FER_VECTORED) && level) {
+                    vec->vectored_irq_m =
+                        riscv_plic->riscv_plic_claim(riscv_plic, target_id);
+                    assert(vec->vectored_irq_m);
+            }
             riscv_cpu_update_mip(RISCV_CPU(cpu), MIP_MEIP, BOOL_TO_MASK(level));
             break;
         case PlicMode_S:
+            if (!vec->vectored_irq_s &&
+                (csr->mmisc_ctl & (1UL << V5_MMISC_CTL_VEC_PLIC)) &&
+                (andes_plic->feature_enable & FER_VECTORED) && level) {
+                    vec->vectored_irq_s =
+                        riscv_plic->riscv_plic_claim(riscv_plic, target_id);
+                    assert(vec->vectored_irq_s);
+            }
             riscv_cpu_update_mip(RISCV_CPU(cpu), MIP_SEIP, BOOL_TO_MASK(level));
             break;
         default:
@@ -129,6 +145,14 @@ andes_plic_read(void *opaque, hwaddr addr, unsigned size)
     AndesPLICState *andes_plic = ANDES_PLIC(opaque);
     uint64_t value;
 
+    switch (addr) {
+    case REG_FEATURE_ENABLE:
+        value = andes_plic->feature_enable;
+        break;
+    default:
+        break;
+    }
+
     memory_region_dispatch_read(&andes_plic->parent_mmio, addr, &value,
                 size_memop(size) | MO_LE, MEMTXATTRS_UNSPECIFIED);
 
@@ -139,6 +163,14 @@ static void
 andes_plic_write(void *opaque, hwaddr addr, uint64_t value, unsigned size)
 {
     AndesPLICState *andes_plic = ANDES_PLIC(opaque);
+
+    switch (addr) {
+    case REG_FEATURE_ENABLE:
+        andes_plic->feature_enable = value & (FER_PREEMPT | FER_VECTORED);
+        break;
+    default:
+        break;
+    }
 
     memory_region_dispatch_write(&andes_plic->parent_mmio, addr, value,
             size_memop(size) | MO_LE, MEMTXATTRS_UNSPECIFIED);

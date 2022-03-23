@@ -418,6 +418,10 @@ struct CPUArchState {
 
     /* Add Vender CSR */
     AndesCsr andes_csr;
+
+    /* Andes vectored-plic */
+    AndesVec andes_vec;
+    void (*do_interrupt_post)(CPUState *cpu);
 };
 
 /*

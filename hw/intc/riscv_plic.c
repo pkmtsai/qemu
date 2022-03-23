@@ -258,8 +258,11 @@ static uint64_t riscv_plic_read_claim(void *opaque,
         hwaddr addr, unsigned size)
 {
     RISCVPLICState *plic = opaque;
+    uint32_t value = 0;
     uint32_t addrid = (addr - plic->context_base) / plic->context_stride;
-    uint32_t value = riscv_plic_claim(plic, addrid);
+    if (plic->riscv_plic_claim) {
+        value = plic->riscv_plic_claim(plic, addrid);
+    }
     if (RISCV_DEBUG_PLIC) {
         qemu_log("plic: read claim: hart%d-%c irq=%x\n",
             plic->addr_config[addrid].hartid,
@@ -559,6 +562,7 @@ static void riscv_plic_realize(DeviceState *dev, Error **errp)
     plic->riscv_plic_read_enable = riscv_plic_read_enable;
     plic->riscv_plic_read_threshold = riscv_plic_read_threshold;
     plic->riscv_plic_read_claim = riscv_plic_read_claim;
+    plic->riscv_plic_claim = riscv_plic_claim;
 
     /* set default write function */
     plic->riscv_plic_write_priority = riscv_plic_write_priority;

@@ -92,6 +92,42 @@ void andes_csr_init(AndesCsr *andes_csr)
                             (1UL << V5_MMISC_CTL_MSA_OR_UNA);
 }
 
+void andes_vec_init(AndesVec *andes_vec)
+{
+    andes_vec->vectored_irq_m = 0;
+    andes_vec->vectored_irq_s = 0;
+}
+
+void andes_cpu_do_interrupt_post(CPUState *cs)
+{
+#if !defined(CONFIG_USER_ONLY)
+    RISCVCPU *cpu = RISCV_CPU(cs);
+    CPURISCVState *env = &cpu->env;
+    AndesCsr *csr = &env->andes_csr;
+    AndesVec *vec = &env->andes_vec;
+
+    if (csr->mmisc_ctl & (1UL << V5_MMISC_CTL_VEC_PLIC)) {
+        if (env->priv == PRV_M) {
+            int irq_id = vec->vectored_irq_m;
+            vec->vectored_irq_m = 0;
+            target_ulong base = env->mtvec;
+            env->pc = ((uint64_t)env->pc >> 32) << 32;
+            env->pc |= cpu_ldl_data(env, base + (irq_id << 2));
+            return;
+        }
+
+        if (env->priv == PRV_S) {
+            int irq_id = vec->vectored_irq_s;
+            vec->vectored_irq_s = 0;
+            target_ulong base = env->stvec;
+            env->pc = ((uint64_t)env->pc >> 32) << 32;
+            env->pc |= cpu_ldl_data(env, base + (irq_id << 2));
+            return;
+        }
+    }
+#endif
+}
+
 riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     /* ================== AndeStar V5 machine mode CSRs ================== */
     /* Configuration Registers */

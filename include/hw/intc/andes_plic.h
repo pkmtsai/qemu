@@ -88,6 +88,9 @@ typedef struct AndesPLICState {
     MemoryRegion parent_mmio;
     char *plic_name;
 
+    /* registers */
+    uint32_t feature_enable;
+
     /* interface */
     void (*andes_plic_update)(void *plic);
 } AndesPLICState;

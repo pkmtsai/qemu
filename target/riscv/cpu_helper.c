@@ -1827,6 +1827,11 @@ void riscv_cpu_do_interrupt(CPUState *cs)
 
     env->two_stage_lookup = false;
     env->two_stage_indirect_lookup = false;
+
+    /* Do extra interrupt action */
+    if (env->do_interrupt_post) {
+        env->do_interrupt_post(cs);
+    }
 #endif
     cs->exception_index = RISCV_EXCP_NONE; /* mark handled to qemu */
 }

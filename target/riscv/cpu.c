@@ -567,6 +567,9 @@ static void rv64_andes_ax25_cpu_init(Object *obj)
 
     /* Setup Andes Custom CSR */
     andes_csr_init(&env->andes_csr);
+    andes_vec_init(&env->andes_vec);
+
+    env->do_interrupt_post = andes_cpu_do_interrupt_post;
 
     /* Enable Andes Custom extension */
     cfg->ext_XAndesV5Ops = true;
@@ -736,6 +739,9 @@ static void rv32_andes_a25_cpu_init(Object *obj)
 
     /* Setup Andes Custom CSR */
     andes_csr_init(&env->andes_csr);
+    andes_vec_init(&env->andes_vec);
+
+    env->do_interrupt_post = andes_cpu_do_interrupt_post;
 
     /* Enable Andes Custom extension */
     cfg->ext_XAndesV5Ops = true;
