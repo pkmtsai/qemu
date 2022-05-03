@@ -69,7 +69,7 @@ static const struct MemmapEntry {
     [ANDES_AE350_PIT]       = { 0xf0400000,   0x100000 },
     [ANDES_AE350_GPIO]      = { 0xf0700000,   0x100000 },
     [ANDES_AE350_SPI]       = { 0xf0b00000,   0x100000 },
-    [ANDES_AE350_DMAD]      = { 0xf0c00000,   0x100000 },
+    [ANDES_AE350_DMAC]      = { 0xf0c00000,   0x100000 },
     [ANDES_AE350_SND]       = { 0xf0d00000,   0x100000 },
     [ANDES_AE350_SDC]       = { 0xf0e00000,   0x100000 },
     [ANDES_AE350_VIRTIO]    = { 0xfe000000,     0x1000 },
@@ -376,9 +376,11 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     create_unimplemented_device("riscv.andes.ae350.snd",
         memmap[ANDES_AE350_SND].base, memmap[ANDES_AE350_SND].size);
 
-    /* DMAD */
-    create_unimplemented_device("riscv.andes.ae350.dmad",
-        memmap[ANDES_AE350_DMAD].base, memmap[ANDES_AE350_DMAD].size);
+    /* DMAC */
+    atcdmac300_create(&s->dma, "atcdmac300",
+                memmap[ANDES_AE350_DMAC].base,
+                memmap[ANDES_AE350_DMAC].size,
+                qdev_get_gpio_in(DEVICE(s->plic), ANDES_AE350_DMAC_IRQ));
 
     /* UART */
     serial_mm_init(system_memory,
@@ -399,6 +401,12 @@ static void andes_ae350_soc_instance_init(Object *obj)
     const struct MemmapEntry *memmap = andes_ae350_memmap;
     MachineState *machine = MACHINE(qdev_get_machine());
     AndesAe350SocState *s = ANDES_AE350_SOC(obj);
+
+    object_initialize_child(obj, "atcdmac300", &s->dma,
+                                TYPE_ATCDMAC300);
+
+    object_initialize_child(obj, "atfmac100", &s->atfmac100,
+                                TYPE_ATFMAC100);
 
     object_initialize_child(obj, "cpus", &s->cpus, TYPE_RISCV_HART_ARRAY);
     object_property_set_str(OBJECT(&s->cpus), "cpu-type",

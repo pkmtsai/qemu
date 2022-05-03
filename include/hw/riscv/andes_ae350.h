@@ -24,6 +24,8 @@
 #include "hw/block/flash.h"
 #include "qom/object.h"
 
+#include "hw/dma/atcdmac300.h"
+
 #define ANDES_CPUS_MAX 4
 
 #define TYPE_ANDES_AE350_SOC "riscv.andes.ae350.soc"
@@ -38,6 +40,8 @@ typedef struct AndesAe350SocState {
     RISCVHartArrayState cpus;
     DeviceState *plic;
     DeviceState *plic_sw;
+
+    ATCDMAC300State dma;
 } AndesAe350SocState;
 
 #define TYPE_ANDES_AE350_MACHINE MACHINE_TYPE_NAME("andes_ae350")
@@ -70,7 +74,7 @@ enum {
     ANDES_AE350_PIT,
     ANDES_AE350_GPIO,
     ANDES_AE350_SPI,
-    ANDES_AE350_DMAD,
+    ANDES_AE350_DMAC,
     ANDES_AE350_SND,
     ANDES_AE350_SDC,
     ANDES_AE350_VIRTIO,
@@ -80,6 +84,7 @@ enum {
     ANDES_AE350_PIT_IRQ = 3,
     ANDES_AE350_UART1_IRQ = 8,
     ANDES_AE350_UART2_IRQ = 9,
+    ANDES_AE350_DMAC_IRQ = 10,
     ANDES_AE350_SDC_IRQ = 18,
     ANDES_AE350_MAC_IRQ = 19,
     ANDES_AE350_VIRTIO_COUNT = 8,
