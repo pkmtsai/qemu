@@ -42,6 +42,9 @@ typedef struct CPUArchState CPURISCVState;
 # define TYPE_RISCV_CPU_BASE            TYPE_RISCV_CPU_BASE64
 #endif
 
+/* Vendor CSR declaration */
+#include "csr_andes.inc.h"
+
 #define TCG_GUEST_DEFAULT_MO 0
 
 /*
@@ -412,6 +415,9 @@ struct CPUArchState {
     uint64_t kvm_timer_state;
     uint64_t kvm_timer_frequency;
 #endif /* CONFIG_KVM */
+
+    /* Add Vender CSR */
+    AndesCsr andes_csr;
 };
 
 /*
@@ -783,6 +789,7 @@ void riscv_add_satp_mode_properties(Object *obj);
 bool riscv_cpu_accelerator_compatible(RISCVCPU *cpu);
 
 /* CSR function table */
+extern riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE];
 extern riscv_csr_operations csr_ops[CSR_TABLE_SIZE];
 
 extern const bool valid_vm_1_10_32[], valid_vm_1_10_64[];
