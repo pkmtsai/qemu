@@ -1,0 +1,125 @@
+#
+# RISC-V translation routines for the RVXI Base Integer Instruction Set.
+#
+# Copyright (c) 2018 Peer Adelt, peer.adelt@hni.uni-paderborn.de
+#                    Bastian Koppelmann, kbastian@mail.uni-paderborn.de
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms and conditions of the GNU General Public License,
+# version 2 or later, as published by the Free Software Foundation.
+#
+# This program is distributed in the hope it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Fields:
+%rs3       27:5
+%rs2       20:5
+%rs1       15:5
+%rd        7:5
+
+%sh10    20:10
+%csr    20:12
+%rm     12:3
+
+# immediates:
+%imm_i    20:s12
+%imm_s    25:s7 7:5
+%imm_b    31:s1 7:1 25:6 8:4     !function=ex_shift_1
+%imm_j    31:s1 12:8 20:1 21:10  !function=ex_shift_1
+
+# Argument sets:
+&b_andes    imm rs2 rs1
+&i_andes    imm rs1 rd
+&j_andes    imm rd
+&r_andes    rd rs1 rs2
+&s_andes    imm rs1 rs2
+&u_andes    imm rd
+&shift_andes     shamt rs1 rd
+&atomic_andes    aq rl rs2 rs1 rd
+
+# Formats 32:
+@r       .......   ..... ..... ... ..... ....... &r_andes                %rs2 %rs1 %rd
+
+# *** Custom 0 instructions ***
+## Similar to U-type
+%imm_u1 31:s1 15:2 17:3 20:1 21:10 14:1
+@u1     . .......... . ... .. . .. ..... ....... &u_andes      imm=%imm_u1         %rd
+addigp  . .......... . ... .. . 01 ..... 0001011 @u1 #0x01
+lbgp    . .......... . ... .. . 00 ..... 0001011 @u1 #0x00
+lbugp   . .......... . ... .. . 10 ..... 0001011 @u1 #0x02
+
+## Similar to B-type
+%imm_u2 31:s1 15:2 17:3 7:1 25:6 8:4 14:1
+&u_andes2    imm rs2
+@u2     . .......... . ... .. . .. .... . ....... &u_andes2      imm=%imm_u2 %rs2
+sbgp    . ...... ..... ... .. . 11 .... . 0001011 @u2 #0x03
+
+# *** Custom 1 instructions ***
+## Similar to U-type
+%imm_ld 31:s1 21:2 15:2 17:3 20:1 23:8	!function=ex_shift_3
+%imm_lw 31:s1 21:1 15:2 17:3 20:1 22:9	!function=ex_shift_2
+%imm_lh 31:s1 15:2 17:3 20:1 21:10		!function=ex_shift_1
+&u_andes_c1 imm_c1 rd
+@uc1_d   .................      ... .....   ....... &u_andes_c1      imm_c1=%imm_ld  %rd
+@uc1_w   .................      ... .....   ....... &u_andes_c1      imm_c1=%imm_lw  %rd
+@uc1     .................      ... .....   ....... &u_andes_c1      imm_c1=%imm_lh  %rd
+lhgp     . .......... .  ... .. 001 .....   0101011 @uc1 #0x01
+lhugp    . .......... .  ... .. 101 .....   0101011 @uc1 #0x05
+lwgp     . ......... . . ... .. 010 .....   0101011 @uc1_w #0x02
+lwugp    . ......... . . ... .. 110 .....   0101011 @uc1_w #0x06
+ldgp     . ........ .. . ... .. 011 .....   0101011 @uc1_d #0x03
+
+## Similar to B-type
+%imm_sd 31:s1 8:2 15:2 17:3 7:1 25:6 10:2	!function=ex_shift_3
+%imm_sw 31:s1 8:1 15:2 17:3 7:1 25:6 9:3	!function=ex_shift_2
+%imm_sh 31:s1 15:2 17:3 7:1 25:6 8:4		!function=ex_shift_1
+&b_andes_c1 imm_c1 rs2
+@bc1_d  . ...... .....  ... .. ... .....   ....... &b_andes_c1      imm_c1=%imm_sd  %rs2
+@bc1_w  . ...... .....  ... .. ... .....   ....... &b_andes_c1      imm_c1=%imm_sw  %rs2
+@bc1    . ...... .....  ... .. ... .....   ....... &b_andes_c1      imm_c1=%imm_sh  %rs2
+shgp    . ...... .....  ... .. 000 .... .  0101011 @bc1 #0x00
+swgp    . ...... .....  ... .. 100 ... . . 0101011 @bc1_w #0x04
+sdgp    . ...... .....  ... .. 111 .. .. . 0101011 @bc1_d #0x07
+
+# *** Custom 2 instructions (32bit) ***
+## Similar to B-type
+%imm_b_a  31:s1 25:5 8:4         !function=ex_shift_1
+%cimml    30:1 7:1 20:5
+&b_a_cl  imm cimml rs1
+@b_a_cl  . . ..... ..... ..... ... .... . ....... &b_a_cl imm=%imm_b_a  %cimml %rs1
+
+beqc      . . ..... ..... ..... 101 .... . 1011011 @b_a_cl #0x05
+bnec      . . ..... ..... ..... 110 .... . 1011011 @b_a_cl #0x06
+
+%cimms    7:1 20:5
+&b_a_cs  imm cimms rs1
+@b_a_cs  . . ..... ..... ..... ... .... . ....... &b_a_cs imm=%imm_b_a  %cimms %rs1
+
+bbx_bbc   . 0 ..... ..... ..... 111 .... . 1011011 @b_a_cs #0x00
+bbx_bbs   . 1 ..... ..... ..... 111 .... . 1011011 @b_a_cs #0x01
+
+## Similar to I-Type
+%mbfob    26:6
+%lbfob    20:6
+&i_b mbfob lbfob rs1 rd
+@i_bfo    . ..... . ..... ..... ... ..... .......  &i_b %mbfob %lbfob %rs1 %rd
+bfos      . ..... . ..... ..... 011 .....  1011011 @i_bfo #0x03
+bfoz      . ..... . ..... ..... 010 .....  1011011 @i_bfo #0x02
+
+## Similar to R-type
+lea_h     0000101   ..... ..... 000 .....  1011011 @r #0x05
+lea_w     0000110   ..... ..... 000 .....  1011011 @r #0x06
+lea_d     0000111   ..... ..... 000 .....  1011011 @r #0x07
+lea_b_ze  0001000   ..... ..... 000 .....  1011011 @r #0x08
+lea_h_ze  0001001   ..... ..... 000 .....  1011011 @r #0x09
+lea_w_ze  0001010   ..... ..... 000 .....  1011011 @r #0x0a
+lea_d_ze  0001011   ..... ..... 000 .....  1011011 @r #0x0b
+f_ffb     0010000   ..... ..... 000 .....  1011011 @r #0x10
+f_ffzmism 0010001   ..... ..... 000 .....  1011011 @r #0x11
+f_ffmism  0010010   ..... ..... 000 .....  1011011 @r #0x12
+f_flmism  0010011   ..... ..... 000 .....  1011011 @r #0x13

@@ -4,11 +4,13 @@ gen = [
   decodetree.process('insn32.decode', extra_args: '--static-decode=decode_insn32'),
   decodetree.process('xthead.decode', extra_args: '--static-decode=decode_xthead'),
   decodetree.process('XVentanaCondOps.decode', extra_args: '--static-decode=decode_XVentanaCodeOps'),
+  decodetree.process('XAndesV5Ops.decode', extra_args: ['--static-decode=decode_XAndesV5Ops']),
 ]
 
 riscv_ss = ss.source_set()
 riscv_ss.add(gen)
 riscv_ss.add(files(
+  'andes_helper.c',
   'csr_andes.inc.c',
   'cpu.c',
   'cpu_helper.c',
