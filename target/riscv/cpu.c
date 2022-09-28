@@ -570,6 +570,7 @@ static void rv64_andes_ax25_cpu_init(Object *obj)
 
     /* Enable Andes Custom extension */
     cfg->ext_XAndesV5Ops = true;
+    cfg->ext_XAndesCodenseOps = true;
 
     /* Set vendor ID */
     cfg->mvendorid = 0x0000031e;
@@ -738,6 +739,7 @@ static void rv32_andes_a25_cpu_init(Object *obj)
 
     /* Enable Andes Custom extension */
     cfg->ext_XAndesV5Ops = true;
+    cfg->ext_XAndesCodenseOps = true;
 
     /* Set vendor ID */
     cfg->mvendorid = 0x0000031e;
@@ -1517,7 +1519,6 @@ const RISCVCPUMultiExtConfig riscv_cpu_extensions[] = {
     MULTI_EXT_CFG_BOOL("zcmt", ext_zcmt, false),
     MULTI_EXT_CFG_BOOL("zicond", ext_zicond, false),
 
-<<<<<<< HEAD
     /* Vector cryptography extensions */
     MULTI_EXT_CFG_BOOL("zvbb", ext_zvbb, false),
     MULTI_EXT_CFG_BOOL("zvbc", ext_zvbc, false),
@@ -1553,6 +1554,7 @@ const RISCVCPUMultiExtConfig riscv_cpu_vendor_exts[] = {
     MULTI_EXT_CFG_BOOL("xtheadsync", ext_xtheadsync, false),
     MULTI_EXT_CFG_BOOL("xventanacondops", ext_XVentanaCondOps, false),
     MULTI_EXT_CFG_BOOL("xandesv5ops", ext_XAndesV5Ops, false),
+    MULTI_EXT_CFG_BOOL("xandescodenseops", ext_XAndesCodenseOps, false),
 
     DEFINE_PROP_END_OF_LIST(),
 };

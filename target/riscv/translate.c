@@ -1084,6 +1084,7 @@ static uint32_t opcode_at(DisasContextBase *dcbase, target_ulong pc)
 /* Include decoders for factored-out extensions */
 #include "decode-XVentanaCondOps.c.inc"
 #include "decode-XAndesV5Ops.c.inc"
+#include "decode-XAndesCodenseOps.c.inc"
 
 /* Include insn module translation function */
 #include "insn_trans/trans_rvi.c.inc"
@@ -1115,6 +1116,7 @@ static uint32_t opcode_at(DisasContextBase *dcbase, target_ulong pc)
 /* Include decoders for factored-out extensions */
 #include "decode-XVentanaCondOps.c.inc"
 #include "insn_trans/trans_xandesv5ops.c.inc"
+#include "insn_trans/trans_xandescodenseops.c.inc"
 
 /* The specification allows for longer insns, but not supported by qemu. */
 #define MAX_INSN_LEN  4
@@ -1140,18 +1142,29 @@ static void decode_opc(CPURISCVState *env, DisasContext *ctx, uint16_t opcode)
         { has_XAndesV5Ops_p,  decode_XAndesV5Ops },
     };
 
+    static const struct {
+        bool (*guard_func)(DisasContext *);
+        bool (*decode_func)(DisasContext *, uint16_t);
+    } decoders_16[] = {
+        { always_true_p,  decode_insn16 },
+        { has_XAndesCodenseOps_p, decode_XAndesCodenseOps },
+    };
+
     ctx->virt_inst_excp = false;
     ctx->cur_insn_len = insn_len(opcode);
     /* Check for compressed insn */
     if (ctx->cur_insn_len == 2) {
-        ctx->opcode = opcode;
-        /*
-         * The Zca extension is added as way to refer to instructions in the C
-         * extension that do not include the floating-point loads and stores
-         */
-        if ((has_ext(ctx, RVC) || ctx->cfg_ptr->ext_zca) &&
-            decode_insn16(ctx, opcode)) {
-            return;
+        if (!has_ext(ctx, RVC) && !ctx->cfg_ptr->ext_zca) {
+            gen_exception_illegal(ctx);
+        } else {
+            ctx->opcode = opcode;
+
+            for (size_t i = 0; i < ARRAY_SIZE(decoders_16); ++i) {
+                if (decoders_16[i].guard_func(ctx) &&
+                    decoders_16[i].decode_func(ctx, opcode)) {
+                    return;
+                }
+            }
         }
     } else {
         uint32_t opcode32 = opcode;
