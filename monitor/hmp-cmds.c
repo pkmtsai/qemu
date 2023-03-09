@@ -28,6 +28,7 @@
 #include "hw/intc/intc.h"
 #include "qemu/log.h"
 #include "sysemu/sysemu.h"
+#include "gdbstub/internals.h"
 
 bool hmp_handle_error(Monitor *mon, Error *err)
 {
@@ -442,4 +443,16 @@ void hmp_info_mtree(Monitor *mon, const QDict *qdict)
     bool disabled = qdict_get_try_bool(qdict, "disabled", false);
 
     mtree_info(flatview, dispatch_tree, owner, disabled);
+}
+
+void hmp_nds_help(Monitor *mon, const QDict *qdict)
+{
+    const char *option = qdict_get_str(qdict, "option");
+    const bool  value  = qdict_get_bool(qdict, "value");
+
+    if (strncmp(option, "va", 2) == 0) {
+        set_qemu_phy_mem_mode(get_phy_mode(value));
+    } else {
+        monitor_printf(mon, "Unsupported nds '%s' command\n", option);
+    }
 }

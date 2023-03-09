@@ -1875,3 +1875,15 @@ SRST
   List event channels in the guest
 ERST
 #endif
+    {
+        .name       = "nds",
+        .args_type  = "option:s,value:b",
+        .params     = "va [on|off]",
+        .help       = "Switch memory access mode (PA/VA)",
+        .cmd        = hmp_nds_help,
+    },
+
+SRST
+``nds``
+  Andes monitor nds va command
+ERST

@@ -468,6 +468,11 @@ int gdb_target_memory_rw_debug(CPUState *cpu, hwaddr addr,
     return cpu_memory_rw_debug(cpu, addr, buf, len, is_write);
 }
 
+void set_qemu_phy_mem_mode(int mode)
+{
+    phy_memory_mode = mode;
+}
+
 /*
  * cpu helpers
  */
