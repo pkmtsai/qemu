@@ -1,10 +1,12 @@
 #ifndef RISCV_CSR_ANDES_INC_H
 #define RISCV_CSR_ANDES_INC_H
 
+#include "andes_cpu_bits.h"
+
+#define ANDES_CSR_TABLE_SIZE 0x1000
+
 typedef struct andes_csr {
-    target_long uitb;
-    target_long mmsc_cfg;
-    target_long mmisc_ctl;
+    target_long csrno[ANDES_CSR_TABLE_SIZE];
 } AndesCsr;
 
 typedef struct AndesVec {

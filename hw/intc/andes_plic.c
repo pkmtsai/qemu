@@ -69,7 +69,7 @@ void andes_plichw_update(void *plic)
         switch (mode) {
         case PlicMode_M:
             if (!vec->vectored_irq_m &&
-                (csr->mmisc_ctl & (1UL << V5_MMISC_CTL_VEC_PLIC)) &&
+                (csr->csrno[CSR_MMISC_CTL] & (1UL << V5_MMISC_CTL_VEC_PLIC)) &&
                 (andes_plic->feature_enable & FER_VECTORED) && level) {
                     vec->vectored_irq_m =
                         riscv_plic->riscv_plic_claim(riscv_plic, target_id);
@@ -79,7 +79,7 @@ void andes_plichw_update(void *plic)
             break;
         case PlicMode_S:
             if (!vec->vectored_irq_s &&
-                (csr->mmisc_ctl & (1UL << V5_MMISC_CTL_VEC_PLIC)) &&
+                (csr->csrno[CSR_MMISC_CTL] & (1UL << V5_MMISC_CTL_VEC_PLIC)) &&
                 (andes_plic->feature_enable & FER_VECTORED) && level) {
                     vec->vectored_irq_s =
                         riscv_plic->riscv_plic_claim(riscv_plic, target_id);
