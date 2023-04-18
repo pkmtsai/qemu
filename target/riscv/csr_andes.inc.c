@@ -18,6 +18,20 @@ static RISCVException any(CPURISCVState *env,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException write_mcache_ctl(CPURISCVState *env,
+                                       int csrno,
+                                       target_ulong val)
+{
+    /* Change DC_COHSTA to 1 if DC_COHEN is set. Vice versa */
+    if (val & (1UL << V5_MCACHE_CTL_DC_COHEN)) {
+        val |= (1UL << V5_MCACHE_CTL_DC_COHSTA);
+    } else {
+        val &= ~(1UL << V5_MCACHE_CTL_DC_COHSTA);
+    }
+    env->andes_csr.csrno[csrno] = val;
+    return RISCV_EXCP_NONE;
+}
+
 static RISCVException read_csr(CPURISCVState *env,
                                int csrno,
                                target_ulong *val)
@@ -51,6 +65,8 @@ void andes_csr_init(AndesCsr *andes_csr)
                                         (1UL << V5_MMSC_CFG_PPMA);
     andes_csr->csrno[CSR_MMISC_CTL] =   (1UL << V5_MMISC_CTL_BRPE) |
                                         (1UL << V5_MMISC_CTL_MSA_OR_UNA);
+    andes_csr->csrno[CSR_MCACHE_CTL] =  (1UL << V5_MCACHE_CTL_IC_FIRST_WORD) |
+                                        (1UL << V5_MCACHE_CTL_DC_FIRST_WORD);
 }
 
 void andes_vec_init(AndesVec *andes_vec)
@@ -107,7 +123,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_csr},
     [CSR_MECC_CODE]      = { "mecc_code",         any, read_csr, write_csr},
     [CSR_MNVEC]          = { "mnvec",             any, read_csr, write_csr},
-    [CSR_MCACHE_CTL]     = { "mcache_ctl",        any, read_csr, write_csr},
+    [CSR_MCACHE_CTL]     = { "mcache_ctl",        any, read_csr,
+                                                  write_mcache_ctl        },
     [CSR_MCCTLBEGINADDR] = { "mcctlbeginaddr",    any, read_csr, write_csr},
     [CSR_MCCTLCOMMAND]   = { "mcctlcommand",      any, read_csr, write_csr},
     [CSR_MCCTLDATA]      = { "mcctldata",         any, read_csr, write_csr},
