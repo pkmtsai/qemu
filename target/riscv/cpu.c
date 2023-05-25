@@ -598,11 +598,14 @@ static void rv64_andes_ax27_cpu_init(Object *obj)
 static void rv64_andes_ax45_cpu_init(Object *obj)
 {
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
+    AndesCsr *andes_csr = &RISCV_CPU(obj)->env.andes_csr;
 
     rv64_andes_ax25_cpu_init(obj);
 
     /* Set CPU ID */
     cfg->marchid = 0x8a45;
+    /* Set $mmsc_cfg.L2C */
+    andes_csr->csrno[CSR_MMSC_CFG] |= (1UL << V5_MMSC_CFG_L2C);
 }
 
 static void rv64_andes_nx25_cpu_init(Object *obj)
@@ -786,11 +789,15 @@ static void rv32_andes_a27_cpu_init(Object *obj)
 static void rv32_andes_a45_cpu_init(Object *obj)
 {
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
+    AndesCsr *andes_csr = &RISCV_CPU(obj)->env.andes_csr;
 
     rv32_andes_a25_cpu_init(obj);
 
     /* Set CPU ID */
     cfg->marchid = 0x0a45;
+
+    /* Set $mmsc_cfg2.L2C */
+    andes_csr->csrno[CSR_MMSC_CFG2] |= (1UL << V5_MMSC_CFG2_L2C);
 }
 
 static void rv32_andes_n25_cpu_init(Object *obj)

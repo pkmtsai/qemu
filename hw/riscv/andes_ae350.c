@@ -511,7 +511,7 @@ static void andes_ae350_machine_init(MachineState *machine)
     /* L2C */
     memory_region_init_ram(mask_l2c, NULL, "riscv.andes.ae350.l2c",
                            memmap[ANDES_AE350_L2C].size, &error_fatal);
-    memory_region_set_readonly(mask_l2c, true);
+    memory_region_set_readonly(mask_l2c, false);
     memory_region_add_subregion(system_memory, memmap[ANDES_AE350_L2C].base,
                                 mask_l2c);
 

@@ -17,6 +17,8 @@ typedef struct AndesVec {
 /* mmsc_cfg */
 #define V5_MMSC_CFG_ECD                     3
 #define V5_MMSC_CFG_PPMA                    30
+#define V5_MMSC_CFG_L2C                     46
+#define V5_MMSC_CFG2_L2C                    14
 
 /* mmisc_ctl */
 #define V5_MMISC_CTL_VEC_PLIC               1
