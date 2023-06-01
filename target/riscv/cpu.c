@@ -608,6 +608,54 @@ static void rv64_andes_ax45_cpu_init(Object *obj)
     andes_csr->csrno[CSR_MMSC_CFG] |= (1UL << V5_MMSC_CFG_L2C);
 }
 
+static void rv64_andes_ax65_cpu_init(Object *obj)
+{
+    RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
+    AndesCsr *andes_csr = &RISCV_CPU(obj)->env.andes_csr;
+
+    rv64_andes_ax25_cpu_init(obj);
+
+    /* Set CPU ID */
+    cfg->marchid = 0x8a65;
+    /* Set $mmsc_cfg.L2C */
+    andes_csr->csrno[CSR_MMSC_CFG] |= (1UL << V5_MMSC_CFG_L2C);
+
+    /* Bitmanip */
+    cfg->ext_zba = true;
+    cfg->ext_zbb = true;
+    cfg->ext_zbc = true;
+    cfg->ext_zbs = true;
+
+    /* Scalar crypto */
+    cfg->ext_zk  = true;
+    cfg->ext_zks = true;
+
+    /* Half Width FP */
+    cfg->ext_zfh = true;
+
+    /* Base Cache Management Operation */
+    cfg->ext_icbom      = true;
+    cfg->cbom_blocksize = 64;
+    cfg->ext_icboz      = true;
+    cfg->cboz_blocksize = 64;
+
+    /*
+     * Count Overflow and Mode-Based Filtering
+     * (only 4 HPM counter available)
+     */
+    cfg->ext_sscofpmf = true;
+    cfg->pmu_num      = 4;
+    /* NAPOT Translation Contiguity */
+    cfg->ext_svnapot  = true;
+    /* Page-Based Memory Types */
+    cfg->ext_svpbmt   = true;
+    /* Fine-Grained Address-Translation Cache Invalidation */
+    cfg->ext_svinval  = true;
+
+    /* ePMP 0.9.3 (experimental) */
+    cfg->epmp = true;
+}
+
 static void rv64_andes_nx25_cpu_init(Object *obj)
 {
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
@@ -2014,6 +2062,7 @@ static const TypeInfo riscv_cpu_type_infos[] = {
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_AX25,       rv64_andes_ax25_cpu_init),
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_AX27,       rv64_andes_ax27_cpu_init),
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_AX45,       rv64_andes_ax45_cpu_init),
+    DEFINE_CPU(TYPE_RISCV_CPU_ANDES_AX65,       rv64_andes_ax65_cpu_init),
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_NX25,       rv64_andes_nx25_cpu_init),
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_NX27V,      rv64_andes_nx27v_cpu_init),
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_NX45,       rv64_andes_nx45_cpu_init),

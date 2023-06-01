@@ -38,6 +38,7 @@
 #define TYPE_RISCV_CPU_ANDES_NX25       RISCV_CPU_TYPE_NAME("andes-nx25")
 #define TYPE_RISCV_CPU_ANDES_NX27V      RISCV_CPU_TYPE_NAME("andes-nx27v")
 #define TYPE_RISCV_CPU_ANDES_NX45       RISCV_CPU_TYPE_NAME("andes-nx45")
+#define TYPE_RISCV_CPU_ANDES_AX65       RISCV_CPU_TYPE_NAME("andes-ax65")
 #define TYPE_RISCV_CPU_ANY              RISCV_CPU_TYPE_NAME("any")
 #define TYPE_RISCV_CPU_MAX              RISCV_CPU_TYPE_NAME("max")
 #define TYPE_RISCV_CPU_BASE32           RISCV_CPU_TYPE_NAME("rv32")
