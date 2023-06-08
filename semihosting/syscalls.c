@@ -281,6 +281,9 @@ static void host_open(CPUState *cs, gdb_syscall_complete_cb complete,
     if (gdb_flags & GDB_O_TRUNC) {
         host_flags |= O_TRUNC;
     }
+    if (gdb_flags & GDB_O_APPEND) {
+        host_flags |= O_APPEND;
+    }
     if (gdb_flags & GDB_O_EXCL) {
         host_flags |= O_EXCL;
     }
