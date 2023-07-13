@@ -620,6 +620,28 @@ void riscv_cpu_validate_set_extensions(RISCVCPU *cpu, Error **errp)
     riscv_cpu_disable_priv_spec_isa_exts(cpu);
 }
 
+/* Andes ACE */
+#include "andes_ace_helper.h"
+static void riscv_cpu_validate_andes_ace(RISCVCPU *cpu, Error **errp)
+{
+    CPURISCVState *env = &cpu->env;
+
+    if (cpu->cfg.ext_XAndesAce && cpu->cfg.XAndesAceLib == NULL) {
+        error_setg(errp, "Invalid configuration: AndesACE requires XAndesAceLib setting");
+        return;
+    }
+
+    if (cpu->cfg.ext_XAndesAce) { /* cfg.ext_XAndesAce is true, cfg.XAndesAceLib cannot be NULL since above check already */
+        if (load_qemu_ace_wrapper(cpu->cfg.XAndesAceLib) != 0) {
+            error_setg(errp, "xandesacelib '%s' cannot be loaded", cpu->cfg.XAndesAceLib);
+            return;
+        } else {
+            qemu_ace_agent_register(env);
+        }
+    }
+}
+
+
 void riscv_tcg_cpu_finalize_features(RISCVCPU *cpu, Error **errp)
 {
     CPURISCVState *env = &cpu->env;
@@ -651,6 +673,8 @@ void riscv_tcg_cpu_finalize_features(RISCVCPU *cpu, Error **errp)
         error_propagate(errp, local_err);
         return;
     }
+
+    riscv_cpu_validate_andes_ace(cpu, &local_err);
 }
 
 bool riscv_cpu_tcg_compatible(RISCVCPU *cpu)

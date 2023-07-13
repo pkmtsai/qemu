@@ -149,3 +149,21 @@ uint64_t helper_andes_nfcvt_s_bf16(CPURISCVState *env, uint64_t rs2)
     return nanbox_s(env, bfloat16_to_float32(frs, &env->fp_status));
 }
 
+#include "andes_ace_helper.h"
+target_ulong helper_andes_v5_ace(CPURISCVState *env, target_ulong opcode)
+{
+    target_ulong hartid;
+#ifndef CONFIG_USER_ONLY
+    hartid = env->mhartid;
+#else
+    hartid = 0;
+#endif
+    //int ret = qemu_ace_agent_run_insn(env, opcode, hartid);
+    int ret = qemu_ace_agent_run_insn(env, opcode);
+    if (ret != 0) {
+        /* wrong ACE instruction seems return RESERVED_INSN(=1), not ILL Insn */
+        qemu_printf("Run ace instruction result = %d\n", ret);
+        riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, GETPC());
+    }
+    return 0;
+}

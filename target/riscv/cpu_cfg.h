@@ -134,6 +134,8 @@ struct RISCVCPUConfig {
     bool ext_xtheadsync;
     bool ext_XVentanaCondOps;
     bool ext_XAndesV5Ops;
+    bool ext_XAndesAce;
+    bool ext_XAndesAceMulti;
     bool ext_XAndesCodenseOps;
 
     uint32_t pmu_mask;
@@ -141,6 +143,7 @@ struct RISCVCPUConfig {
     char *user_spec;
     char *bext_spec;
     char *vext_spec;
+    char *XAndesAceLib;
     uint16_t vlen;
     uint16_t elen;
     uint16_t cbom_blocksize;
@@ -195,6 +198,7 @@ MATERIALISE_EXT_PREDICATE(xtheadmempair)
 MATERIALISE_EXT_PREDICATE(xtheadsync)
 MATERIALISE_EXT_PREDICATE(XVentanaCondOps)
 MATERIALISE_EXT_PREDICATE(XAndesV5Ops);
+MATERIALISE_EXT_PREDICATE(XAndesAce);
 MATERIALISE_EXT_PREDICATE(XAndesCodenseOps);
 
 #endif
