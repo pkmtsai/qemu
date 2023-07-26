@@ -70,11 +70,15 @@ static const struct MemmapEntry {
     [ANDES_AE350_UART1]     = { 0xf0200000,   0x100000 },
     [ANDES_AE350_UART2]     = { 0xf0300000,   0x100000 },
     [ANDES_AE350_PIT]       = { 0xf0400000,   0x100000 },
+    [ANDES_AE350_WDT]       = { 0xf0500000,   0x100000 },
+    [ANDES_AE350_RTC]       = { 0xf0600000,   0x100000 },
     [ANDES_AE350_GPIO]      = { 0xf0700000,   0x100000 },
+    [ANDES_AE350_I2C]       = { 0xf0a00000,   0x100000 },
     [ANDES_AE350_SPI]       = { 0xf0b00000,   0x100000 },
     [ANDES_AE350_DMAC]      = { 0xf0c00000,   0x100000 },
     [ANDES_AE350_SND]       = { 0xf0d00000,   0x100000 },
     [ANDES_AE350_SDC]       = { 0xf0e00000,   0x100000 },
+    [ANDES_AE350_SPI2]      = { 0xf0f00000,   0x100000 },
     [ANDES_AE350_VIRTIO]    = { 0xfe000000,     0x1000 },
 };
 
@@ -368,9 +372,21 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     create_unimplemented_device("riscv.andes.ae350.spi",
         memmap[ANDES_AE350_SPI].base, memmap[ANDES_AE350_SPI].size);
 
+    /* WDT */
+    create_unimplemented_device("riscv.andes.ae350.wdt",
+        memmap[ANDES_AE350_WDT].base, memmap[ANDES_AE350_WDT].size);
+
+    /* RTC */
+    create_unimplemented_device("riscv.andes.ae350.rtc",
+        memmap[ANDES_AE350_RTC].base, memmap[ANDES_AE350_RTC].size);
+
     /* GPIO */
     create_unimplemented_device("riscv.andes.ae350.gpio",
         memmap[ANDES_AE350_GPIO].base, memmap[ANDES_AE350_GPIO].size);
+
+    /* I2C */
+    create_unimplemented_device("riscv.andes.ae350.i2c",
+        memmap[ANDES_AE350_I2C].base, memmap[ANDES_AE350_I2C].size);
 
     /* LCD */
     create_unimplemented_device("riscv.andes.ae350.lcd",
@@ -398,6 +414,10 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     /* SDC */
     atfsdc010_create(memmap[ANDES_AE350_SDC].base,
                 qdev_get_gpio_in(DEVICE(s->plic), ANDES_AE350_SDC_IRQ));
+
+    /* SPI2 */
+    create_unimplemented_device("riscv.andes.ae350.spi2",
+        memmap[ANDES_AE350_SPI2].base, memmap[ANDES_AE350_SPI2].size);
 
 
     /* UART */
