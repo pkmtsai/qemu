@@ -28,7 +28,7 @@
 #include "hw/net/atfmac100.h"
 #include "hw/sd/atfsdc010.h"
 
-#define ANDES_CPUS_MAX 4
+#define ANDES_CPUS_MAX 8
 
 #define TYPE_ANDES_AE350_SOC "riscv.andes.ae350.soc"
 #define ANDES_AE350_SOC(obj) \
