@@ -10,7 +10,7 @@
 #include "qemu/main-loop.h"
 #include "exec/exec-all.h"
 #include "andes_cpu_bits.h"
-#include "csr_andes.inc.h"
+#include "csr_andes.h"
 
 static RISCVException any(CPURISCVState *env,
                           int csrno)

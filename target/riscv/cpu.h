@@ -43,7 +43,7 @@ typedef struct CPUArchState CPURISCVState;
 #endif
 
 /* Vendor CSR declaration */
-#include "csr_andes.inc.h"
+#include "csr_andes.h"
 
 #define TCG_GUEST_DEFAULT_MO 0
 
