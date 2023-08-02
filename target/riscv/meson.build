@@ -14,6 +14,7 @@ riscv_ss.add(gen)
 riscv_ss.add(files(
   'andes_helper.c',
   'csr_andes.c',
+  'csr_andes_nx45v.c',
   'cpu.c',
   'cpu_helper.c',
   'csr.c',

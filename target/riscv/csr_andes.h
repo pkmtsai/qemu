@@ -38,4 +38,6 @@ void andes_csr_init(AndesCsr *);
 void andes_vec_init(AndesVec *);
 void andes_cpu_do_interrupt_post(CPUState *cpu);
 
+void andes_spec_csr_init_nx45v(AndesCsr *);
+
 #endif /* RISCV_CSR_ANDES_INC_H */
