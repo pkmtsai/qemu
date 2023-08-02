@@ -108,15 +108,15 @@ void andes_cpu_do_interrupt_post(CPUState *cs)
 riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     /* ================== AndeStar V5 machine mode CSRs ================== */
     /* Configuration Registers */
-    [CSR_MICM_CFG]  = { "micm_cfg",          any, read_csr,      write_csr},
-    [CSR_MDCM_CFG]  = { "mdcm_cfg",          any, read_csr,      write_csr},
-    [CSR_MMSC_CFG]  = { "mmsc_cfg",          any, read_csr,      write_csr},
-    [CSR_MMSC_CFG2] = { "mmsc_cfg2",         any, read_csr,      write_csr},
-    [CSR_MVEC_CFG]  = { "mvec_cfg",          any, read_csr,      write_csr},
+    [CSR_MICM_CFG]  = { "micm_cfg",          any, read_csr },
+    [CSR_MDCM_CFG]  = { "mdcm_cfg",          any, read_csr },
+    [CSR_MMSC_CFG]  = { "mmsc_cfg",          any, read_csr },
+    [CSR_MMSC_CFG2] = { "mmsc_cfg2",         any, read_csr },
+    [CSR_MVEC_CFG]  = { "mvec_cfg",          any, read_csr },
 
     /* Crash Debug CSRs */
-    [CSR_MCRASH_STATESAVE]  = { "mcrash_statesave",  any, read_csr, write_csr},
-    [CSR_MSTATUS_CRASHSAVE] = { "mstatus_crashsave", any, read_csr, write_csr},
+    [CSR_MCRASH_STATESAVE]  = { "mcrash_statesave",  any, read_csr },
+    [CSR_MSTATUS_CRASHSAVE] = { "mstatus_crashsave", any, read_csr },
 
     /* Memory CSRs */
     [CSR_MILMB]          = { "milmb",             any, read_csr, write_csr},
