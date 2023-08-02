@@ -51,16 +51,34 @@ static RISCVException write_csr(CPURISCVState *env,
 static RISCVException write_mecc_code(CPURISCVState *env, int csrno,
                                       target_ulong val)
 {
-    // we only need to take care of CODE field, other fields are always zero.
-    env->andes_csr.csrno[CSR_MECC_CODE] = val & MASK_CSR_MECC_CODE_CODE;
+    env->andes_csr.csrno[CSR_MECC_CODE] = val & WRITE_MASK_CSR_MECC_CODE;
     return RISCV_EXCP_NONE;
 }
 
 static RISCVException write_uitb(CPURISCVState *env, int csrno,
                                  target_ulong val)
 {
-    // we only need to take care of ADDR field
-    env->andes_csr.csrno[CSR_UITB] = val & MASK_CSR_UITB_ADDR;
+    env->andes_csr.csrno[CSR_UITB] = val & WRITE_MASK_CSR_UITB;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_mpft_ctl(CPURISCVState *env, int csrno,
+                                     target_ulong val)
+{
+    env->andes_csr.csrno[CSR_MPFT_CTL] = val & WRITE_MASK_CSR_MPFT_CTL;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_mhsp_ctl(CPURISCVState *env, int csrno,
+                                     target_ulong val)
+{
+    env->andes_csr.csrno[CSR_MHSP_CTL] = val & WRITE_MASK_CSR_MHSP_CTL;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_all_ignore(CPURISCVState *env, int csrno,
+                                       target_ulong val)
+{
     return RISCV_EXCP_NONE;
 }
 
@@ -83,6 +101,8 @@ void andes_csr_init(AndesCsr *andes_csr)
                                         (1UL << V5_MMISC_CTL_MSA_OR_UNA);
     andes_csr->csrno[CSR_MCACHE_CTL] =  (1UL << V5_MCACHE_CTL_IC_FIRST_WORD) |
                                         (1UL << V5_MCACHE_CTL_DC_FIRST_WORD);
+    andes_csr->csrno[CSR_MSP_BOUND] =   ~((target_long)0);  // all-one reset value
+    andes_csr->csrno[CSR_MSP_BASE] =    ~((target_long)0);
 }
 
 void andes_vec_init(AndesVec *andes_vec)
@@ -139,9 +159,10 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_csr},
     [CSR_MECC_CODE]      = { "mecc_code",         any, read_csr,
                                                        write_mecc_code    },
-    [CSR_MNVEC]          = { "mnvec",             any, read_csr, write_csr},
+    [CSR_MNVEC]          = { "mnvec",             any, read_csr,
+                                                       write_all_ignore   },
     [CSR_MCACHE_CTL]     = { "mcache_ctl",        any, read_csr,
-                                                  write_mcache_ctl        },
+                                                       write_mcache_ctl   },
     [CSR_MCCTLBEGINADDR] = { "mcctlbeginaddr",    any, read_csr, write_csr},
     [CSR_MCCTLCOMMAND]   = { "mcctlcommand",      any, read_csr, write_csr},
     [CSR_MCCTLDATA]      = { "mcctldata",         any, read_csr, write_csr},
@@ -149,7 +170,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MFIOB]          = { "mfiob",             any, read_csr, write_csr},
 
     /* Hardware Stack Protection & Recording */
-    [CSR_MHSP_CTL]     = { "mhsp_ctl",            any, read_csr, write_csr},
+    [CSR_MHSP_CTL]     = { "mhsp_ctl",            any, read_csr,
+                                                       write_mhsp_ctl     },
     [CSR_MSP_BOUND]    = { "msp_bound",           any, read_csr, write_csr},
     [CSR_MSP_BASE]     = { "msp_base",            any, read_csr, write_csr},
     [CSR_MXSTATUS]     = { "mxstatus",            any, read_csr, write_csr},
@@ -164,7 +186,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MSAVEDCAUSE2] = { "msavedcause2",        any, read_csr, write_csr},
 
     /* Control CSRs */
-    [CSR_MPFT_CTL]  = { "mpft_ctl",               any, read_csr, write_csr},
+    [CSR_MPFT_CTL]  = { "mpft_ctl",               any, read_csr,
+                                                       write_mpft_ctl     },
     [CSR_MMISC_CTL] = { "mmisc_ctl",              any, read_csr, write_csr},
     [CSR_MCLK_CTL]  = { "mclk_ctl",               any, read_csr, write_csr},
 
