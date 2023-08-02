@@ -33,6 +33,8 @@ typedef struct AndesVec {
 #define V5_MCACHE_CTL_DC_COHEN              19
 #define V5_MCACHE_CTL_DC_COHSTA             20
 
+#define MASK_CSR_MECC_CODE_CODE             0xFF
+#define MASK_CSR_UITB_ADDR                  0xFFFFFFFC
 
 void andes_csr_init(AndesCsr *);
 void andes_vec_init(AndesVec *);

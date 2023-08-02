@@ -48,6 +48,22 @@ static RISCVException write_csr(CPURISCVState *env,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException write_mecc_code(CPURISCVState *env, int csrno,
+                                      target_ulong val)
+{
+    // we only need to take care of CODE field, other fields are always zero.
+    env->andes_csr.csrno[CSR_MECC_CODE] = val & MASK_CSR_MECC_CODE_CODE;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_uitb(CPURISCVState *env, int csrno,
+                                 target_ulong val)
+{
+    // we only need to take care of ADDR field
+    env->andes_csr.csrno[CSR_UITB] = val & MASK_CSR_UITB_ADDR;
+    return RISCV_EXCP_NONE;
+}
+
 void andes_csr_init(AndesCsr *andes_csr)
 {
     int i;
@@ -121,7 +137,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     /* Memory CSRs */
     [CSR_MILMB]          = { "milmb",             any, read_csr, write_csr},
     [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_csr},
-    [CSR_MECC_CODE]      = { "mecc_code",         any, read_csr, write_csr},
+    [CSR_MECC_CODE]      = { "mecc_code",         any, read_csr,
+                                                       write_mecc_code    },
     [CSR_MNVEC]          = { "mnvec",             any, read_csr, write_csr},
     [CSR_MCACHE_CTL]     = { "mcache_ctl",        any, read_csr,
                                                   write_mcache_ctl        },
@@ -219,7 +236,7 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
 
     /* =================== AndeStar V5 user mode CSRs =================== */
     /* User mode control registers */
-    [CSR_UITB]           = { "uitb",              any, read_csr, write_csr},
+    [CSR_UITB]           = { "uitb",              any, read_csr, write_uitb},
     [CSR_UCODE]          = { "ucode",             any, read_csr, write_csr},
     [CSR_UDCAUSE]        = { "udcause",           any, read_csr, write_csr},
     [CSR_UCCTLBEGINADDR] = { "ucctlbeginaddr",    any, read_csr, write_csr},
