@@ -18,6 +18,17 @@ static RISCVException any(CPURISCVState *env,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException ecc(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_ECC) == 0) {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+    else {
+        return RISCV_EXCP_NONE;
+    }
+}
+
 static RISCVException write_mcache_ctl(CPURISCVState *env,
                                        int csrno,
                                        target_ulong val)
@@ -101,8 +112,8 @@ void andes_csr_init(AndesCsr *andes_csr)
                                         (1UL << V5_MMISC_CTL_MSA_OR_UNA);
     andes_csr->csrno[CSR_MCACHE_CTL] =  (1UL << V5_MCACHE_CTL_IC_FIRST_WORD) |
                                         (1UL << V5_MCACHE_CTL_DC_FIRST_WORD);
-    andes_csr->csrno[CSR_MSP_BOUND] =   ~((target_long)0);  // all-one reset value
-    andes_csr->csrno[CSR_MSP_BASE] =    ~((target_long)0);
+    andes_csr->csrno[CSR_MSP_BOUND] =   ~((target_ulong)0);  // all-one reset value
+    andes_csr->csrno[CSR_MSP_BASE] =    ~((target_ulong)0);
 }
 
 void andes_vec_init(AndesVec *andes_vec)
@@ -157,7 +168,7 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     /* Memory CSRs */
     [CSR_MILMB]          = { "milmb",             any, read_csr, write_csr},
     [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_csr},
-    [CSR_MECC_CODE]      = { "mecc_code",         any, read_csr,
+    [CSR_MECC_CODE]      = { "mecc_code",         ecc, read_csr,
                                                        write_mecc_code    },
     [CSR_MNVEC]          = { "mnvec",             any, read_csr,
                                                        write_all_ignore   },
