@@ -7,8 +7,10 @@
 #define MASK_MMSC_CFG_L2C          ((uint64_t)0x1 << 46)
 #define MASK_MMSC_CFG_IOCP         ((uint64_t)0x1 << 46)
 
-static RISCVException read_mmsc_cfg(CPURISCVState *env, int csrno,
-                                    target_ulong *val)
+#define WRITE_MASK_CSR_MCOUNTERWEN_N45V_META    0xFD
+
+static RISCVException read_mmsc_cfg_nx45v_meta(CPURISCVState *env, int csrno,
+                                               target_ulong *val)
 {
     static target_ulong mask = MASK_MMSC_CFG_ECC     | MASK_MMSC_CFG_ECD
                              | MASK_MMSC_CFG_PFT     | MASK_MMSC_CFG_HSP
@@ -29,9 +31,27 @@ static RISCVException read_mmsc_cfg(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException write_mcounterwen_nx45v_meta(CPURISCVState *env,
+                                                   int csrno, target_ulong val)
+{
+    env->andes_csr.csrno[CSR_MCOUNTERWEN] =
+        val & WRITE_MASK_CSR_MCOUNTERWEN_N45V_META;
+
+    return RISCV_EXCP_NONE;
+}
+
+
 void andes_spec_csr_init_nx45v_meta(AndesCsr *andes_csr)
 {
-    andes_csr->csrno[CSR_MECC_CODE] = 0;
+    andes_csr->csrno[CSR_MMSC_CFG] = MASK_MMSC_CFG_ECD   | MASK_MMSC_CFG_PFT
+                                   | MASK_MMSC_CFG_HSP   | MASK_MMSC_CFG_ACE
+                                   | MASK_MMSC_CFG_VPLIC | MASK_MMSC_CFG_EV5PE
+                                   | MASK_MMSC_CFG_PMNDS
+                                   | MASK_MMSC_CFG_CCTLCSR
+                                   | MASK_MMSC_CFG_PPMA  | MASK_MMSC_CFG_ZFH
+                                   | MASK_MMSC_CFG_VL4
+                                   | MASK_MMSC_CFG_VECCFG;
 
-    andes_csr_ops[CSR_MMSC_CFG].read = read_mmsc_cfg;
+    andes_csr_ops[CSR_MMSC_CFG].read = read_mmsc_cfg_nx45v_meta;
+    andes_csr_ops[CSR_MCOUNTERWEN].write = write_mcounterwen_nx45v_meta;
 }

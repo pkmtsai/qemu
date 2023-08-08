@@ -96,9 +96,11 @@ typedef struct AndesVec {
 #define MASK_MMSC_CFG_2_RVARCH              (0x01 << 20)
 
 #define WRITE_MASK_CSR_MECC_CODE            0xFF
-#define WRITE_MASK_CSR_UITB                 0xFFFFFFFC
+#define WRITE_MASK_CSR_UITB_32              0xFFFC
+#define WRITE_MASK_CSR_UITB_64              0xFFFFFFFC
 #define WRITE_MASK_CSR_MPFT_CTL             0x1F0
-#define WRITE_MASK_CSR_MHSP_CTL             0x1F
+#define WRITE_MASK_CSR_MHSP_CTL             0x3F
+#define WRITE_MASK_CSR_MCOUNTERWEN          0xFFFD
 
 void andes_csr_init(AndesCsr *);
 void andes_vec_init(AndesVec *);
