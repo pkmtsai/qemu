@@ -167,10 +167,10 @@ static RISCVException write_mhsp_ctl(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
-static RISCVException write_mcounterwen(CPURISCVState *env, int csrno,
-                                        target_ulong val)
+static RISCVException write_counter_common(CPURISCVState *env, int csrno,
+                                           target_ulong val)
 {
-    env->andes_csr.csrno[CSR_MCOUNTERWEN] = val & WRITE_MASK_CSR_MCOUNTERWEN;
+    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_COUNTER_COMMON;
     return RISCV_EXCP_NONE;
 }
 
@@ -291,12 +291,17 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
 
     /* Counter related CSRs */
     [CSR_MCOUNTERWEN]    = { "mcounterwen",       pmnds, read_csr,
-                                                         write_mcounterwen  },
-    [CSR_MCOUNTERINTEN]  = { "mcounterinten",     pmnds, read_csr, write_csr},
-    [CSR_MCOUNTERMASK_M] = { "mcountermask_m",    pmnds, read_csr, write_csr},
-    [CSR_MCOUNTERMASK_S] = { "mcountermask_s",    pmnds, read_csr, write_csr},
-    [CSR_MCOUNTERMASK_U] = { "mcountermask_u",    pmnds, read_csr, write_csr},
-    [CSR_MCOUNTEROVF]    = { "mcounterovf",       pmnds, read_csr, write_csr},
+                                                         write_counter_common},
+    [CSR_MCOUNTERINTEN]  = { "mcounterinten",     pmnds, read_csr,
+                                                         write_counter_common},
+    [CSR_MCOUNTERMASK_M] = { "mcountermask_m",    pmnds, read_csr,
+                                                         write_counter_common},
+    [CSR_MCOUNTERMASK_S] = { "mcountermask_s",    pmnds, read_csr,
+                                                         write_counter_common},
+    [CSR_MCOUNTERMASK_U] = { "mcountermask_u",    pmnds, read_csr,
+                                                         write_counter_common},
+    [CSR_MCOUNTEROVF]    = { "mcounterovf",       pmnds, read_csr,
+                                                         write_counter_common},
 
     /* Enhanced CLIC CSRs */
     [CSR_MIRQ_ENTRY]   = { "mirq_entry",          any, read_csr, write_csr},
