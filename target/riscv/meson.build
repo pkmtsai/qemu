@@ -12,9 +12,6 @@ gen = [
 riscv_ss = ss.source_set()
 riscv_ss.add(gen)
 riscv_ss.add(files(
-  'andes_helper.c',
-  'csr_andes.c',
-  'csr_andes_nx45v_meta.c',
   'cpu.c',
   'cpu_helper.c',
   'csr.c',
@@ -27,8 +24,11 @@ riscv_ss.add(files(
   'translate.c',
   'm128_helper.c',
   'crypto_helper.c',
-  'zce_helper.c',
   'vcrypto_helper.c'
+  'zce_helper.c'
+  'andes_helper.c',
+  'csr_andes.c',
+  'csr_andes_nx45v_meta.c'
 ))
 
 riscv_system_ss = ss.source_set()

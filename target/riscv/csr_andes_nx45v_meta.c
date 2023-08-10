@@ -7,8 +7,6 @@
 #define MASK_MMSC_CFG_L2C          ((uint64_t)0x1 << 46)
 #define MASK_MMSC_CFG_IOCP         ((uint64_t)0x1 << 46)
 
-#define WRITE_MASK_CSR_COUNTER_COMMON_NX45V_META    0xFD
-
 static RISCVException read_mmsc_cfg_nx45v_meta(CPURISCVState *env, int csrno,
                                                target_ulong *val)
 {
@@ -31,15 +29,6 @@ static RISCVException read_mmsc_cfg_nx45v_meta(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
-static RISCVException write_counter_common_nx45v_meta(CPURISCVState *env,
-                                                      int csrno,
-                                                      target_ulong val)
-{
-    env->andes_csr.csrno[csrno] =
-        val & WRITE_MASK_CSR_COUNTER_COMMON_NX45V_META;
-    return RISCV_EXCP_NONE;
-}
-
 void andes_spec_csr_init_nx45v_meta(AndesCsr *andes_csr)
 {
     andes_csr->csrno[CSR_MMSC_CFG] = MASK_MMSC_CFG_ECD   | MASK_MMSC_CFG_PFT
@@ -52,10 +41,4 @@ void andes_spec_csr_init_nx45v_meta(AndesCsr *andes_csr)
                                    | MASK_MMSC_CFG_VECCFG;
 
     andes_csr_ops[CSR_MMSC_CFG].read = read_mmsc_cfg_nx45v_meta;
-    andes_csr_ops[CSR_MCOUNTERWEN].write = write_counter_common_nx45v_meta;
-    andes_csr_ops[CSR_MCOUNTERINTEN].write = write_counter_common_nx45v_meta;
-    andes_csr_ops[CSR_MCOUNTERMASK_M].write = write_counter_common_nx45v_meta;
-    andes_csr_ops[CSR_MCOUNTERMASK_S].write = write_counter_common_nx45v_meta;
-    andes_csr_ops[CSR_MCOUNTERMASK_U].write = write_counter_common_nx45v_meta;
-    andes_csr_ops[CSR_MCOUNTEROVF].write = write_counter_common_nx45v_meta;
 }
