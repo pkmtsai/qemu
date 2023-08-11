@@ -18,6 +18,15 @@ static RISCVException any(CPURISCVState *env,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException smode(CPURISCVState *env, int csrno)
+{
+    if (riscv_has_ext(env, RVS)) {
+        return RISCV_EXCP_NONE;
+    }
+
+    return RISCV_EXCP_ILLEGAL_INST;
+}
+
 static RISCVException ecc(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -170,7 +179,7 @@ static RISCVException write_mhsp_ctl(CPURISCVState *env, int csrno,
 static RISCVException write_mcounter(CPURISCVState *env, int csrno,
                                      target_ulong val)
 {
-    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_COUNTER_COMMON;
+    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_COUNTER;
     return RISCV_EXCP_NONE;
 }
 
@@ -232,7 +241,7 @@ static RISCVException write_scounter(CPURISCVState *env, int csrno,
 
     target_ulong wen = env->andes_csr.csrno[CSR_MCOUNTERWEN];
     if (wen == 0) {
-        env->andes_csr.csrno[real_csrno] = val & WRITE_MASK_CSR_COUNTER_COMMON;
+        env->andes_csr.csrno[real_csrno] = val & WRITE_MASK_CSR_COUNTER;
     }
     else {
         for (int i=0; i<RV_MAX_MHPMCOUNTERS; i++) {
@@ -257,7 +266,7 @@ static RISCVException write_scountinhibit(CPURISCVState *env, int csrno,
                                           target_ulong val)
 {
     target_ulong wen = env->andes_csr.csrno[CSR_MCOUNTERWEN];
-    target_ulong new_val = val & WRITE_MASK_CSR_COUNTER_COMMON;
+    target_ulong new_val = val & WRITE_MASK_CSR_COUNTER;
     target_ulong read_val;
 
     if (wen == 0) {
@@ -274,6 +283,20 @@ static RISCVException write_scountinhibit(CPURISCVState *env, int csrno,
         }
         csr_ops[CSR_MCOUNTINHIBIT].write(env, CSR_MCOUNTINHIBIT, read_val);
     }
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_shpmevent(CPURISCVState *env, int csrno,
+                                      target_ulong val)
+{
+    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_HPMEVENT;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_sliep(CPURISCVState *env, int csrno,
+                                     target_ulong val)
+{
+    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_SLIEP;
     return RISCV_EXCP_NONE;
 }
 
@@ -444,9 +467,9 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
 
     /* ================ AndeStar V5 supervisor mode CSRs ================ */
     /* Supervisor trap registers */
-    [CSR_SLIE]    = { "slie",                     any, read_csr, write_csr},
-    [CSR_SLIP]    = { "slip",                     any, read_csr, write_csr},
-    [CSR_SDCAUSE] = { "sdcause",                  any, read_csr, write_csr},
+    [CSR_SLIE]    = { "slie",                     smode, read_csr, write_sliep},
+    [CSR_SLIP]    = { "slip",                     smode, read_csr, write_sliep},
+    [CSR_SDCAUSE] = { "sdcause",                  smode, read_csr, write_csr  },
 
     /* Supervisor counter registers */
     [CSR_SCOUNTERINTEN]  = { "scounterinten",     pmnds, read_scounter,
@@ -461,10 +484,14 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
                                                          write_scounter     },
     [CSR_SCOUNTINHIBIT]  = { "scountinhibit",     pmnds, read_scountinhibit,
                                                          write_scountinhibit},
-    [CSR_SHPMEVENT3]     = { "shpmevent3",        pmnds, read_csr, write_csr},
-    [CSR_SHPMEVENT4]     = { "shpmevent4",        pmnds, read_csr, write_csr},
-    [CSR_SHPMEVENT5]     = { "shpmevent5",        pmnds, read_csr, write_csr},
-    [CSR_SHPMEVENT6]     = { "shpmevent6",        pmnds, read_csr, write_csr},
+    [CSR_SHPMEVENT3]     = { "shpmevent3",        pmnds, read_csr,
+                                                         write_shpmevent    },
+    [CSR_SHPMEVENT4]     = { "shpmevent4",        pmnds, read_csr,
+                                                         write_shpmevent    },
+    [CSR_SHPMEVENT5]     = { "shpmevent5",        pmnds, read_csr,
+                                                         write_shpmevent    },
+    [CSR_SHPMEVENT6]     = { "shpmevent6",        pmnds, read_csr,
+                                                         write_shpmevent    },
 
     /* Supervisor control registers */
     [CSR_SCCTLDATA] = { "scctldata",              any, read_csr, write_csr},
