@@ -7,8 +7,8 @@
 #define MASK_MMSC_CFG_L2C          ((uint64_t)0x1 << 46)
 #define MASK_MMSC_CFG_IOCP         ((uint64_t)0x1 << 46)
 
-static RISCVException read_mmsc_cfg_nx45v_meta(CPURISCVState *env, int csrno,
-                                               target_ulong *val)
+static RISCVException read_mmsc_cfg_nx45v(CPURISCVState *env, int csrno,
+                                          target_ulong *val)
 {
     static target_ulong mask = MASK_MMSC_CFG_ECC     | MASK_MMSC_CFG_ECD
                              | MASK_MMSC_CFG_PFT     | MASK_MMSC_CFG_HSP
@@ -29,7 +29,7 @@ static RISCVException read_mmsc_cfg_nx45v_meta(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
-void andes_spec_csr_init_nx45v_meta(AndesCsr *andes_csr)
+void andes_spec_csr_init_nx45v(AndesCsr *andes_csr)
 {
     andes_csr->csrno[CSR_MMSC_CFG] = MASK_MMSC_CFG_ECD   | MASK_MMSC_CFG_PFT
                                    | MASK_MMSC_CFG_HSP   | MASK_MMSC_CFG_ACE
@@ -40,5 +40,5 @@ void andes_spec_csr_init_nx45v_meta(AndesCsr *andes_csr)
                                    | MASK_MMSC_CFG_VL4
                                    | MASK_MMSC_CFG_VECCFG;
 
-    andes_csr_ops[CSR_MMSC_CFG].read = read_mmsc_cfg_nx45v_meta;
+    andes_csr_ops[CSR_MMSC_CFG].read = read_mmsc_cfg_nx45v;
 }
