@@ -71,6 +71,17 @@ static RISCVException hsp(CPURISCVState *env, int csrno)
     }
 }
 
+static RISCVException ppi(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_PPI) == 0) {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+    else {
+        return RISCV_EXCP_NONE;
+    }
+}
+
 static RISCVException pmnds(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -155,6 +166,24 @@ static RISCVException write_uitb(CPURISCVState *env, int csrno,
             break;
         case MXL_RV64:
             env->andes_csr.csrno[CSR_UITB] = val & WRITE_MASK_CSR_UITB_64;
+            return RISCV_EXCP_NONE;
+            break;
+        default:
+            return RISCV_EXCP_ILLEGAL_INST;
+    }
+}
+
+static RISCVException write_mppib(CPURISCVState *env, int csrno,
+                                  target_ulong val)
+{
+    switch(riscv_cpu_mxl(env))
+    {
+        case MXL_RV32:
+            env->andes_csr.csrno[CSR_MPPIB] = val & WRITE_MASK_CSR_MPPIB_32;
+            return RISCV_EXCP_NONE;
+            break;
+        case MXL_RV64:
+            env->andes_csr.csrno[CSR_MPPIB] = val & WRITE_MASK_CSR_MPPIB_64;
             return RISCV_EXCP_NONE;
             break;
         default:
@@ -379,19 +408,19 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MSTATUS_CRASHSAVE] = { "mstatus_crashsave", any, read_csr },
 
     /* Memory CSRs */
-    [CSR_MILMB]          = { "milmb",             any, read_csr, write_csr},
-    [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_csr},
+    [CSR_MILMB]          = { "milmb",             any, read_csr, write_csr  },
+    [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_csr  },
     [CSR_MECC_CODE]      = { "mecc_code",         ecc, read_csr,
-                                                       write_mecc_code    },
+                                                       write_mecc_code      },
     [CSR_MNVEC]          = { "mnvec",             any, read_csr,
-                                                       write_all_ignore   },
+                                                       write_all_ignore     },
     [CSR_MCACHE_CTL]     = { "mcache_ctl",        any, read_csr,
-                                                       write_mcache_ctl   },
-    [CSR_MCCTLBEGINADDR] = { "mcctlbeginaddr",    any, read_csr, write_csr},
-    [CSR_MCCTLCOMMAND]   = { "mcctlcommand",      any, read_csr, write_csr},
-    [CSR_MCCTLDATA]      = { "mcctldata",         any, read_csr, write_csr},
-    [CSR_MPPIB]          = { "mppib",             any, read_csr, write_csr},
-    [CSR_MFIOB]          = { "mfiob",             any, read_csr, write_csr},
+                                                       write_mcache_ctl     },
+    [CSR_MCCTLBEGINADDR] = { "mcctlbeginaddr",    any, read_csr, write_csr  },
+    [CSR_MCCTLCOMMAND]   = { "mcctlcommand",      any, read_csr, write_csr  },
+    [CSR_MCCTLDATA]      = { "mcctldata",         any, read_csr, write_csr  },
+    [CSR_MPPIB]          = { "mppib",             ppi, read_csr, write_mppib},
+    [CSR_MFIOB]          = { "mfiob",             any, read_csr, write_csr  },
 
     /* Hardware Stack Protection & Recording */
     [CSR_MHSP_CTL]     = { "mhsp_ctl",            hsp, read_csr,
