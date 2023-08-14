@@ -563,7 +563,7 @@ static void rv64_andes_common_cpu_init(Object *obj, fp_csr_init_fn spec_csr_init
     if (!env->misa_ext) {
         set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
     }
-    register_cpu_props(obj);
+    riscv_cpu_add_user_properties(obj);
     set_priv_version(env, PRIV_VERSION_1_12_0);
 
 #ifndef CONFIG_USER_ONLY
@@ -728,7 +728,7 @@ static void rv64_andes_nx45v_meta_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
-    set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVU | RVV | RVX);
+    set_misa(env, MXL_RV64, RVA | RVC | RVD | RVF | RVI | RVM | RVN | RVU | RVV | RVX);
     rv64_andes_common_cpu_init(obj, andes_spec_csr_init_nx45v_meta);
     cfg->mmu = false;
 #ifndef CONFIG_USER_ONLY
@@ -830,7 +830,7 @@ static void rv32_andes_common_cpu_init(Object *obj)
     if (!env->misa_ext) {
         set_misa(env, MXL_RV32, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
     }
-    register_cpu_props(obj);
+    riscv_cpu_add_user_properties(obj);
     set_priv_version(env, PRIV_VERSION_1_12_0);
 
 #ifndef CONFIG_USER_ONLY
@@ -1538,6 +1538,8 @@ static const MISAExtInfo misa_ext_info_arr[] = {
     MISA_EXT_INFO(RVJ, "x-j", "Dynamic translated languages"),
     MISA_EXT_INFO(RVV, "v", "Vector operations"),
     MISA_EXT_INFO(RVG, "g", "General purpose (IMAFD_Zicsr_Zifencei)"),
+    MISA_EXT_INFO(RVN, "n", "Andes User Level Interrupt Extension"),
+    MISA_EXT_INFO(RVX, "x", "Andes Extension"),
 };
 
 static int riscv_validate_misa_info_idx(uint32_t bit)
