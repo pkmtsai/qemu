@@ -14,6 +14,7 @@
 #ifdef CONFIG_LINUX
 #include "linux-user/loader.h"
 #include "linux-user/qemu.h"
+#include "gdbstub/andes_ace_gdb.c.inc"
 #endif
 
 /*

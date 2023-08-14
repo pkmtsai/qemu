@@ -1484,7 +1484,7 @@ static void riscv_cpu_reset_hold(Object *obj)
         }
     }
     env->mcause = 0;
-    for (int i = 0; i < 32; i++) {
+    for (i = 0; i < 32; i++) {
         env->gpr[i] = 0;
         env->fpr[i] = 0;
     }
@@ -1497,7 +1497,7 @@ static void riscv_cpu_reset_hold(Object *obj)
     env->frm = 0;
     env->scause = 0;
     env->satp = 0;
-    for (int i = 0; i < MAX_RISCV_PMPS; i++) {
+    for (i = 0; i < MAX_RISCV_PMPS; i++) {
         env->pmp_state.pmp[i].addr_reg = 0;
         env->pmp_state.pmp[i].cfg_reg = 0;
         env->pmp_state.addr[i].sa = 0;
@@ -2200,6 +2200,7 @@ static Property andes_cpu_property[] = {
     DEFINE_PROP_STRING("xandesacelib", RISCVCPU, cfg.XAndesAceLib),
     DEFINE_PROP_STRING("xandesaceextlibpath", RISCVCPU,
                        cfg.XAndesAceExtLibPath),
+    DEFINE_PROP_STRING("xandesacelibdbg", RISCVCPU, cfg.XAndesAceLibDbg),
     DEFINE_PROP_END_OF_LIST(),
 };
 
@@ -2236,6 +2237,8 @@ static const char *riscv_gdb_get_dynamic_xml(CPUState *cs, const char *xmlname)
         return cpu->dyn_csr_xml;
     } else if (strcmp(xmlname, "riscv-vector.xml") == 0) {
         return cpu->dyn_vreg_xml;
+    } else if (strcmp(xmlname, "riscv-ace.xml") == 0) {
+        return cpu->dyn_ace_xml;
     }
 
     return NULL;

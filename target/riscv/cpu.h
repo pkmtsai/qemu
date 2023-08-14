@@ -457,6 +457,7 @@ struct ArchCPU {
 
     char *dyn_csr_xml;
     char *dyn_vreg_xml;
+    char *dyn_ace_xml;
 
     /* Configuration Settings */
     RISCVCPUConfig cfg;

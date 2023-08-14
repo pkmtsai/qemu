@@ -1411,6 +1411,173 @@ static void handle_v_kill(GArray *params, void *user_ctx)
     gdb_qemu_exit(0);
 }
 
+#ifndef CONFIG_USER_ONLY
+static int gdb_vfile_packet(char const *packet, int packet_size)
+{
+    char const *parse;
+    int fd;
+    int ret;
+    int offset;
+    char *pathname;
+    int pathname_len;
+    char reply[16];
+
+    if (strncmp(packet, "open:", 5) == 0) {
+        int flags;
+        mode_t mode;
+        char *separator;
+        parse = packet + 5;
+
+        if (*parse == '\0') {
+            return -1;
+        }
+
+        separator = strchr(parse, ',');
+
+        if (separator == NULL) {
+            return -1;
+        }
+
+        pathname_len = (separator - parse) / 2;
+        gdb_hextomem(gdbserver_state.mem_buf, parse, pathname_len);
+        pathname = (char *)gdbserver_state.mem_buf->data;
+        pathname[pathname_len] = 0;
+
+        parse = separator + 1;
+        ret = qemu_strtoul(parse, &parse, 16, (unsigned long *)&flags);
+        if (ret < 0) {
+            return -1;
+        }
+        if (*(parse++) != ',') {
+            return -1;
+        }
+        ret = qemu_strtoul(parse, &parse, 16, (unsigned long *)&mode);
+        if (ret < 0) {
+            return -1;
+        }
+
+        ret = open(pathname, flags, mode);
+
+        if (ret == -1) {
+            snprintf(reply, sizeof(reply), "F-1,%x", errno);
+        } else {
+            snprintf(reply, sizeof(reply), "F%x", ret);
+        }
+
+        gdb_put_packet(reply);
+
+        return 0;
+
+    } else if (strncmp(packet, "close:", 6) == 0) {
+        parse = packet + 6;
+        if (*parse == '\0') {
+            return -1;
+        }
+
+        ret = qemu_strtoul(parse, &parse, 16, (unsigned long *)&fd);
+        if (ret < 0) {
+            return -1;
+        }
+
+        ret = close(fd);
+
+        if (ret == -1) {
+            snprintf(reply, sizeof(reply), "F-1,%x", errno);
+        } else {
+            snprintf(reply, sizeof(reply), "F%x", ret);
+        }
+
+        gdb_put_packet(reply);
+
+        return 0;
+
+    } else if (strncmp(packet, "setfs:", 6) == 0) {
+        parse = packet + 6;
+        if (*parse == '\0') {
+            return -1;
+        }
+
+        ret = qemu_strtoul(parse, &parse, 16, (unsigned long *)&fd);
+        if (ret < 0) {
+            return -1;
+        }
+
+        snprintf(reply, sizeof(reply), "F%x", 0);
+
+        gdb_put_packet(reply);
+
+        return 0;
+
+    } else if (strncmp(packet, "pread:", 6) == 0) {
+        int count;
+        char *read_buffer;
+        parse = packet + 6;
+
+        if (*parse == '\0') {
+            return -1;
+        }
+
+        ret = qemu_strtoul(parse, &parse, 16, (unsigned long *)&fd);
+        if (ret < 0) {
+            return -1;
+        }
+        if (*(parse++) != ',') {
+            return -1;
+        }
+
+        ret = qemu_strtoul(parse, &parse, 16, (unsigned long *)&count);
+        if (ret < 0) {
+            return -1;
+        }
+        if (*(parse++) != ',') {
+            return -1;
+        }
+
+        ret = qemu_strtoul(parse, &parse, 16, (unsigned long *)&offset);
+        if (ret < 0) {
+            return -1;
+        }
+
+        read_buffer = malloc(count);
+        ret = pread(fd, read_buffer, count, offset);
+
+        char *reply2 = malloc(16 + ret * 2); /* payload and escape characters */
+        if (ret == -1) {
+            snprintf(reply2, 16, "F-1,%x", errno);
+            gdb_put_packet(reply2);
+        } else {
+            snprintf(reply2, 16, "F%x;", ret);
+            g_string_assign(gdbserver_state.str_buf, reply2);
+            if (ret > 0) {
+                gdb_memtox(gdbserver_state.str_buf, read_buffer, ret);
+                gdb_put_packet_binary(gdbserver_state.str_buf->str,
+                                      gdbserver_state.str_buf->len, false);
+            } else {
+                gdb_put_packet(reply2);
+            }
+        }
+
+        free(read_buffer);
+        free(reply2);
+
+        return 0;
+
+    }
+
+    return 0;
+}
+
+static void handle_v_file(GArray *params, void *user_ctx)
+{
+  char reply[16];
+  if (gdb_vfile_packet(get_param(params, 0)->data,
+                       strlen(get_param(params, 0)->data)) == -1) {
+    snprintf(reply, 16, "F-1,%x", EPERM);
+    gdb_put_packet(reply);
+  }
+}
+#endif
+
 static const GdbCmdParseEntry gdb_v_commands_table[] = {
     /* Order is important if has same prefix */
     {
@@ -1463,6 +1630,13 @@ static const GdbCmdParseEntry gdb_v_commands_table[] = {
     {
         .handler = gdb_handle_v_file_readlink,
         .cmd = "File:readlink:",
+        .cmd_startswith = 1,
+        .schema = "s0"
+    },
+#else /* System emulatin use original codes for ACE/gdb */
+    {
+        .handler = handle_v_file,
+        .cmd = "File:",
         .cmd_startswith = 1,
         .schema = "s0"
     },
