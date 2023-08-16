@@ -5,7 +5,7 @@
 
 #define MASK_MMSC_CFG_L2CMP_CFG    ((uint64_t)0x1 << 45)
 #define MASK_MMSC_CFG_L2C          ((uint64_t)0x1 << 46)
-#define MASK_MMSC_CFG_IOCP         ((uint64_t)0x1 << 46)
+#define MASK_MMSC_CFG_IOCP         ((uint64_t)0x1 << 47)
 
 static RISCVException read_mmsc_cfg_nx45v(CPURISCVState *env, int csrno,
                                           target_ulong *val)

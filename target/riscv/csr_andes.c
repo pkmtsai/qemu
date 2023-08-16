@@ -82,6 +82,17 @@ static RISCVException ppi(CPURISCVState *env, int csrno)
     }
 }
 
+static RISCVException ppma(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_PPMA) == 0) {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+    else {
+        return RISCV_EXCP_NONE;
+    }
+}
+
 static RISCVException pmnds(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -466,26 +477,26 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_PUSHMXSTATUS] = { "pushmxstatus",        any, read_csr, write_csr},
 
     /* Andes Physical Memory Attribute(PMA) CSRs */
-    [CSR_PMACFG0]   = { "pmacfg0",                any, read_csr, write_csr},
-    [CSR_PMACFG1]   = { "pmacfg1",                any, read_csr, write_csr},
-    [CSR_PMACFG2]   = { "pmacfg2",                any, read_csr, write_csr},
-    [CSR_PMACFG3]   = { "pmacfg3",                any, read_csr, write_csr},
-    [CSR_PMAADDR0]  = { "pmaaddr0",               any, read_csr, write_csr},
-    [CSR_PMAADDR1]  = { "pmaaddr1",               any, read_csr, write_csr},
-    [CSR_PMAADDR2]  = { "pmaaddr2",               any, read_csr, write_csr},
-    [CSR_PMAADDR3]  = { "pmaaddr3",               any, read_csr, write_csr},
-    [CSR_PMAADDR4]  = { "pmaaddr4",               any, read_csr, write_csr},
-    [CSR_PMAADDR5]  = { "pmaaddr5",               any, read_csr, write_csr},
-    [CSR_PMAADDR6]  = { "pmaaddr6",               any, read_csr, write_csr},
-    [CSR_PMAADDR7]  = { "pmaaddr7",               any, read_csr, write_csr},
-    [CSR_PMAADDR8]  = { "pmaaddr8",               any, read_csr, write_csr},
-    [CSR_PMAADDR9]  = { "pmaaddr9",               any, read_csr, write_csr},
-    [CSR_PMAADDR10] = { "pmaaddr10",              any, read_csr, write_csr},
-    [CSR_PMAADDR11] = { "pmaaddr11",              any, read_csr, write_csr},
-    [CSR_PMAADDR12] = { "pmaaddr12",              any, read_csr, write_csr},
-    [CSR_PMAADDR13] = { "pmaaddr13",              any, read_csr, write_csr},
-    [CSR_PMAADDR14] = { "pmaaddr14",              any, read_csr, write_csr},
-    [CSR_PMAADDR15] = { "pmaaddr15",              any, read_csr, write_csr},
+    [CSR_PMACFG0]   = { "pmacfg0",                ppma, read_csr, write_csr},
+    [CSR_PMACFG1]   = { "pmacfg1",                ppma, read_csr, write_csr},
+    [CSR_PMACFG2]   = { "pmacfg2",                ppma, read_csr, write_csr},
+    [CSR_PMACFG3]   = { "pmacfg3",                ppma, read_csr, write_csr},
+    [CSR_PMAADDR0]  = { "pmaaddr0",               ppma, read_csr, write_csr},
+    [CSR_PMAADDR1]  = { "pmaaddr1",               ppma, read_csr, write_csr},
+    [CSR_PMAADDR2]  = { "pmaaddr2",               ppma, read_csr, write_csr},
+    [CSR_PMAADDR3]  = { "pmaaddr3",               ppma, read_csr, write_csr},
+    [CSR_PMAADDR4]  = { "pmaaddr4",               ppma, read_csr, write_csr},
+    [CSR_PMAADDR5]  = { "pmaaddr5",               ppma, read_csr, write_csr},
+    [CSR_PMAADDR6]  = { "pmaaddr6",               ppma, read_csr, write_csr},
+    [CSR_PMAADDR7]  = { "pmaaddr7",               ppma, read_csr, write_csr},
+    [CSR_PMAADDR8]  = { "pmaaddr8",               ppma, read_csr, write_csr},
+    [CSR_PMAADDR9]  = { "pmaaddr9",               ppma, read_csr, write_csr},
+    [CSR_PMAADDR10] = { "pmaaddr10",              ppma, read_csr, write_csr},
+    [CSR_PMAADDR11] = { "pmaaddr11",              ppma, read_csr, write_csr},
+    [CSR_PMAADDR12] = { "pmaaddr12",              ppma, read_csr, write_csr},
+    [CSR_PMAADDR13] = { "pmaaddr13",              ppma, read_csr, write_csr},
+    [CSR_PMAADDR14] = { "pmaaddr14",              ppma, read_csr, write_csr},
+    [CSR_PMAADDR15] = { "pmaaddr15",              ppma, read_csr, write_csr},
 
     /* Debug/Trace Registers (shared with Debug Mode) */
     [CSR_TSELECT] = { "tselect",                  any, read_csr, write_csr},

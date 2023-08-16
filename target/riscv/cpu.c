@@ -822,7 +822,9 @@ static void rv32_imafcu_nommu_cpu_init(Object *obj)
     cpu->cfg.pmp = true;
 }
 
-static void rv32_andes_common_cpu_init(Object *obj)
+typedef void (*fp_csr_init_fn)(AndesCsr *);
+
+static void rv32_andes_common_cpu_init(Object *obj, fp_csr_init_fn spec_csr_init)
 {
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
@@ -839,6 +841,9 @@ static void rv32_andes_common_cpu_init(Object *obj)
 
     /* Setup Andes Custom CSR */
     andes_csr_init(&env->andes_csr);
+    if (spec_csr_init != NULL) {
+        spec_csr_init(&env->andes_csr);
+    }
     andes_vec_init(&env->andes_vec);
 
     env->do_interrupt_post = andes_cpu_do_interrupt_post;
@@ -854,7 +859,7 @@ static void rv32_andes_common_cpu_init(Object *obj)
 static void rv32_andes_a25_cpu_init(Object *obj) {
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
 
-    rv32_andes_common_cpu_init(obj);
+    rv32_andes_common_cpu_init(obj, NULL);
 
     /* Set CPU ID */
     cfg->marchid = 0x0a25;
@@ -864,7 +869,7 @@ static void rv32_andes_a27_cpu_init(Object *obj)
 {
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
 
-    rv32_andes_common_cpu_init(obj);
+    rv32_andes_common_cpu_init(obj, NULL);
 
     /* Set CPU ID */
     cfg->marchid = 0x0a27;
@@ -875,7 +880,7 @@ static void rv32_andes_a45_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     AndesCsr *andes_csr = &RISCV_CPU(obj)->env.andes_csr;
 
-    rv32_andes_common_cpu_init(obj);
+    rv32_andes_common_cpu_init(obj, NULL);
 
     /* Set CPU ID */
     cfg->marchid = 0x0a45;
@@ -890,7 +895,7 @@ static void rv32_andes_n25_cpu_init(Object *obj)
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
     set_misa(env, MXL_RV32, RVI | RVM | RVA | RVF | RVD | RVC | RVU);
-    rv32_andes_common_cpu_init(obj);
+    rv32_andes_common_cpu_init(obj, NULL);
     cfg->mmu = false;
 #ifndef CONFIG_USER_ONLY
     memset(&cfg->satp_mode, 0, sizeof(RISCVSATPMap));
@@ -907,7 +912,7 @@ static void rv32_andes_n45_cpu_init(Object *obj)
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
     set_misa(env, MXL_RV32, RVI | RVM | RVA | RVF | RVD | RVC | RVU);
-    rv32_andes_common_cpu_init(obj);
+    rv32_andes_common_cpu_init(obj, NULL);
     cfg->mmu = false;
 #ifndef CONFIG_USER_ONLY
     memset(&cfg->satp_mode, 0, sizeof(RISCVSATPMap));
