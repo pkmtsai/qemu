@@ -49,6 +49,17 @@ static RISCVException ecd(CPURISCVState *env, int csrno)
     }
 }
 
+static RISCVException edsp(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_EDSP) == 0) {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+    else {
+        return RISCV_EXCP_NONE;
+    }
+}
+
 static RISCVException pft(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -89,8 +100,35 @@ static RISCVException ppma(CPURISCVState *env, int csrno)
         return RISCV_EXCP_ILLEGAL_INST;
     }
     else {
+        if (csrno == CSR_PMACFG1 || csrno == CSR_PMACFG3) {
+            if (riscv_cpu_mxl(env) != MXL_RV32) {
+                return RISCV_EXCP_ILLEGAL_INST;
+            }
+        }
         return RISCV_EXCP_NONE;
     }
+}
+
+static RISCVException fio(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_FIO) == 0) {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+    else {
+        return RISCV_EXCP_NONE;
+    }
+}
+
+static RISCVException veccfg(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (riscv_has_ext(env, RVV)) {
+        if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_VECCFG) == 1) {
+            return RISCV_EXCP_NONE;
+        }
+    }
+    return RISCV_EXCP_ILLEGAL_INST;
 }
 
 static RISCVException pmnds(CPURISCVState *env, int csrno)
@@ -166,6 +204,13 @@ static RISCVException write_mecc_code(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException write_ucode(CPURISCVState *env, int csrno,
+                                  target_ulong val)
+{
+    env->andes_csr.csrno[CSR_UCODE] = val & WRITE_MASK_CSR_UCODE;
+    return RISCV_EXCP_NONE;
+}
+
 static RISCVException write_uitb(CPURISCVState *env, int csrno,
                                  target_ulong val)
 {
@@ -195,6 +240,24 @@ static RISCVException write_mppib(CPURISCVState *env, int csrno,
             break;
         case MXL_RV64:
             env->andes_csr.csrno[CSR_MPPIB] = val & WRITE_MASK_CSR_MPPIB_64;
+            return RISCV_EXCP_NONE;
+            break;
+        default:
+            return RISCV_EXCP_ILLEGAL_INST;
+    }
+}
+
+static RISCVException write_mfiob(CPURISCVState *env, int csrno,
+                                  target_ulong val)
+{
+    switch(riscv_cpu_mxl(env))
+    {
+        case MXL_RV32:
+            env->andes_csr.csrno[CSR_MFIOB] = val & WRITE_MASK_CSR_MFIOB_32;
+            return RISCV_EXCP_NONE;
+            break;
+        case MXL_RV64:
+            env->andes_csr.csrno[CSR_MFIOB] = val & WRITE_MASK_CSR_MFIOB_64;
             return RISCV_EXCP_NONE;
             break;
         default:
@@ -408,11 +471,11 @@ void andes_cpu_do_interrupt_post(CPUState *cs)
 riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     /* ================== AndeStar V5 machine mode CSRs ================== */
     /* Configuration Registers */
-    [CSR_MICM_CFG]  = { "micm_cfg",          any, read_csr },
-    [CSR_MDCM_CFG]  = { "mdcm_cfg",          any, read_csr },
-    [CSR_MMSC_CFG]  = { "mmsc_cfg",          any, read_csr },
-    [CSR_MMSC_CFG2] = { "mmsc_cfg2",         any, read_csr },
-    [CSR_MVEC_CFG]  = { "mvec_cfg",          any, read_csr },
+    [CSR_MICM_CFG]  = { "micm_cfg",          any,    read_csr },
+    [CSR_MDCM_CFG]  = { "mdcm_cfg",          any,    read_csr },
+    [CSR_MMSC_CFG]  = { "mmsc_cfg",          any,    read_csr },
+    [CSR_MMSC_CFG2] = { "mmsc_cfg2",         any,    read_csr },
+    [CSR_MVEC_CFG]  = { "mvec_cfg",          veccfg, read_csr },
 
     /* Crash Debug CSRs */
     [CSR_MCRASH_STATESAVE]  = { "mcrash_statesave",  any, read_csr },
@@ -431,7 +494,7 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MCCTLCOMMAND]   = { "mcctlcommand",      any, read_csr, write_csr  },
     [CSR_MCCTLDATA]      = { "mcctldata",         any, read_csr, write_csr  },
     [CSR_MPPIB]          = { "mppib",             ppi, read_csr, write_mppib},
-    [CSR_MFIOB]          = { "mfiob",             any, read_csr, write_csr  },
+    [CSR_MFIOB]          = { "mfiob",             fio, read_csr, write_mfiob},
 
     /* Hardware Stack Protection & Recording */
     [CSR_MHSP_CTL]     = { "mhsp_ctl",            hsp, read_csr,
@@ -539,8 +602,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
 
     /* =================== AndeStar V5 user mode CSRs =================== */
     /* User mode control registers */
-    [CSR_UITB]           = { "uitb",              ecd, read_csr, write_uitb},
-    [CSR_UCODE]          = { "ucode",             any, read_csr, write_csr},
+    [CSR_UITB]           = { "uitb",              ecd,  read_csr, write_uitb },
+    [CSR_UCODE]          = { "ucode",             edsp, read_csr, write_ucode},
     [CSR_UDCAUSE]        = { "udcause",           any, read_csr, write_csr},
     [CSR_UCCTLBEGINADDR] = { "ucctlbeginaddr",    any, read_csr, write_csr},
     [CSR_UCCTLCOMMAND]   = { "ucctlcommand",      any, read_csr, write_csr},

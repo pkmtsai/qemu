@@ -105,6 +105,10 @@ typedef struct AndesVec {
 #define WRITE_MASK_CSR_SLIEP                0x10F0000
 #define WRITE_MASK_CSR_MPPIB_32             0xFFFFFC3F
 #define WRITE_MASK_CSR_MPPIB_64             0xFFFFFFFFFFFFFC3F
+#define WRITE_MASK_CSR_MFIOB_32             0xFFFFFC3F
+#define WRITE_MASK_CSR_MFIOB_64             0xFFFFFFFFFFFFFC3F
+#define WRITE_MASK_CSR_UCODE                0x1
+#define WRITE_MASK_CSR_MVEC_CFG             0x3FFFF
 
 void andes_csr_init(AndesCsr *);
 void andes_vec_init(AndesVec *);
