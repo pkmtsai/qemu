@@ -95,6 +95,12 @@ typedef struct AndesVec {
 #define MASK_MMSC_CFG_2_CORE_PCLUS          (0x0F << 16)
 #define MASK_MMSC_CFG_2_RVARCH              (0x01 << 20)
 
+/* mcause */
+#define MASK_MCAUSE_EXCEPTION_CODE_32       (~MASK_MCAUSE_INTERRUPT_32)
+#define MASK_MCAUSE_INTERRUPT_32            (1 << 31)
+#define MASK_MCAUSE_EXCEPTION_CODE_64       (~MASK_MCAUSE_INTERRUPT_64)
+#define MASK_MCAUSE_INTERRUPT_64            ((uint64_t)1 << 63)
+
 #define WRITE_MASK_CSR_MECC_CODE            0xFF
 #define WRITE_MASK_CSR_UITB_32              0xFFFFFFFC
 #define WRITE_MASK_CSR_UITB_64              0xFFFFFFFFFFFFFFFC
@@ -109,6 +115,9 @@ typedef struct AndesVec {
 #define WRITE_MASK_CSR_MFIOB_64             0xFFFFFFFFFFFFFC3F
 #define WRITE_MASK_CSR_UCODE                0x1
 #define WRITE_MASK_CSR_MVEC_CFG             0x3FFFF
+#define WRITE_MASK_CSR_MXSTATUS             0x3FF
+#define WRITE_MASK_CSR_MDCAUSE              0x7F
+#define WRITE_MASK_CSR_SDCAUSE              0x7F
 
 void andes_csr_init(AndesCsr *);
 void andes_vec_init(AndesVec *);

@@ -131,6 +131,17 @@ static RISCVException veccfg(CPURISCVState *env, int csrno)
     return RISCV_EXCP_ILLEGAL_INST;
 }
 
+static RISCVException bf16cvt(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (riscv_has_ext(env, RVV)) {
+        if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_BF16CVT) == 1) {
+            return RISCV_EXCP_NONE;
+        }
+    }
+    return RISCV_EXCP_ILLEGAL_INST;
+}
+
 static RISCVException pmnds(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -283,6 +294,36 @@ static RISCVException write_mcounter(CPURISCVState *env, int csrno,
                                      target_ulong val)
 {
     env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_COUNTER;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_mxstatus(CPURISCVState *env, int csrno,
+                                     target_ulong val)
+{
+    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MXSTATUS;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_smdcause(CPURISCVState *env, int csrno,
+                                     target_ulong val)
+{
+    bool interrupt = false;
+    target_ulong mcause;
+    csr_ops[CSR_MCAUSE].read(env, CSR_MCAUSE, &mcause);
+
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        interrupt = get_field(mcause, MASK_MCAUSE_INTERRUPT_32);
+    }
+    else {
+        interrupt = get_field(mcause, MASK_MCAUSE_INTERRUPT_64);
+    }
+
+    if (interrupt) {
+        env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MDCAUSE;
+    }
+    else {
+        env->andes_csr.csrno[csrno] = val;
+    }
     return RISCV_EXCP_NONE;
 }
 
@@ -498,25 +539,27 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
 
     /* Hardware Stack Protection & Recording */
     [CSR_MHSP_CTL]     = { "mhsp_ctl",            hsp, read_csr,
-                                                       write_mhsp_ctl     },
-    [CSR_MSP_BOUND]    = { "msp_bound",           hsp, read_csr, write_csr},
-    [CSR_MSP_BASE]     = { "msp_base",            hsp, read_csr, write_csr},
-    [CSR_MXSTATUS]     = { "mxstatus",            any, read_csr, write_csr},
-    [CSR_MDCAUSE]      = { "mdcause",             any, read_csr, write_csr},
-    [CSR_MSLIDELEG]    = { "mslideleg",           any, read_csr, write_csr},
-    [CSR_MSAVESTATUS]  = { "msavestatus",         any, read_csr, write_csr},
-    [CSR_MSAVEEPC1]    = { "msaveepc1",           any, read_csr, write_csr},
-    [CSR_MSAVECAUSE1]  = { "msavecause1",         any, read_csr, write_csr},
-    [CSR_MSAVEEPC2]    = { "msaveepc2",           any, read_csr, write_csr},
-    [CSR_MSAVECAUSE2]  = { "msavecause2",         any, read_csr, write_csr},
-    [CSR_MSAVEDCAUSE1] = { "msavedcause1",        any, read_csr, write_csr},
-    [CSR_MSAVEDCAUSE2] = { "msavedcause2",        any, read_csr, write_csr},
+                                                       write_mhsp_ctl         },
+    [CSR_MSP_BOUND]    = { "msp_bound",           hsp, read_csr, write_csr    },
+    [CSR_MSP_BASE]     = { "msp_base",            hsp, read_csr, write_csr    },
+    [CSR_MXSTATUS]     = { "mxstatus",            any, read_csr,
+                                                       write_mxstatus         },
+    [CSR_MDCAUSE]      = { "mdcause",             any, read_csr,
+                                                       write_smdcause         },
+    [CSR_MSLIDELEG]    = { "mslideleg",           any, read_csr, write_csr    },
+    [CSR_MSAVESTATUS]  = { "msavestatus",         any, read_csr, write_csr    },
+    [CSR_MSAVEEPC1]    = { "msaveepc1",           any, read_csr, write_csr    },
+    [CSR_MSAVECAUSE1]  = { "msavecause1",         any, read_csr, write_csr    },
+    [CSR_MSAVEEPC2]    = { "msaveepc2",           any, read_csr, write_csr    },
+    [CSR_MSAVECAUSE2]  = { "msavecause2",         any, read_csr, write_csr    },
+    [CSR_MSAVEDCAUSE1] = { "msavedcause1",        any, read_csr, write_csr    },
+    [CSR_MSAVEDCAUSE2] = { "msavedcause2",        any, read_csr, write_csr    },
 
     /* Control CSRs */
     [CSR_MPFT_CTL]  = { "mpft_ctl",               pft, read_csr,
-                                                       write_mpft_ctl     },
-    [CSR_MMISC_CTL] = { "mmisc_ctl",              any, read_csr, write_csr},
-    [CSR_MCLK_CTL]  = { "mclk_ctl",               any, read_csr, write_csr},
+                                                       write_mpft_ctl         },
+    [CSR_MMISC_CTL] = { "mmisc_ctl",              any, read_csr, write_csr    },
+    [CSR_MCLK_CTL]  = { "mclk_ctl",               bf16cvt, read_csr, write_csr},
 
     /* Counter related CSRs */
     [CSR_MCOUNTERWEN]    = { "mcounterwen",       pmnds, read_csr,
@@ -572,7 +615,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     /* Supervisor trap registers */
     [CSR_SLIE]    = { "slie",                     smode, read_csr, write_sliep},
     [CSR_SLIP]    = { "slip",                     smode, read_csr, write_sliep},
-    [CSR_SDCAUSE] = { "sdcause",                  smode, read_csr, write_csr  },
+    [CSR_SDCAUSE] = { "sdcause",                  smode, read_csr,
+                                                         write_smdcause       },
 
     /* Supervisor counter registers */
     [CSR_SCOUNTERINTEN]  = { "scounterinten",     pmnds, read_scounter,
