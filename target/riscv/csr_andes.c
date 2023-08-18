@@ -154,6 +154,17 @@ static RISCVException mmisc_ctl(CPURISCVState *env, int csrno)
     return RISCV_EXCP_ILLEGAL_INST;
 }
 
+static RISCVException smisc_ctl(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (riscv_has_ext(env, RVS)) {
+        if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_ACE) == 1) {
+            return RISCV_EXCP_NONE;
+        }
+    }
+    return RISCV_EXCP_ILLEGAL_INST;
+}
+
 static RISCVException pmnds(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -320,6 +331,13 @@ static RISCVException write_mmisc_ctl(CPURISCVState *env, int csrno,
                                       target_ulong val)
 {
     env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MMISC_CTL;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_smisc_ctl(CPURISCVState *env, int csrno,
+                                      target_ulong val)
+{
+    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_SMISC_CTL;
     return RISCV_EXCP_NONE;
 }
 
@@ -661,8 +679,9 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
                                                          write_shpmevent    },
 
     /* Supervisor control registers */
-    [CSR_SCCTLDATA] = { "scctldata",              any, read_csr, write_csr},
-    [CSR_SMISC_CTL] = { "smisc_ctl",              any, read_csr, write_csr},
+    [CSR_SCCTLDATA] = { "scctldata",              any, read_csr, write_csr    },
+    [CSR_SMISC_CTL] = { "smisc_ctl",              smisc_ctl, read_csr,
+                                                             write_smisc_ctl  },
 
     /* =================== AndeStar V5 user mode CSRs =================== */
     /* User mode control registers */

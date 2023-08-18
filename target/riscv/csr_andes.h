@@ -133,6 +133,7 @@ typedef struct AndesVec {
 #define WRITE_MASK_CSR_MDCAUSE              0x7F
 #define WRITE_MASK_CSR_SDCAUSE              0x7F
 #define WRITE_MASK_CSR_MMISC_CTL            0x3F7F
+#define WRITE_MASK_CSR_SMISC_CTL            0x30
 
 void andes_csr_init(AndesCsr *);
 void andes_vec_init(AndesVec *);
