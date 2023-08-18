@@ -12,6 +12,7 @@
 #define CSR_MMSC_CFG            0xfc2
 #define CSR_MMSC_CFG2           0xfc3
 #define CSR_MVEC_CFG            0xfc7
+#define CSR_MRVARCH_CFG         0xfca
 
 /* Crash Debug CSRs */
 #define CSR_MCRASH_STATESAVE    0xfc8

@@ -6,6 +6,11 @@
 #define MASK_MMSC_CFG_L2CMP_CFG          ((uint64_t)0x1 << 45)
 #define MASK_MMSC_CFG_L2C                ((uint64_t)0x1 << 46)
 #define MASK_MMSC_CFG_IOCP               ((uint64_t)0x1 << 47)
+#define MASK_MRVARCH_CFG_ZFBFMIN         ((uint64_t)0x1 << 32)
+#define MASK_MRVARCH_CFG_ZVFBFMIN        ((uint64_t)0x1 << 33)
+#define MASK_MRVARCH_CFG_ZVFBFWMA        ((uint64_t)0x1 << 34)
+#define MASK_MRVARCH_CFG_ZVQMAC          ((uint64_t)0x1 << 35)
+#define MASK_MRVARCH_CFG_ZVLSSEG         ((uint64_t)0x1 << 36)
 
 #define WRITE_MASK_CSR_MXSTATUS_NX45V        0x3F
 #define WRITE_MASK_CSR_MDCAUSE_EXCP_NX45V    0x7
@@ -31,6 +36,20 @@ static RISCVException read_mmsc_cfg_nx45v(CPURISCVState *env, int csrno,
                          | MASK_MMSC_CFG_RVARCH;
 
     *val = env->andes_csr.csrno[CSR_MMSC_CFG] & (target_ulong)mask;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException read_mrvarch_cfg_nx45v(CPURISCVState *env, int csrno,
+                                             target_ulong *val)
+{
+    static uint64_t mask = MASK_MRVARCH_CFG_ZBA      | MASK_MRVARCH_CFG_ZBB
+                         | MASK_MRVARCH_CFG_ZBC      | MASK_MRVARCH_CFG_ZBS
+                         | MASK_MRVARCH_CFG_ZFBFMIN
+                         | MASK_MRVARCH_CFG_ZVFBFMIN
+                         | MASK_MRVARCH_CFG_ZVFBFWMA | MASK_MRVARCH_CFG_ZVQMAC
+                         | MASK_MRVARCH_CFG_ZVLSSEG;
+
+    *val = env->andes_csr.csrno[CSR_MRVARCH_CFG] & (target_ulong)mask;
     return RISCV_EXCP_NONE;
 }
 
@@ -97,6 +116,7 @@ void andes_spec_csr_init_nx45v(AndesCsr *andes_csr)
     andes_csr->csrno[CSR_MMISC_CTL] = 0x48;
 
     andes_csr_ops[CSR_MMSC_CFG].read = read_mmsc_cfg_nx45v;
+    andes_csr_ops[CSR_MRVARCH_CFG].read = read_mrvarch_cfg_nx45v;
     andes_csr_ops[CSR_MCLK_CTL].write = write_mclk_ctl_nx45v;
     andes_csr_ops[CSR_MXSTATUS].write = write_mxstatus_nx45v;
     andes_csr_ops[CSR_MDCAUSE].write = write_smdcause_nx45v;

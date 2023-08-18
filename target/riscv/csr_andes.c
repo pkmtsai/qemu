@@ -120,11 +120,41 @@ static RISCVException fio(CPURISCVState *env, int csrno)
     }
 }
 
+static RISCVException rvarch(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    bool rvarchbit;
+
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        rvarchbit = get_field(csr->csrno[CSR_MMSC_CFG2], MASK_MMSC_CFG2_RVARCH);
+    }
+    else {
+        rvarchbit = get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_RVARCH);
+    }
+
+    if (rvarchbit) {
+        return RISCV_EXCP_NONE;
+    }
+    else {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+}
+
 static RISCVException veccfg(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
+    bool veccfgbit;
+
     if (riscv_has_ext(env, RVV)) {
-        if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_VECCFG) == 1) {
+        if (riscv_cpu_mxl(env) == MXL_RV32) {
+            veccfgbit = get_field(csr->csrno[CSR_MMSC_CFG2],
+                                  MASK_MMSC_CFG2_VECCFG);
+        }
+        else {
+            veccfgbit = get_field(csr->csrno[CSR_MMSC_CFG],
+                                  MASK_MMSC_CFG_RVARCH);
+        }
+        if (veccfgbit) {
             return RISCV_EXCP_NONE;
         }
     }
@@ -134,8 +164,18 @@ static RISCVException veccfg(CPURISCVState *env, int csrno)
 static RISCVException bf16cvt(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
+    bool bf16bit;
+
     if (riscv_has_ext(env, RVV)) {
-        if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_BF16CVT) == 1) {
+        if (riscv_cpu_mxl(env) == MXL_RV32) {
+            bf16bit = get_field(csr->csrno[CSR_MMSC_CFG2],
+                                MASK_MMSC_CFG2_BF16CVT);
+        }
+        else {
+            bf16bit = get_field(csr->csrno[CSR_MMSC_CFG],
+                                  MASK_MMSC_CFG_BF16CVT);
+        }
+        if (bf16bit) {
             return RISCV_EXCP_NONE;
         }
     }
@@ -549,11 +589,12 @@ void andes_cpu_do_interrupt_post(CPUState *cs)
 riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     /* ================== AndeStar V5 machine mode CSRs ================== */
     /* Configuration Registers */
-    [CSR_MICM_CFG]  = { "micm_cfg",          any,    read_csr },
-    [CSR_MDCM_CFG]  = { "mdcm_cfg",          any,    read_csr },
-    [CSR_MMSC_CFG]  = { "mmsc_cfg",          any,    read_csr },
-    [CSR_MMSC_CFG2] = { "mmsc_cfg2",         any,    read_csr },
-    [CSR_MVEC_CFG]  = { "mvec_cfg",          veccfg, read_csr },
+    [CSR_MICM_CFG]     = { "micm_cfg",          any,    read_csr },
+    [CSR_MDCM_CFG]     = { "mdcm_cfg",          any,    read_csr },
+    [CSR_MMSC_CFG]     = { "mmsc_cfg",          any,    read_csr },
+    [CSR_MMSC_CFG2]    = { "mmsc_cfg2",         any,    read_csr },
+    [CSR_MVEC_CFG]     = { "mvec_cfg",          veccfg, read_csr },
+    [CSR_MRVARCH_CFG]  = { "mrvarch_cfg",       rvarch, read_csr },
 
     /* Crash Debug CSRs */
     [CSR_MCRASH_STATESAVE]  = { "mcrash_statesave",  any, read_csr },
