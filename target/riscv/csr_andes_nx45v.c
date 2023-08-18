@@ -47,6 +47,17 @@ static RISCVException write_mxstatus_nx45v(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException write_mmisc_ctl_nx45v(CPURISCVState *env, int csrno,
+                                            target_ulong val)
+{
+    static uint64_t mask = MASK_MMISC_CTL_VEC_PLIC | MASK_MMISC_CTL_RVCOMPM
+                         | MASK_MMISC_CTL_BRPE     | MASK_MMISC_CTL_ACES
+                         | MASK_MMISC_CTL_MSA_UNA  | MASK_MMISC_CTL_NBLD_EN;
+
+    env->andes_csr.csrno[CSR_MMISC_CTL] = val & (target_ulong)mask;
+    return RISCV_EXCP_NONE;
+}
+
 static RISCVException write_smdcause_nx45v(CPURISCVState *env, int csrno,
                                            target_ulong val)
 {
@@ -83,10 +94,12 @@ void andes_spec_csr_init_nx45v(AndesCsr *andes_csr)
     andes_csr->csrno[CSR_MMSC_CFG] = (target_ulong)mmsc_init_val;
     andes_csr->csrno[CSR_MCLK_CTL] = 0;
     andes_csr->csrno[CSR_MXSTATUS] = 0;
+    andes_csr->csrno[CSR_MMISC_CTL] = 0x48;
 
     andes_csr_ops[CSR_MMSC_CFG].read = read_mmsc_cfg_nx45v;
     andes_csr_ops[CSR_MCLK_CTL].write = write_mclk_ctl_nx45v;
     andes_csr_ops[CSR_MXSTATUS].write = write_mxstatus_nx45v;
     andes_csr_ops[CSR_MDCAUSE].write = write_smdcause_nx45v;
     andes_csr_ops[CSR_SDCAUSE].write = write_smdcause_nx45v;
+    andes_csr_ops[CSR_MMISC_CTL].write = write_mmisc_ctl_nx45v;
 }

@@ -101,6 +101,20 @@ typedef struct AndesVec {
 #define MASK_MCAUSE_EXCEPTION_CODE_64       (~MASK_MCAUSE_INTERRUPT_64)
 #define MASK_MCAUSE_INTERRUPT_64            ((uint64_t)1 << 63)
 
+/* mmisc_ctl */
+#define MASK_MMISC_CTL_ACE                  (0x1)
+#define MASK_MMISC_CTL_VEC_PLIC             (0x1 << 1)
+#define MASK_MMISC_CTL_RVCOMPM              (0x1 << 2)
+#define MASK_MMISC_CTL_BRPE                 (0x1 << 3)
+#define MASK_MMISC_CTL_ACES                 (0x3 << 4)
+#define MASK_MMISC_CTL_MSA_UNA              (0x1 << 6)
+#define MASK_MMISC_CTL_NBLD_EN              (0x1 << 8)
+#define MASK_MMISC_CTL_NEWNMI               (0x1 << 9)
+#define MASK_MMISC_CTL_VCGL1_EN             (0x1 << 10)
+#define MASK_MMISC_CTL_VCGL2_EN             (0x1 << 11)
+#define MASK_MMISC_CTL_VCGL3_EN             (0x1 << 12)
+#define MASK_MMISC_CTL_LDX0NXP              (0x1 << 13)
+
 #define WRITE_MASK_CSR_MECC_CODE            0xFF
 #define WRITE_MASK_CSR_UITB_32              0xFFFFFFFC
 #define WRITE_MASK_CSR_UITB_64              0xFFFFFFFFFFFFFFFC
@@ -118,6 +132,7 @@ typedef struct AndesVec {
 #define WRITE_MASK_CSR_MXSTATUS             0x3FF
 #define WRITE_MASK_CSR_MDCAUSE              0x7F
 #define WRITE_MASK_CSR_SDCAUSE              0x7F
+#define WRITE_MASK_CSR_MMISC_CTL            0x3F7F
 
 void andes_csr_init(AndesCsr *);
 void andes_vec_init(AndesVec *);

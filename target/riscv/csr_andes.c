@@ -142,6 +142,18 @@ static RISCVException bf16cvt(CPURISCVState *env, int csrno)
     return RISCV_EXCP_ILLEGAL_INST;
 }
 
+static RISCVException mmisc_ctl(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_ACE) == 1
+        || get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_VPLIC) == 1
+        || get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_ECD) == 1
+        || get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_EV5PE) == 1) {
+        return RISCV_EXCP_NONE;
+    }
+    return RISCV_EXCP_ILLEGAL_INST;
+}
+
 static RISCVException pmnds(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -301,6 +313,13 @@ static RISCVException write_mxstatus(CPURISCVState *env, int csrno,
                                      target_ulong val)
 {
     env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MXSTATUS;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_mmisc_ctl(CPURISCVState *env, int csrno,
+                                      target_ulong val)
+{
+    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MMISC_CTL;
     return RISCV_EXCP_NONE;
 }
 
@@ -558,7 +577,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     /* Control CSRs */
     [CSR_MPFT_CTL]  = { "mpft_ctl",               pft, read_csr,
                                                        write_mpft_ctl         },
-    [CSR_MMISC_CTL] = { "mmisc_ctl",              any, read_csr, write_csr    },
+    [CSR_MMISC_CTL] = { "mmisc_ctl",              mmisc_ctl, read_csr,
+                                                             write_mmisc_ctl  },
     [CSR_MCLK_CTL]  = { "mclk_ctl",               bf16cvt, read_csr, write_csr},
 
     /* Counter related CSRs */
