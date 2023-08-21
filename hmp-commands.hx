@@ -666,6 +666,19 @@ SRST
 ERST
 
     {
+        .name       = "reset",
+        .args_type  = "op:s?",
+        .params     = "[halt|run]",
+        .help       = "reset with halt or run option.",
+        .cmd        = hmp_reset,
+    },
+
+SRST
+``reset [halt|run]``
+  Reset the system with halt or run option.
+ERST
+
+    {
         .name       = "system_powerdown",
         .args_type  = "",
         .params     = "",

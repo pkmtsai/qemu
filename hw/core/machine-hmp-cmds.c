@@ -19,6 +19,7 @@
 #include "qapi/error.h"
 #include "qapi/qapi-builtin-visit.h"
 #include "qapi/qapi-commands-machine.h"
+#include "qapi/qapi-commands-misc.h"
 #include "qapi/qmp/qdict.h"
 #include "qapi/string-output-visitor.h"
 #include "qemu/error-report.h"
@@ -183,6 +184,16 @@ void hmp_info_balloon(Monitor *mon, const QDict *qdict)
 void hmp_system_reset(Monitor *mon, const QDict *qdict)
 {
     qmp_system_reset(NULL);
+}
+
+void hmp_reset(Monitor *mon, const QDict *qdict)
+{
+    const char *op = qdict_get_try_str(qdict, "op");
+    qmp_stop(NULL);
+    qmp_system_reset(NULL);
+    if (!strcmp(op, "run")) {
+        qmp_cont(NULL);
+    }
 }
 
 void hmp_system_powerdown(Monitor *mon, const QDict *qdict)
