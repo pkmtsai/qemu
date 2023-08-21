@@ -632,6 +632,30 @@ static void rv64_andes_ax45_cpu_init(Object *obj)
     cfg->marchid = 0x8a45;
 }
 
+static void rv64_andes_ax45mpv_cpu_init(Object *obj)
+{
+    RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
+    CPURISCVState *env = &RISCV_CPU(obj)->env;
+
+    set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU | RVV);
+    rv64_andes_common_cpu_init(obj, andes_set_mmsc_cfg_l2c);
+
+    /* Set CPU ID */
+    cfg->marchid = 0x8a45;
+
+    /* Bitmanip */
+    cfg->ext_zba = true;
+    cfg->ext_zbb = true;
+    cfg->ext_zbc = true;
+    cfg->ext_zbs = true;
+
+    /* Vector */
+    cfg->ext_v = true;
+    cfg->vext_spec = g_strdup("v1.0");
+    cfg->vlen  = 1024;
+    cfg->elen  = 64;
+}
+
 static void rv64_andes_ax65_cpu_init(Object *obj)
 {
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
@@ -2110,6 +2134,7 @@ static const TypeInfo riscv_cpu_type_infos[] = {
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_AX25,       rv64_andes_ax25_cpu_init),
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_AX27,       rv64_andes_ax27_cpu_init),
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_AX45,       rv64_andes_ax45_cpu_init),
+    DEFINE_CPU(TYPE_RISCV_CPU_ANDES_AX45MPV,    rv64_andes_ax45mpv_cpu_init),
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_AX65,       rv64_andes_ax65_cpu_init),
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_NX25,       rv64_andes_nx25_cpu_init),
     DEFINE_CPU(TYPE_RISCV_CPU_ANDES_NX27V,      rv64_andes_nx27v_cpu_init),
