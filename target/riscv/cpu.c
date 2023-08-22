@@ -1148,6 +1148,33 @@ static bool riscv_cpu_has_work(CPUState *cs)
 #endif
 }
 
+static void andes_csr_reset_common(CPURISCVState *env)
+{
+    env->andes_csr.csrno[CSR_MXSTATUS] = 0;
+    env->andes_csr.csrno[CSR_MSLIDELEG] = 0;
+    env->andes_csr.csrno[CSR_MDCAUSE] = 0;
+    env->andes_csr.csrno[CSR_SLIE] = 0;
+    env->andes_csr.csrno[CSR_SLIP] = 0;
+    env->andes_csr.csrno[CSR_SDCAUSE] = 0;
+    env->andes_csr.csrno[CSR_FRM] = 0;
+    env->andes_csr.csrno[CSR_FCSR] = 0;
+    env->andes_csr.csrno[CSR_SCAUSE] = 0;
+    env->andes_csr.csrno[CSR_UCAUSE] = 0;
+    env->andes_csr.csrno[CSR_MNVEC] = env->resetvec;
+
+    env->andes_csr.csrno[CSR_UITB] = 0;
+    env->andes_csr.csrno[CSR_MMSC_CFG] = (1UL << V5_MMSC_CFG_ECD) |
+                                         (1UL << V5_MMSC_CFG_PPMA);
+    env->andes_csr.csrno[CSR_MMISC_CTL] = (1UL << V5_MMISC_CTL_BRPE) |
+                                          (1UL << V5_MMISC_CTL_MSA_OR_UNA);
+    env->andes_csr.csrno[CSR_MCACHE_CTL] =
+                    (1UL << V5_MCACHE_CTL_IC_FIRST_WORD) |
+                    (1UL << V5_MCACHE_CTL_DC_FIRST_WORD);
+    /* all-one reset value */
+    env->andes_csr.csrno[CSR_MSP_BOUND] = ~((target_ulong)0);
+    env->andes_csr.csrno[CSR_MSP_BASE] = ~((target_ulong)0);
+}
+
 static void riscv_cpu_reset_hold(Object *obj)
 {
 #ifndef CONFIG_USER_ONLY
@@ -1163,9 +1190,11 @@ static void riscv_cpu_reset_hold(Object *obj)
         mcc->parent_phases.hold(obj);
     }
 #ifndef CONFIG_USER_ONLY
+    andes_spec_csr_reset_common(env);
     env->misa_mxl = env->misa_mxl_max;
     env->priv = PRV_M;
     env->mstatus &= ~(MSTATUS_MIE | MSTATUS_MPRV);
+    env->mstatus |= set_field(env->mstatus, MSTATUS_MPP, 3);
     if (env->misa_mxl > MXL_RV32) {
         /*
          * The reset status of SXL/UXL is undefined, but mstatus is WARL
@@ -1185,6 +1214,26 @@ static void riscv_cpu_reset_hold(Object *obj)
         }
     }
     env->mcause = 0;
+    for (int i = 0; i < 32; i++) {
+        env->gpr[i] = 0;
+        env->fpr[i] = 0;
+    }
+    env->medeleg = 0;
+    env->mideleg = 0;
+    env->mie = 0;
+    env->mepc = 0;
+    env->mip = 0;
+    env->frm = 0;
+    env->scause = 0;
+    env->satp = 0;
+    for (int i = 0; i < MAX_RISCV_PMPS; i++) {
+        env->pmp_state.pmp[i].addr_reg = 0;
+        env->pmp_state.pmp[i].cfg_reg = 0;
+        env->pmp_state.addr[i].sa = 0;
+        env->pmp_state.addr[i].ea = 0;
+    }
+    env->pmp_state.num_rules = 0;
+
     env->miclaim = MIP_SGEIP;
     env->pc = env->resetvec;
     env->bins = 0;
