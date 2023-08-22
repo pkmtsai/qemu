@@ -305,6 +305,7 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     char *plic_hart_config, *plicsw_hart_config;
     NICInfo *nd = &nd_table[0];
 
+    sysbus_realize(SYS_BUS_DEVICE(&s->cpus), &error_abort);
     plicsw_hart_config =
         init_hart_config(ANDES_PLICSW_HART_CONFIG, machine->smp.cpus);
 
@@ -453,7 +454,6 @@ static void andes_ae350_soc_instance_init(Object *obj)
                             machine->smp.cpus, &error_abort);
     qdev_prop_set_uint64(DEVICE(&s->cpus), "resetvec",
                             memmap[ANDES_AE350_MROM].base);
-    sysbus_realize(SYS_BUS_DEVICE(&s->cpus), &error_abort);
 }
 
 static int andes_load_elf(MachineState *machine,
