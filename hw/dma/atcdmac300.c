@@ -23,9 +23,10 @@
   #define LOG(x...) xLOG(x)
 #endif
 
-static void atcdmac300_dma_int_stat_update(ATCDMAC300State *s, int ch)
+static void atcdmac300_dma_int_stat_update(ATCDMAC300State *s, int status,
+                                           int ch)
 {
-    s->IntStatus |= (1 << (INT_STATUS_TC + ch));
+    s->IntStatus |= (1 << (status + ch));
 }
 
 static void atcdmac300_dma_reset_chan(ATCDMAC300State *s, int ch)
@@ -128,50 +129,63 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
             dst_width = (1 << dst_width);
             burst_size = (1 << burst_size);
             remain_size = (s->chan[ch].ChnTranSize * src_width);
-            while (remain_size > 0) {
-                int i;
-                for (i = 0; i < burst_size; i++) {
-                    if (remain_size <= 0) {
-                        break;
-                    }
+            if (remain_size && burst_size < (1 << 11) &&
+                src_width < (1 << 6) && dst_width < (1 << 6) &&
+                (src_addr & (src_width - 1)) == 0 &&
+                (dst_addr & (dst_width - 1)) == 0 &&
+                (remain_size & (dst_width - 1)) == 0 &&
+                (burst_size & (dst_width - 1)) == 0) {
 
-                    memset(buf, 0, sizeof(buf));
+                while (remain_size > 0) {
+                    int i;
+                    for (i = 0; i < burst_size; i++) {
+                        if (remain_size <= 0) {
+                            break;
+                        }
 
-                    copy_size = MIN(remain_size, src_width);
-                    cpu_physical_memory_read(src_addr, buf, copy_size);
-                    burst_remain_size = copy_size;
-                    uint64_t *curr_ptr = buf;
-                    while (burst_remain_size > 0) {
-                        copy_size_dst = MIN(burst_remain_size, dst_width);
-                        cpu_physical_memory_write(dst_addr, curr_ptr,
-                                                    copy_size_dst);
-                        curr_ptr += copy_size_dst;
-                        burst_remain_size -= copy_size_dst;
-                    }
+                        memset(buf, 0, sizeof(buf));
 
-                    LOG("ATCDMAC300: ch[%d]: 0x%lx->0x%lx buf=0x%lx,"
-                        " size=%ld\n", ch, src_addr, dst_addr, buf[0]
-                        , copy_size);
+                        copy_size = MIN(remain_size, src_width);
+                        cpu_physical_memory_read(src_addr, buf, copy_size);
+                        burst_remain_size = copy_size;
+                        uint64_t *curr_ptr = buf;
+                        while (burst_remain_size > 0) {
+                            copy_size_dst = MIN(burst_remain_size, dst_width);
+                            cpu_physical_memory_write(dst_addr, curr_ptr,
+                                                        copy_size_dst);
+                            curr_ptr += copy_size_dst;
+                            burst_remain_size -= copy_size_dst;
+                        }
 
-                    remain_size -= copy_size;
+                        LOG("ATCDMAC300: ch[%d]: 0x%lx->0x%lx buf=0x%lx,"
+                                " size=%ld\n", ch, src_addr, dst_addr, buf[0]
+                                , copy_size);
 
-                    if (src_addr_ctl == 0) {
-                        src_addr += copy_size;
-                    }
-                    if (src_addr_ctl == 1) {
-                        src_addr -= copy_size;
-                    }
-                    if (dst_addr_ctl == 0) {
-                        dst_addr += copy_size;
-                    }
-                    if (dst_addr_ctl == 1) {
-                        dst_addr -= copy_size;
+                        remain_size -= copy_size;
+
+                        if (src_addr_ctl == 0) {
+                            src_addr += copy_size;
+                        }
+                        if (src_addr_ctl == 1) {
+                            src_addr -= copy_size;
+                        }
+                        if (dst_addr_ctl == 0) {
+                            dst_addr += copy_size;
+                        }
+                        if (dst_addr_ctl == 1) {
+                            dst_addr -= copy_size;
+                        }
                     }
                 }
+                atcdmac300_dma_reset_chan(s, ch);
+                atcdmac300_dma_int_stat_update(s, INT_STATUS_TC, ch);
+                qemu_irq_raise(s->irq);
+            } else {
+                atcdmac300_dma_reset_chan(s, ch);
+                atcdmac300_dma_int_stat_update(s, INT_STATUS_ERR, ch);
+                qemu_irq_raise(s->irq);
             }
-            atcdmac300_dma_int_stat_update(s, ch);
-            atcdmac300_dma_reset_chan(s, ch);
-            qemu_irq_raise(s->irq);
+
         } else {
             atcdmac300_dma_reset_chan(s, ch);
             qemu_irq_lower(s->irq);
