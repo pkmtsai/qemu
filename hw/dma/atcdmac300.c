@@ -87,7 +87,8 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
     int ch = 0;
     uint64_t buf[ATCDMAC300_MAX_BURST_SIZE];
     int64_t remain_size, copy_size;
-    uint64_t src_addr, dst_addr, src_width, burst_size;
+    uint64_t src_addr, dst_addr, src_width, burst_size,
+             src_addr_ctl, dst_addr_ctl;
 
     LOG("@@@ atcdmac300_write()=0x%lx, value=0x%lx\n", offset, value);
 
@@ -116,6 +117,10 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
                             & CHAN_CTL_SRC_BURST_SZ_MASK;
             src_addr = (s->chan[ch].ChnSrcAddrH << 32) | s->chan[ch].ChnSrcAddr;
             dst_addr = (s->chan[ch].ChnDstAddrH << 32) | s->chan[ch].ChnDstAddr;
+            src_addr_ctl = (s->chan[ch].ChnCtrl >> CHAN_CTL_SRC_ADDR_CTL)
+                            & CHAN_CTL_SRC_ADDR_CTL_MASK;
+            dst_addr_ctl = (s->chan[ch].ChnCtrl >> CHAN_CTL_DST_ADDR_CTL)
+                            & CHAN_CTL_DST_ADDR_CTL_MASK;
 
             src_width = (1 << src_width);
             burst_size = (1 << burst_size);
@@ -138,12 +143,17 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
 
                     remain_size -= copy_size;
 
-                    if (!cpu_physical_memory_is_io(src_addr)) {
+                    if (src_addr_ctl == 0) {
                         src_addr += copy_size;
                     }
-
-                    if (!cpu_physical_memory_is_io(dst_addr)) {
+                    if (src_addr_ctl == 1) {
+                        src_addr -= copy_size;
+                    }
+                    if (dst_addr_ctl == 0) {
                         dst_addr += copy_size;
+                    }
+                    if (dst_addr_ctl == 1) {
+                        dst_addr -= copy_size;
                     }
                 }
             }
