@@ -86,8 +86,8 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
     ATCDMAC300State *s = opaque;
     int ch = 0;
     uint64_t buf[ATCDMAC300_MAX_BURST_SIZE];
-    int64_t remain_size, copy_size;
-    uint64_t src_addr, dst_addr, src_width, burst_size,
+    int64_t remain_size, burst_remain_size, copy_size, copy_size_dst;
+    uint64_t src_addr, dst_addr, src_width, dst_width, burst_size,
              src_addr_ctl, dst_addr_ctl;
 
     LOG("@@@ atcdmac300_write()=0x%lx, value=0x%lx\n", offset, value);
@@ -113,6 +113,8 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
 
             src_width = (s->chan[ch].ChnCtrl >> CHAN_CTL_SRC_WIDTH)
                             & CHAN_CTL_SRC_WIDTH_MASK;
+            dst_width = (s->chan[ch].ChnCtrl >> CHAN_CTL_DST_WIDTH)
+                            & CHAN_CTL_DST_WIDTH_MASK;
             burst_size = (s->chan[ch].ChnCtrl >> CHAN_CTL_SRC_BURST_SZ)
                             & CHAN_CTL_SRC_BURST_SZ_MASK;
             src_addr = (s->chan[ch].ChnSrcAddrH << 32) | s->chan[ch].ChnSrcAddr;
@@ -123,6 +125,7 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
                             & CHAN_CTL_DST_ADDR_CTL_MASK;
 
             src_width = (1 << src_width);
+            dst_width = (1 << dst_width);
             burst_size = (1 << burst_size);
             remain_size = (s->chan[ch].ChnTranSize * src_width);
             while (remain_size > 0) {
@@ -136,10 +139,19 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
 
                     copy_size = MIN(remain_size, src_width);
                     cpu_physical_memory_read(src_addr, buf, copy_size);
-                    cpu_physical_memory_write(dst_addr, buf, copy_size);
+                    burst_remain_size = copy_size;
+                    uint64_t *curr_ptr = buf;
+                    while (burst_remain_size > 0) {
+                        copy_size_dst = MIN(burst_remain_size, dst_width);
+                        cpu_physical_memory_write(dst_addr, curr_ptr,
+                                                    copy_size_dst);
+                        curr_ptr += copy_size_dst;
+                        burst_remain_size -= copy_size_dst;
+                    }
 
-                    LOG("ATCDMAC300: ch[%d]: 0x%lx->0x%lx buf=0x%lx, size=%ld\n",
-                        ch, src_addr, dst_addr, buf[0], copy_size);
+                    LOG("ATCDMAC300: ch[%d]: 0x%lx->0x%lx buf=0x%lx,"
+                        " size=%ld\n", ch, src_addr, dst_addr, buf[0]
+                        , copy_size);
 
                     remain_size -= copy_size;
 
@@ -157,11 +169,9 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
                     }
                 }
             }
-
             atcdmac300_dma_int_stat_update(s, ch);
             atcdmac300_dma_reset_chan(s, ch);
             qemu_irq_raise(s->irq);
-
         } else {
             atcdmac300_dma_reset_chan(s, ch);
             qemu_irq_lower(s->irq);
