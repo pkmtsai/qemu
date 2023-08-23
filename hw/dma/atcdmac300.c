@@ -89,7 +89,7 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
     uint64_t buf[ATCDMAC300_MAX_BURST_SIZE];
     int64_t remain_size, burst_remain_size, copy_size, copy_size_dst;
     uint64_t src_addr, dst_addr, src_width, dst_width, burst_size,
-             src_addr_ctl, dst_addr_ctl;
+             src_addr_ctl, dst_addr_ctl, int_tc_mask, int_err_mask;
 
     LOG("@@@ atcdmac300_write()=0x%lx, value=0x%lx\n", offset, value);
 
@@ -129,6 +129,8 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
             dst_width = (1 << dst_width);
             burst_size = (1 << burst_size);
             remain_size = (s->chan[ch].ChnTranSize * src_width);
+            int_tc_mask = (s->chan[ch].ChnCtrl >> CHAN_CTL_INT_TC_MASK) & 0x1;
+            int_err_mask = (s->chan[ch].ChnCtrl >> CHAN_CTL_INT_ERR_MASK) & 0x1;
             if (remain_size && burst_size < (1 << 11) &&
                 src_width < (1 << 6) && dst_width < (1 << 6) &&
                 (src_addr & (src_width - 1)) == 0 &&
@@ -179,11 +181,15 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
                 }
                 atcdmac300_dma_reset_chan(s, ch);
                 atcdmac300_dma_int_stat_update(s, INT_STATUS_TC, ch);
-                qemu_irq_raise(s->irq);
+                if (!int_tc_mask) {
+                    qemu_irq_raise(s->irq);
+                }
             } else {
                 atcdmac300_dma_reset_chan(s, ch);
                 atcdmac300_dma_int_stat_update(s, INT_STATUS_ERR, ch);
-                qemu_irq_raise(s->irq);
+                if (!int_err_mask) {
+                    qemu_irq_raise(s->irq);
+                }
             }
 
         } else {
