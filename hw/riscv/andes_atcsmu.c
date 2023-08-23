@@ -45,7 +45,7 @@ reset_vector_read(int hartid, bool data_hi)
 {
     CPUState *cpu = qemu_get_cpu(hartid);
     if (cpu) {
-        CPURISCVState *env = cpu->env_ptr;
+        CPURISCVState *env = cpu_env(cpu);
         if (data_hi) {
             return env->resetvec = (env->resetvec >> 32) ;
         } else {
@@ -61,7 +61,7 @@ reset_vector_write(int hartid, uint64_t value, bool data_hi)
 {
     CPUState *cpu = qemu_get_cpu(hartid);
     if (cpu) {
-        CPURISCVState *env = cpu->env_ptr;
+        CPURISCVState *env = cpu_env(cpu);
         if (data_hi) {
             env->resetvec = (env->resetvec << 32 >> 32) |
                             ((value & UINT32_MAX) << 32);

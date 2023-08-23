@@ -265,7 +265,6 @@ static const char * const riscv_intr_names[] = {
     "reserved"
 };
 
-static void riscv_cpu_add_user_properties(Object *obj);
 static void register_andes_cpu_props(Object *obj);
 
 const char *riscv_cpu_get_trap_name(target_ulong cause, bool async)
@@ -695,7 +694,7 @@ static void rv64_andes_common_cpu_init(Object *obj,
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
     if (!env->misa_ext) {
-        set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
+        riscv_cpu_set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
     }
     riscv_cpu_add_user_properties(obj);
     register_andes_cpu_props(obj);
@@ -725,8 +724,8 @@ static void rv64_andes_common_cpu_init(Object *obj,
     cfg->mvendorid = 0x0000031e;
 
     /* inherited from parent obj via riscv_cpu_init() */
-    cfg->ext_ifencei = true;
-    cfg->ext_icsr = true;
+    cfg->ext_zifencei = true;
+    cfg->ext_zicsr = true;
 }
 
 static void rv64_andes_ax25_cpu_init(Object *obj)
@@ -764,7 +763,7 @@ static void rv64_andes_ax45mpv_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
-    set_misa(env, MXL_RV64,
+    riscv_cpu_set_misa(env, MXL_RV64,
              RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU | RVV);
     rv64_andes_common_cpu_init(obj, andes_set_mmsc_cfg_l2c);
 
@@ -806,9 +805,9 @@ static void rv64_andes_ax65_cpu_init(Object *obj)
     cfg->ext_zfh = true;
 
     /* Base Cache Management Operation */
-    cfg->ext_icbom      = true;
+    cfg->ext_zicbom      = true;
     cfg->cbom_blocksize = 64;
-    cfg->ext_icboz      = true;
+    cfg->ext_zicboz      = true;
     cfg->cboz_blocksize = 64;
 
     /*
@@ -816,7 +815,7 @@ static void rv64_andes_ax65_cpu_init(Object *obj)
      * (only 4 HPM counter available)
      */
     cfg->ext_sscofpmf = true;
-    cfg->pmu_num      = 4;
+    cfg->pmu_mask = MAKE_64BIT_MASK(3, 4);
     /* NAPOT Translation Contiguity */
     cfg->ext_svnapot  = true;
     /* Page-Based Memory Types */
@@ -825,7 +824,7 @@ static void rv64_andes_ax65_cpu_init(Object *obj)
     cfg->ext_svinval  = true;
 
     /* ePMP 0.9.3 (experimental) */
-    cfg->epmp = true;
+    cfg->ext_smepmp = true;
 }
 
 static void rv64_andes_nx25_cpu_init(Object *obj)
@@ -833,7 +832,7 @@ static void rv64_andes_nx25_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
-    set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVU);
+    riscv_cpu_set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVU);
     rv64_andes_common_cpu_init(obj, NULL);
     cfg->mmu = false;
 #ifndef CONFIG_USER_ONLY
@@ -850,7 +849,7 @@ static void rv64_andes_nx27v_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
-    set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVU | RVV);
+    riscv_cpu_set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVU | RVV);
     rv64_andes_common_cpu_init(obj, NULL);
     cfg->mmu = false;
 #ifndef CONFIG_USER_ONLY
@@ -871,7 +870,7 @@ static void rv64_andes_nx45_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
-    set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVU);
+    riscv_cpu_set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVU);
     rv64_andes_common_cpu_init(obj, NULL);
     cfg->mmu = false;
 #ifndef CONFIG_USER_ONLY
@@ -888,7 +887,7 @@ static void rv64_andes_nx45v_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
-    set_misa(env, MXL_RV64,
+    riscv_cpu_set_misa(env, MXL_RV64,
              RVA | RVC | RVD | RVF | RVI | RVM | RVN | RVU | RVV | RVX);
     rv64_andes_common_cpu_init(obj, andes_spec_csr_init_nx45v);
     cfg->mmu = false;
@@ -1000,7 +999,7 @@ static void rv32_andes_common_cpu_init(Object *obj,
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
     if (!env->misa_ext) {
-        set_misa(env, MXL_RV32, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
+        riscv_cpu_set_misa(env, MXL_RV32, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
     }
     riscv_cpu_add_user_properties(obj);
     register_andes_cpu_props(obj);
@@ -1030,8 +1029,8 @@ static void rv32_andes_common_cpu_init(Object *obj,
     cfg->mvendorid = 0x0000031e;
 
     /* inherited from parent obj via riscv_cpu_init() */
-    cfg->ext_ifencei = true;
-    cfg->ext_icsr = true;
+    cfg->ext_zifencei = true;
+    cfg->ext_zicsr = true;
 }
 
 static void rv32_andes_a25_cpu_init(Object *obj)
@@ -1069,7 +1068,7 @@ static void rv32_andes_n25_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
-    set_misa(env, MXL_RV32, RVI | RVM | RVA | RVF | RVD | RVC | RVU);
+    riscv_cpu_set_misa(env, MXL_RV32, RVI | RVM | RVA | RVF | RVD | RVC | RVU);
     rv32_andes_common_cpu_init(obj, NULL);
     cfg->mmu = false;
 #ifndef CONFIG_USER_ONLY
@@ -1089,7 +1088,7 @@ static void rv32_andes_n45_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
-    set_misa(env, MXL_RV32, RVI | RVM | RVA | RVF | RVD | RVC | RVU);
+    riscv_cpu_set_misa(env, MXL_RV32, RVI | RVM | RVA | RVF | RVD | RVC | RVU);
     rv32_andes_common_cpu_init(obj, NULL);
     cfg->mmu = false;
 #ifndef CONFIG_USER_ONLY
@@ -2028,7 +2027,6 @@ const RISCVCPUMultiExtConfig riscv_cpu_extensions[] = {
     MULTI_EXT_CFG_BOOL("zcmt", ext_zcmt, false),
     MULTI_EXT_CFG_BOOL("zicond", ext_zicond, false),
 
-<<<<<<< HEAD
     /* Vector cryptography extensions */
     MULTI_EXT_CFG_BOOL("zvbb", ext_zvbb, false),
     MULTI_EXT_CFG_BOOL("zvbc", ext_zvbc, false),
@@ -2046,42 +2044,6 @@ const RISCVCPUMultiExtConfig riscv_cpu_extensions[] = {
     MULTI_EXT_CFG_BOOL("zvks", ext_zvks, false),
     MULTI_EXT_CFG_BOOL("zvksc", ext_zvksc, false),
     MULTI_EXT_CFG_BOOL("zvksg", ext_zvksg, false),
-=======
-    /* Vendor-specific custom extensions */
-    DEFINE_PROP_BOOL("xtheadba", RISCVCPU, cfg.ext_xtheadba, false),
-    DEFINE_PROP_BOOL("xtheadbb", RISCVCPU, cfg.ext_xtheadbb, false),
-    DEFINE_PROP_BOOL("xtheadbs", RISCVCPU, cfg.ext_xtheadbs, false),
-    DEFINE_PROP_BOOL("xtheadcmo", RISCVCPU, cfg.ext_xtheadcmo, false),
-    DEFINE_PROP_BOOL("xtheadcondmov", RISCVCPU, cfg.ext_xtheadcondmov, false),
-    DEFINE_PROP_BOOL("xtheadfmemidx", RISCVCPU, cfg.ext_xtheadfmemidx, false),
-    DEFINE_PROP_BOOL("xtheadfmv", RISCVCPU, cfg.ext_xtheadfmv, false),
-    DEFINE_PROP_BOOL("xtheadmac", RISCVCPU, cfg.ext_xtheadmac, false),
-    DEFINE_PROP_BOOL("xtheadmemidx", RISCVCPU, cfg.ext_xtheadmemidx, false),
-    DEFINE_PROP_BOOL("xtheadmempair", RISCVCPU, cfg.ext_xtheadmempair, false),
-    DEFINE_PROP_BOOL("xtheadsync", RISCVCPU, cfg.ext_xtheadsync, false),
-    DEFINE_PROP_BOOL("xventanacondops", RISCVCPU, cfg.ext_XVentanaCondOps, false),
-    DEFINE_PROP_BOOL("xandesv5ops", RISCVCPU, cfg.ext_XAndesV5Ops, false),
-    DEFINE_PROP_BOOL("xandesace", RISCVCPU, cfg.ext_XAndesAce, false),
-    DEFINE_PROP_BOOL("xandesacemulti", RISCVCPU, cfg.ext_XAndesAceMulti, false),
-    DEFINE_PROP_STRING("xandesacelib", RISCVCPU, cfg.XAndesAceLib),
-    DEFINE_PROP_BOOL("xandescodenseops", RISCVCPU,
-                        cfg.ext_XAndesCodenseOps, false),
-
-    /* These are experimental so mark with 'x-' */
-    DEFINE_PROP_BOOL("x-zicond", RISCVCPU, cfg.ext_zicond, false),
-
-    /* ePMP 0.9.3 */
-    DEFINE_PROP_BOOL("x-epmp", RISCVCPU, cfg.epmp, false),
-    DEFINE_PROP_BOOL("x-smaia", RISCVCPU, cfg.ext_smaia, false),
-    DEFINE_PROP_BOOL("x-ssaia", RISCVCPU, cfg.ext_ssaia, false),
-
-    DEFINE_PROP_BOOL("x-zvfh", RISCVCPU, cfg.ext_zvfh, false),
-    DEFINE_PROP_BOOL("x-zvfhmin", RISCVCPU, cfg.ext_zvfhmin, false),
-
-    DEFINE_PROP_BOOL("x-zfbfmin", RISCVCPU, cfg.ext_zfbfmin, false),
-    DEFINE_PROP_BOOL("x-zvfbfmin", RISCVCPU, cfg.ext_zvfbfmin, false),
-    DEFINE_PROP_BOOL("x-zvfbfwma", RISCVCPU, cfg.ext_zvfbfwma, false),
->>>>>>> 14adb0d925 (target/riscv:)
 
     DEFINE_PROP_END_OF_LIST(),
 };
@@ -2101,6 +2063,8 @@ const RISCVCPUMultiExtConfig riscv_cpu_vendor_exts[] = {
     MULTI_EXT_CFG_BOOL("xventanacondops", ext_XVentanaCondOps, false),
     MULTI_EXT_CFG_BOOL("xandesv5ops", ext_XAndesV5Ops, false),
     MULTI_EXT_CFG_BOOL("xandescodenseops", ext_XAndesCodenseOps, false),
+    MULTI_EXT_CFG_BOOL("xandesace", ext_XAndesAce, false),
+    MULTI_EXT_CFG_BOOL("xandesacemulti", ext_XAndesAceMulti, false),
 
     DEFINE_PROP_END_OF_LIST(),
 };
@@ -2214,7 +2178,6 @@ static Property riscv_cpu_properties[] = {
 };
 
 static Property andes_cpu_property[] = {
-    /* Defaults for standard extensions */
 #ifndef CONFIG_USER_ONLY
     DEFINE_PROP_UINT64("ilm_base", RISCVCPU, env.ilm_base, 0),
     DEFINE_PROP_UINT64("dlm_base", RISCVCPU, env.dlm_base, 0x200000),
@@ -2225,6 +2188,9 @@ static Property andes_cpu_property[] = {
     DEFINE_PROP_BOOL("dlm_default_enable", RISCVCPU, env.dlm_default_enable,
                      false),
 #endif
+    DEFINE_PROP_STRING("xandesacelib", RISCVCPU, cfg.XAndesAceLib),
+    DEFINE_PROP_STRING("xandesaceextlibpath", RISCVCPU,
+                       cfg.XAndesAceExtLibPath),
     DEFINE_PROP_END_OF_LIST(),
 };
 

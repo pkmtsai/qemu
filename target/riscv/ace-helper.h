@@ -1,29 +1,30 @@
-
 #ifndef __ACE_HELPER_H__
 #define __ACE_HELPER_H__
 
 #ifdef __cplusplus
-    #include <cstdint>
-    #define EXPORT_C extern "C"
+#include <cstdint>
+#define EXPORT_C extern "C"
 #else
-    #include <stdint.h>
-    #define EXPORT_C
+#include <stdint.h>
+#define EXPORT_C
 #endif
 
-enum CB_NAME
-{
+/* define ACE agent version, just use int value */
+#define ACE_AGENT_VERSION   100
+
+enum CB_NAME {
     GET_XRF = 0,
     SET_XRF,
     GET_FRF,
     SET_FRF,
-    GET_VRF, 
+    GET_VRF,
     SET_VRF,
-    GET_MEM, 
+    GET_MEM,
     SET_MEM,
-    GET_CSR, 
+    GET_CSR,
     SET_CSR,
     SET_CSR_MASKED,
-    GET_ACM, 
+    GET_ACM,
     SET_ACM,
     GET_PC,
     GET_HARD_ID,
@@ -34,13 +35,13 @@ enum CB_NAME
 };
 
 typedef int (*generic_fp)(void);
-typedef generic_fp* cb_table_t;
-/**
+typedef generic_fp *cb_table_t;
+/*
  * generic_fp table[CB_NAME_MAX];
  * table[GET_XRF] = &qemu_get_xrf;
  * table[SET_XRF] = &qemu_set_xrf;
- * 
-*/
+ *
+ */
 
 typedef enum {
     ACM_OK,
@@ -49,7 +50,7 @@ typedef enum {
 
 /* For Get PC/HART_ID/PRIV */
 typedef uint64_t (*func0)(void *);
-#define FUNC_0(f) ((func0)(f))(void *)
+#define FUNC_0(f, p0) ((func0)(f))(p0)
 
 /* For Get/Set XRF/FRF */
 typedef uint64_t (*func1)(void *, uint32_t x);
@@ -81,9 +82,15 @@ typedef void (*func3m)(void *, uint64_t x, uint64_t y, uint32_t z);
 typedef ACM_Status (*func3a)(void *, uint64_t x, uint32_t y, char *z);
 #define FUNC_3A(f, p0, p1, p2, p3) ((func3a)(f))(p0, p1, p2, p3)
 
-typedef int32_t (*fp_ace_agent_register_t)(void *, cb_table_t, uint32_t);
-typedef int32_t (*fp_ace_agent_run_insn_t)(void *, uint32_t);
-EXPORT_C int32_t ace_agent_register(void *, cb_table_t cb_table, uint32_t cb_table_num);
-EXPORT_C int32_t ace_agent_run_insn(void *, uint32_t opcode);
+typedef int32_t (*fp_ace_agent_register_t)(void *, cb_table_t, uint32_t,
+    const char*, uint64_t, int32_t);
+typedef int32_t (*fp_ace_agent_run_insn_t)(void *, uint32_t, uint64_t);
+typedef int32_t (*fp_ace_agent_version_t)(void *, uint64_t);
+typedef char* (*fp_ace_agent_copilot_version_t)(void *);
+EXPORT_C int32_t ace_agent_register(void *, cb_table_t cb_table,
+    uint32_t cb_table_num, const char *, uint64_t, int32_t);
+EXPORT_C int32_t ace_agent_run_insn(void *, uint32_t opcode, uint64_t);
+EXPORT_C int32_t ace_agent_version(void *);
+EXPORT_C const char *ace_agent_copilot_version(void *, uint64_t);
 
-#endif  // __ACE_HELPER_H__
+#endif

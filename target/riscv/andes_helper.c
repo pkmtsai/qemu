@@ -158,8 +158,7 @@ target_ulong helper_andes_v5_ace(CPURISCVState *env, target_ulong opcode)
 #else
     hartid = 0;
 #endif
-    //int ret = qemu_ace_agent_run_insn(env, opcode, hartid);
-    int ret = qemu_ace_agent_run_insn(env, opcode);
+    int ret = qemu_ace_agent_run_insn(env, opcode, hartid);
     if (ret != 0) {
         /* wrong ACE instruction seems return RESERVED_INSN(=1), not ILL Insn */
         qemu_printf("Run ace instruction result = %d\n", ret);

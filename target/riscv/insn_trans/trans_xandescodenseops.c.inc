@@ -69,7 +69,7 @@ static int andes_v5_gen_codense_exec_it(DisasContext *ctx,
 {
     uint32_t insn;
     uint32_t imm_ex10 = a->imm_codense;
-    CPURISCVState *env = ctx->cs->env_ptr;
+    CPURISCVState *env = cpu_env(ctx->cs);
     target_ulong uitb_val = 0;
     riscv_csrrw(env, CSR_UITB, &uitb_val, 0, 0);
 
