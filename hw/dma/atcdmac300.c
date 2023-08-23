@@ -129,8 +129,10 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
             dst_width = (1 << dst_width);
             burst_size = (1 << burst_size);
             remain_size = (s->chan[ch].ChnTranSize * src_width);
-            int_tc_mask = (s->chan[ch].ChnCtrl >> CHAN_CTL_INT_TC_MASK) & 0x1;
-            int_err_mask = (s->chan[ch].ChnCtrl >> CHAN_CTL_INT_ERR_MASK) & 0x1;
+            int_tc_mask = (s->chan[ch].ChnCtrl >> CHAN_CTL_INT_TC_MASK_POS)
+                          & 0x1;
+            int_err_mask = (s->chan[ch].ChnCtrl >> CHAN_CTL_INT_ERR_MASK_POS)
+                           & 0x1;
             if (remain_size && burst_size < (1 << 11) &&
                 src_width < (1 << 6) && dst_width < (1 << 6) &&
                 (src_addr & (src_width - 1)) == 0 &&

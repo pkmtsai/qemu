@@ -67,9 +67,9 @@ OBJECT_DECLARE_SIMPLE_TYPE(ATCDMAC300State, ATCDMAC300)
 #define CHAN_CTL_DST_ADDR_CTL           12
 #define CHAN_CTL_SRC_REQ_SEL            8
 #define CHAN_CTL_DST_REQ_SEL            4
-#define CHAN_CTL_INT_ABT_MASK           3
-#define CHAN_CTL_INT_ERR_MASK           2
-#define CHAN_CTL_INT_TC_MASK            1
+#define CHAN_CTL_INT_ABT_MASK_POS       3
+#define CHAN_CTL_INT_ERR_MASK_POS       2
+#define CHAN_CTL_INT_TC_MASK_POS        1
 #define CHAN_CTL_ENABLE                 0
 
 #define CHAN_CTL_SRC_WIDTH_MASK         0x7
