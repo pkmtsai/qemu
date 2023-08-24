@@ -27,6 +27,7 @@
 #include "hw/dma/atcdmac300.h"
 #include "hw/net/atfmac100.h"
 #include "hw/sd/atfsdc010.h"
+#include "hw/riscv/andes_atcsmu.h"
 
 #define ANDES_CPUS_MAX 8
 
@@ -45,6 +46,7 @@ typedef struct AndesAe350SocState {
 
     ATCDMAC300State dma;
     ATFMAC100State atfmac100;
+    AndesATCSMUState atcsmu;
 
     uint64_t ilm_base;
     uint64_t dlm_base;
@@ -52,6 +54,7 @@ typedef struct AndesAe350SocState {
     uint32_t dlm_size;
     bool ilm_default_enable;
     bool dlm_default_enable;
+
 } AndesAe350SocState;
 
 #define TYPE_ANDES_AE350_MACHINE MACHINE_TYPE_NAME("andes_ae350")

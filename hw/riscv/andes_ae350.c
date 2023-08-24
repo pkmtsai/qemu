@@ -27,6 +27,7 @@
 #include "qapi/error.h"
 #include "hw/boards.h"
 #include "hw/loader.h"
+#include "hw/nmi.h"
 #include "hw/sysbus.h"
 #include "hw/qdev-properties.h"
 #include "hw/char/serial.h"
@@ -710,14 +711,30 @@ static void andes_ae350_machine_init(MachineState *machine)
                 kernel_entry, fdt_load_addr);
 }
 
+static void ae350_do_nmi_on_cpu(CPUState *cs, run_on_cpu_data arg)
+{
+    RISCVCPU *cpu = RISCV_CPU(cs);
+    CPURISCVState *env = &cpu->env;
+    env->mcause = 0x1;
+    env->mepc = env->pc;
+    env->pc = env->resetvec;
+}
+
+static void ae350_nmi(NMIState *n, int cpu_index, Error **errp)
+{
+    CPUState *cs = qemu_get_cpu(cpu_index);
+    async_run_on_cpu(cs, ae350_do_nmi_on_cpu, RUN_ON_CPU_NULL);
+}
+
 static void andes_ae350_machine_class_init(ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
-
+    NMIClass *nc = NMI_CLASS(oc);
     mc->desc = "RISC-V Board compatible with Andes AE350";
     mc->init = andes_ae350_machine_init;
     mc->max_cpus = ANDES_CPUS_MAX;
     mc->default_cpu_type = VIRT_CPU;
+    nc->nmi_monitor_handler = ae350_nmi;
 }
 
 static void andes_ae350_machine_instance_init(Object *obj)
@@ -731,6 +748,10 @@ static const TypeInfo andes_ae350_machine_typeinfo = {
     .class_init = andes_ae350_machine_class_init,
     .instance_init = andes_ae350_machine_instance_init,
     .instance_size = sizeof(AndesAe350BoardState),
+    .interfaces = (InterfaceInfo[]) {
+         { TYPE_NMI },
+         { }
+    },
 };
 
 static void andes_ae350_machine_init_register_types(void)
