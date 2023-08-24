@@ -393,7 +393,7 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     }
 
     /* SMU */
-    andes_atcsmu_create(memmap[ANDES_AE350_SMU].base,
+    andes_atcsmu_create(&s->atcsmu, memmap[ANDES_AE350_SMU].base,
                         memmap[ANDES_AE350_SMU].size);
 
     /* SMC */
@@ -480,6 +480,9 @@ static void andes_ae350_soc_instance_init(Object *obj)
 
     object_initialize_child(obj, "atfmac100", &s->atfmac100,
                                 TYPE_ATFMAC100);
+
+    object_initialize_child(obj, "atcsmu", &s->atcsmu,
+                            TYPE_ANDES_ATCSMU);
 
     object_initialize_child(obj, "cpus", &s->cpus, TYPE_RISCV_HART_ARRAY);
     object_property_set_str(OBJECT(&s->cpus), "cpu-type",

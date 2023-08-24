@@ -39,7 +39,7 @@ typedef struct AndesATCSMUState {
     uint32_t smu_base_addr;
     uint32_t smu_base_size;
     uint32_t scratch;
-    pcs_registers pcs_regs[8];
+    pcs_registers pcs_regs[4];
 } AndesATCSMUState;
 
 #define ATCSMU_WRSR         0x10
@@ -77,7 +77,7 @@ typedef struct AndesATCSMUState {
 #define SMUCMD_POWEROFF     0x5a
 #define SMUCMD_STANDBY      0x55
 
-DeviceState *
-andes_atcsmu_create(hwaddr addr, hwaddr size);
+void
+andes_atcsmu_create(AndesATCSMUState *dev, hwaddr addr, hwaddr size);
 
 #endif

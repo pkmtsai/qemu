@@ -214,13 +214,11 @@ type_init(andes_atcsmu_register_types)
 /*
  * Create ATCSMU device.
  */
-DeviceState*
-andes_atcsmu_create(hwaddr addr, hwaddr size)
+void
+andes_atcsmu_create(AndesATCSMUState *dev, hwaddr addr, hwaddr size)
 {
-    DeviceState *dev = qdev_new(TYPE_ANDES_ATCSMU);
-    qdev_prop_set_uint32(dev, "smu-base-addr", addr);
-    qdev_prop_set_uint32(dev, "smu-base-size", size);
+    qdev_prop_set_uint32(DEVICE(dev), "smu-base-addr", addr);
+    qdev_prop_set_uint32(DEVICE(dev), "smu-base-size", size);
     sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, addr);
-    return dev;
 }
