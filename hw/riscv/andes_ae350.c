@@ -49,6 +49,7 @@
 #include "hw/riscv/andes_ae350.h"
 #include "hw/riscv/andes_atcsmu.h"
 #include "hw/sd/atfsdc010.h"
+#include "hw/rtc/atcrtc100.h"
 
 #define BIOS_FILENAME ""
 
@@ -408,8 +409,11 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
         memmap[ANDES_AE350_WDT].base, memmap[ANDES_AE350_WDT].size);
 
     /* RTC */
-    create_unimplemented_device("riscv.andes.ae350.rtc",
-        memmap[ANDES_AE350_RTC].base, memmap[ANDES_AE350_RTC].size);
+    atcrtc100_create(memmap[ANDES_AE350_RTC].base,
+                     qdev_get_gpio_in(DEVICE(s->plic),
+                     ANDES_AE350_RTC_PERIOD_IRQ),
+                     qdev_get_gpio_in(DEVICE(s->plic),
+                     ANDES_AE350_RTC_ALARM_IRQ));
 
     /* GPIO */
     create_unimplemented_device("riscv.andes.ae350.gpio",

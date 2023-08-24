@@ -1,3 +1,6 @@
+config ATCRTC100
+    bool
+
 config DS1338
     bool
     depends on I2C
