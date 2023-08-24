@@ -51,6 +51,7 @@
 #include "hw/riscv/andes_atcsmu.h"
 #include "hw/sd/atfsdc010.h"
 #include "hw/rtc/atcrtc100.h"
+#include "hw/watchdog/atcwdt200.h"
 
 #define BIOS_FILENAME ""
 
@@ -455,6 +456,8 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     create_unimplemented_device("riscv.andes.ae350.spi2",
         memmap[ANDES_AE350_SPI2].base, memmap[ANDES_AE350_SPI2].size);
 
+    /* WDT */
+    atcwdt200_create(memmap[ANDES_AE350_WDT].base);
 
     /* UART */
     serial_mm_init(system_memory,

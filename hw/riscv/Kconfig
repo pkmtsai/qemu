@@ -15,6 +15,7 @@ config ANDES_AE350
     select ATCDMAC300
     select ATCPIT100
     select ATCRTC100
+    select ATCWDT200
     select ATCSMU
     select ATFMAC100
     select ATFSDC010
