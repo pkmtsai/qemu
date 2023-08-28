@@ -138,7 +138,7 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
                 (src_addr & (src_width - 1)) == 0 &&
                 (dst_addr & (dst_width - 1)) == 0 &&
                 (remain_size & (dst_width - 1)) == 0 &&
-                (burst_size & (dst_width - 1)) == 0) {
+                (burst_size * src_width & (dst_width - 1)) == 0) {
 
                 while (remain_size > 0) {
                     int i;
