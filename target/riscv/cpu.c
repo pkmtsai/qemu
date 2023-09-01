@@ -1377,6 +1377,7 @@ static void riscv_cpu_reset_hold(Object *obj)
     env->mie = 0;
     env->mepc = 0;
     env->mip = 0;
+    env->mseccfg = 0;
     env->frm = 0;
     env->scause = 0;
     env->satp = 0;
