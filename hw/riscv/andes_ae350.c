@@ -58,8 +58,6 @@ static const struct MemmapEntry {
 } andes_ae350_memmap[] = {
     [ANDES_AE350_DRAM]      = { 0x00000000, 0x80000000 },
     [ANDES_AE350_MROM]      = { 0x80000000,  0x8000000 },
-    [ANDES_AE350_ILM]       = { 0x00000000,   0x200000 },
-    [ADNES_AE350_DLM]       = { 0x00200000,   0x200000 },
     [ANDES_AE350_SLAVEPORT0_ILM] = { 0xa0000000,   0x200000 },
     [ANDES_AE350_SLAVEPORT0_DLM] = { 0xa0200000,   0x200000 },
     [ANDES_AE350_SLAVEPORT1_ILM] = { 0xa0400000,   0x200000 },
