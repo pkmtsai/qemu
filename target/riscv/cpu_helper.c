@@ -766,7 +766,27 @@ static int get_physical_address_pmp(CPURISCVState *env, int *prot, hwaddr addr,
     }
 
     *prot = pmp_priv_to_page_prot(pmp_priv);
-
+    if (tlb_size != NULL) {
+        target_ulong tlb_sa = addr & ~(TARGET_PAGE_SIZE - 1);
+        target_ulong tlb_ea = tlb_sa + TARGET_PAGE_SIZE - 1;
+        if (pmp_index != MAX_RISCV_PMPS) {
+            *tlb_size = pmp_get_tlb_size(env, pmp_index, tlb_sa, tlb_ea);
+        } else if (env->andes_csr.csrno[CSR_MILMB] & 0x1) {
+            if (env->ilm_base <= tlb_sa &&
+                env->ilm_base + env->ilm_size - 1 >= tlb_ea) {
+                *tlb_size = TARGET_PAGE_SIZE;
+            } else {
+                *tlb_size = 1;
+            }
+        } else if (env->andes_csr.csrno[CSR_MDLMB] & 0x1) {
+            if (env->dlm_base <= tlb_sa &&
+                env->dlm_base + env->dlm_size - 1 >= tlb_ea) {
+                *tlb_size = TARGET_PAGE_SIZE;
+            } else {
+                *tlb_size = 1;
+            }
+        }
+    }
     return TRANSLATE_SUCCESS;
 }
 
@@ -826,6 +846,21 @@ static int get_physical_address(CPURISCVState *env, hwaddr *physical,
     if (mode == PRV_M || !riscv_cpu_cfg(env)->mmu) {
         *physical = addr;
         *ret_prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+        return TRANSLATE_SUCCESS;
+    }
+
+    /* Access local memory */
+    if (env->andes_csr.csrno[CSR_MILMB] & 0x1 &&
+        addr >= env->ilm_base &&
+        addr < env->ilm_base + env->ilm_size) {
+        *physical = addr;
+        *ret_prot = PAGE_EXEC;
+        return TRANSLATE_SUCCESS;
+    } else if (env->andes_csr.csrno[CSR_MDLMB] & 0x1 &&
+               addr >= env->dlm_base &&
+               addr < env->dlm_base + env->dlm_size) {
+        *physical = addr;
+        *ret_prot = PAGE_READ | PAGE_WRITE;
         return TRANSLATE_SUCCESS;
     }
 
