@@ -457,13 +457,29 @@ static const MemoryRegionOps atcpit100_ops = {
     .valid = {.min_access_size = 4, .max_access_size = 4}
 };
 
-#ifdef MORE_HOOK
 static void
 atcpit100_reset(DeviceState *dev)
 {
-    LOG("%s:\n", __func__);
+    int i,j;
+    Atcpit100State *s = ATCPIT100(dev);
+    for (i = 0; i < ATCPIT100_CHANNEL_NUM; ++i) {
+        Atcpit100Channel *ch = &s->channels[i];
+        for (j = 0; j < ATCPIT100_CHANNEL_TIMER_NUM; ++j) {
+            Atcpit100Timer *tmr = &ch->timers[j];
+            ptimer_transaction_begin(tmr->ptimer);
+            ptimer_stop(tmr->ptimer);
+            ptimer_set_freq(tmr->ptimer, s->pclk);
+            ptimer_transaction_commit(tmr->ptimer);
+        }
+        ch->control = 0;
+        ch->reload = 0;
+    }
+    s->int_en = 0;
+    s->int_st = 0;
+    s->ch_en = 0;
 }
 
+#ifdef MORE_HOOK
 static void
 atcpit100_realize(DeviceState *dev, Error **errp)
 {
@@ -533,8 +549,8 @@ atcpit100_class_init(ObjectClass *klass, void *data)
 
 #ifdef MORE_HOOK
     k->realize = atcpit100_realize;
-    k->reset = atcpit100_reset;
 #endif
+    k->reset = atcpit100_reset;
     device_class_set_props(k, atcpit100_properties);
 }
 
