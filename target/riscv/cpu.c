@@ -1303,6 +1303,7 @@ static void andes_csr_reset_common(CPURISCVState *env)
 
     env->andes_csr.csrno[CSR_UITB] = 0;
     env->andes_csr.csrno[CSR_MMSC_CFG] = (1UL << V5_MMSC_CFG_ECD) |
+                                         (1UL << V5_MMSC_CFG_LMSLVP)|
                                          (1UL << V5_MMSC_CFG_PPMA);
     env->andes_csr.csrno[CSR_MMISC_CTL] = (1UL << V5_MMISC_CTL_BRPE) |
                                           (1UL << V5_MMISC_CTL_MSA_OR_UNA);
