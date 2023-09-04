@@ -68,6 +68,14 @@ static const struct MemmapEntry {
     [ANDES_AE350_SLAVEPORT2_DLM] = { 0xa0a00000,   0x200000 },
     [ANDES_AE350_SLAVEPORT3_ILM] = { 0xa0c00000,   0x200000 },
     [ANDES_AE350_SLAVEPORT3_DLM] = { 0xa0e00000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT4_ILM] = { 0xa1000000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT4_DLM] = { 0xa1200000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT5_ILM] = { 0xa1400000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT5_DLM] = { 0xa1600000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT6_ILM] = { 0xa1800000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT6_DLM] = { 0xa1a00000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT7_ILM] = { 0xa1c00000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT7_DLM] = { 0xa1e00000,   0x200000 },
     [ANDES_AE350_NOR]       = { 0x88000000,  0x4000000 },
     [ANDES_AE350_MAC]       = { 0xe0100000,   0x100000 },
     [ANDES_AE350_LCD]       = { 0xe0200000,   0x100000 },
@@ -635,7 +643,7 @@ static void andes_ae350_machine_init(MachineState *machine)
     memory_region_set_readonly(mask_l2c, false);
     memory_region_add_subregion(system_memory, memmap[ANDES_AE350_L2C].base,
                                 mask_l2c);
-    for (int i = 0 ; i < 4; i++) {
+    for (int i = 0 ; i < ANDES_CPUS_MAX; i++) {
         struct MemmapEntry silm_map =
             memmap[ANDES_AE350_SLAVEPORT0_ILM + i * 2];
         struct MemmapEntry sdlm_map =
