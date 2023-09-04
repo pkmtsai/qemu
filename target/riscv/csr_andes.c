@@ -11,6 +11,7 @@
 #include "exec/exec-all.h"
 #include "andes_cpu_bits.h"
 #include "csr_andes.h"
+#include "exec/address-spaces.h"
 
 static RISCVException any(CPURISCVState *env,
                           int csrno)
@@ -527,6 +528,40 @@ static RISCVException write_all_ignore(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException write_lmb(CPURISCVState *env,
+                                int csrno,
+                                target_ulong val)
+{
+    uint64_t enable = val & 0x1;
+    bool locked = false;
+    if (!qemu_mutex_iothread_locked()) {
+        locked = true;
+        qemu_mutex_lock_iothread();
+    }
+    if (csrno == CSR_MILMB) {
+        if (enable) {
+            memory_region_add_subregion_overlap(env->cpu_as_root,
+                                env->ilm_base, env->mask_ilm, 1);
+        } else if (memory_region_is_mapped(env->mask_ilm)) {
+            memory_region_del_subregion(env->cpu_as_root, env->mask_ilm);
+        }
+    }
+    if (csrno == CSR_MDLMB) {
+        if (enable) {
+            memory_region_add_subregion_overlap(env->cpu_as_root,
+                                env->dlm_base, env->mask_dlm, 1);
+        } else if (memory_region_is_mapped(env->mask_dlm)) {
+            memory_region_del_subregion(env->cpu_as_root, env->mask_dlm);
+        }
+    }
+    tlb_flush(env_cpu(env));
+    env->andes_csr.csrno[csrno] = val;
+    if (locked) {
+        qemu_mutex_unlock_iothread();
+    }
+    return RISCV_EXCP_NONE;
+}
+
 void andes_csr_init(AndesCsr *andes_csr)
 {
     int i;
@@ -541,6 +576,7 @@ void andes_csr_init(AndesCsr *andes_csr)
     /* Initilaize Andes CSRs default value */
     andes_csr->csrno[CSR_UITB] = 0;
     andes_csr->csrno[CSR_MMSC_CFG] =    (1UL << V5_MMSC_CFG_ECD) |
+                                        (1UL << V5_MMSC_CFG_LMSLVP) |
                                         (1UL << V5_MMSC_CFG_PPMA);
     andes_csr->csrno[CSR_MMISC_CTL] =   (1UL << V5_MMISC_CTL_BRPE) |
                                         (1UL << V5_MMISC_CTL_MSA_OR_UNA);
@@ -601,8 +637,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MSTATUS_CRASHSAVE] = { "mstatus_crashsave", any, read_csr },
 
     /* Memory CSRs */
-    [CSR_MILMB]          = { "milmb",             any, read_csr, write_csr  },
-    [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_csr  },
+    [CSR_MILMB]          = { "milmb",             any, read_csr, write_lmb  },
+    [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_lmb  },
     [CSR_MECC_CODE]      = { "mecc_code",         ecc, read_csr,
                                                        write_mecc_code      },
     [CSR_MNVEC]          = { "mnvec",             any, read_csr,

@@ -424,6 +424,17 @@ struct CPUArchState {
     /* Andes vectored-plic */
     AndesVec andes_vec;
     void (*do_interrupt_post)(CPUState *cpu);
+
+    MemoryRegion *cpu_as_root;
+    MemoryRegion *cpu_as_mem;
+    MemoryRegion *mask_ilm;
+    MemoryRegion *mask_dlm;
+    uint64_t ilm_base;
+    uint64_t dlm_base;
+    uint32_t ilm_size;
+    uint32_t dlm_size;
+    bool ilm_default_enable;
+    bool dlm_default_enable;
 };
 
 /*

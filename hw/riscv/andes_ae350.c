@@ -58,6 +58,16 @@ static const struct MemmapEntry {
 } andes_ae350_memmap[] = {
     [ANDES_AE350_DRAM]      = { 0x00000000, 0x80000000 },
     [ANDES_AE350_MROM]      = { 0x80000000,  0x8000000 },
+    [ANDES_AE350_ILM]       = { 0x00000000,   0x200000 },
+    [ADNES_AE350_DLM]       = { 0x00200000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT0_ILM] = { 0xa0000000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT0_DLM] = { 0xa0200000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT1_ILM] = { 0xa0400000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT1_DLM] = { 0xa0600000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT2_ILM] = { 0xa0800000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT2_DLM] = { 0xa0a00000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT3_ILM] = { 0xa0c00000,   0x200000 },
+    [ANDES_AE350_SLAVEPORT3_DLM] = { 0xa0e00000,   0x200000 },
     [ANDES_AE350_NOR]       = { 0x88000000,  0x4000000 },
     [ANDES_AE350_MAC]       = { 0xe0100000,   0x100000 },
     [ANDES_AE350_LCD]       = { 0xe0200000,   0x100000 },
@@ -305,7 +315,21 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     char *plic_hart_config, *plicsw_hart_config;
     NICInfo *nd = &nd_table[0];
 
+    qdev_prop_set_bit(DEVICE(&s->cpus), "ilm_default_enable",
+                        s->ilm_default_enable);
+    qdev_prop_set_bit(DEVICE(&s->cpus), "dlm_default_enable",
+                        s->dlm_default_enable);
+    qdev_prop_set_uint64(DEVICE(&s->cpus), "ilm_base",
+                        s->ilm_base);
+    qdev_prop_set_uint64(DEVICE(&s->cpus), "dlm_base",
+                        s->dlm_base);
+    qdev_prop_set_uint64(DEVICE(&s->cpus), "ilm_size",
+                        s->ilm_size);
+    qdev_prop_set_uint64(DEVICE(&s->cpus), "dlm_size",
+                        s->dlm_size);
+
     sysbus_realize(SYS_BUS_DEVICE(&s->cpus), &error_abort);
+
     plicsw_hart_config =
         init_hart_config(ANDES_PLICSW_HART_CONFIG, machine->smp.cpus);
 
@@ -489,6 +513,83 @@ static int andes_load_elf(MachineState *machine,
     return 0;
 }
 
+typedef struct Slaveport_status {
+    int hart_id;
+    bool dlm;
+} Slaveport_status;
+static uint64_t slaveport_read(void *opaque, hwaddr addr, unsigned size)
+{
+    uint64_t ret = 0;
+    Slaveport_status *s = (Slaveport_status *)opaque;
+    CPUState *cs = qemu_get_cpu(s->hart_id);
+    if (!cs) {
+        return ret;
+    }
+    CPURISCVState *env = &RISCV_CPU(cs)->env;
+    if (s->dlm) {
+        memory_region_dispatch_read(env->mask_dlm, addr, &ret,
+            size_memop(size) | MO_LE, (MemTxAttrs) { .memory = 1 });
+    } else {
+        memory_region_dispatch_read(env->mask_ilm, addr, &ret,
+            size_memop(size) | MO_LE, (MemTxAttrs) { .memory = 1 });
+    }
+    return ret;
+}
+
+static void slaveport_write(void *opaque, hwaddr addr, uint64_t value,
+                            unsigned size)
+{
+    Slaveport_status *s = (Slaveport_status *)opaque;
+    CPUState *cs = qemu_get_cpu(s->hart_id);
+    if (!cs) {
+        return;
+    }
+    CPURISCVState *env = &RISCV_CPU(cs)->env;
+    if (s->dlm) {
+        memory_region_dispatch_write(env->mask_dlm, addr, value,
+            size_memop(size) | MO_LE, (MemTxAttrs) { .memory = 1 });
+    } else {
+        memory_region_dispatch_write(env->mask_ilm, addr, value,
+            size_memop(size) | MO_LE, (MemTxAttrs) { .memory = 1 });
+    }
+}
+
+static const MemoryRegionOps slaveport_ops = {
+    .read = slaveport_read,
+    .write = slaveport_write,
+    .endianness = DEVICE_LITTLE_ENDIAN,
+    .valid = {
+        .min_access_size = 1,
+        .max_access_size = 8,
+        .unaligned = true,
+    },
+    .impl = {
+        .min_access_size = 1,
+        .max_access_size = 8,
+        .unaligned = true,
+    },
+};
+
+static void slaveport_create(int hart_id, bool dlm, hwaddr base, hwaddr size)
+{
+    Slaveport_status *s = g_new(Slaveport_status, 1);
+    s->hart_id = hart_id;
+    s->dlm = dlm;
+    MemoryRegion *slaveport_mr = g_new(MemoryRegion, 1);
+    MemoryRegion *system_memory = get_system_memory();
+    char *name;
+    if (dlm) {
+        name = g_strdup_printf("%s%d_%s", "riscv.andes.ae350.slaveport",
+                               hart_id, "dlm");
+    } else {
+        name = g_strdup_printf("%s%d_%s", "riscv.andes.ae350.slaveport",
+                               hart_id, "ilm");
+    }
+    memory_region_init_io(slaveport_mr, NULL, &slaveport_ops, s,
+                          name, size);
+    memory_region_add_subregion(system_memory, base, slaveport_mr);
+}
+
 static void andes_ae350_machine_init(MachineState *machine)
 {
     const struct MemmapEntry *memmap = andes_ae350_memmap;
@@ -534,6 +635,14 @@ static void andes_ae350_machine_init(MachineState *machine)
     memory_region_set_readonly(mask_l2c, false);
     memory_region_add_subregion(system_memory, memmap[ANDES_AE350_L2C].base,
                                 mask_l2c);
+    for (int i = 0 ; i < 4; i++) {
+        struct MemmapEntry silm_map =
+            memmap[ANDES_AE350_SLAVEPORT0_ILM + i * 2];
+        struct MemmapEntry sdlm_map =
+             memmap[ANDES_AE350_SLAVEPORT0_ILM + i * 2 + 1];
+        slaveport_create(i, 0, silm_map.base, silm_map.size);
+        slaveport_create(i, 1, sdlm_map.base, sdlm_map.size);
+    }
 
     /* load/create device tree */
     if (machine->dtb) {
@@ -618,10 +727,24 @@ static void andes_ae350_machine_init_register_types(void)
 
 type_init(andes_ae350_machine_init_register_types)
 
+
+static Property andes_ae350_soc_property[] = {
+    /* Defaults for standard extensions */
+    DEFINE_PROP_UINT64("ilm_base", AndesAe350SocState, ilm_base, 0),
+    DEFINE_PROP_UINT64("dlm_base", AndesAe350SocState, dlm_base, 0x200000),
+    DEFINE_PROP_UINT32("ilm_size", AndesAe350SocState, ilm_size, 0x200000),
+    DEFINE_PROP_UINT32("dlm_size", AndesAe350SocState, dlm_size, 0x200000),
+    DEFINE_PROP_BOOL("ilm_default_enable", AndesAe350SocState,
+                     ilm_default_enable, false),
+    DEFINE_PROP_BOOL("dlm_default_enable", AndesAe350SocState,
+                     dlm_default_enable, false),
+    DEFINE_PROP_END_OF_LIST(),
+};
+
 static void andes_ae350_soc_class_init(ObjectClass *oc, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(oc);
-
+    device_class_set_props(dc, andes_ae350_soc_property);
     dc->realize = andes_ae350_soc_realize;
     dc->user_creatable = false;
 }

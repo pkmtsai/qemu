@@ -45,6 +45,13 @@ typedef struct AndesAe350SocState {
 
     ATCDMAC300State dma;
     ATFMAC100State atfmac100;
+
+    uint64_t ilm_base;
+    uint64_t dlm_base;
+    uint32_t ilm_size;
+    uint32_t dlm_size;
+    bool ilm_default_enable;
+    bool dlm_default_enable;
 } AndesAe350SocState;
 
 #define TYPE_ANDES_AE350_MACHINE MACHINE_TYPE_NAME("andes_ae350")
@@ -63,6 +70,16 @@ typedef struct AndesAe350BoardState {
 enum {
     ANDES_AE350_DRAM,
     ANDES_AE350_MROM,
+    ANDES_AE350_ILM,
+    ADNES_AE350_DLM,
+    ANDES_AE350_SLAVEPORT0_ILM,
+    ANDES_AE350_SLAVEPORT0_DLM,
+    ANDES_AE350_SLAVEPORT1_ILM,
+    ANDES_AE350_SLAVEPORT1_DLM,
+    ANDES_AE350_SLAVEPORT2_ILM,
+    ANDES_AE350_SLAVEPORT2_DLM,
+    ANDES_AE350_SLAVEPORT3_ILM,
+    ANDES_AE350_SLAVEPORT3_DLM,
     ANDES_AE350_NOR,
     ANDES_AE350_MAC,
     ANDES_AE350_LCD,

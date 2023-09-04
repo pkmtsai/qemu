@@ -16,6 +16,7 @@ typedef struct AndesVec {
 
 /* mmsc_cfg */
 #define V5_MMSC_CFG_ECD                     3
+#define V5_MMSC_CFG_LMSLVP                  14
 #define V5_MMSC_CFG_PPMA                    30
 #define V5_MMSC_CFG_L2C                     46
 #define V5_MMSC_CFG2_L2C                    14
@@ -32,6 +33,13 @@ typedef struct AndesVec {
 #define V5_MCACHE_CTL_DC_FIRST_WORD         12
 #define V5_MCACHE_CTL_DC_COHEN              19
 #define V5_MCACHE_CTL_DC_COHSTA             20
+
+/* micm_cfg */
+#define V5_MICM_CFG_ILMB                    12
+#define V5_MICM_CFG_ILMSZ                   15
+/* mdcm_cfg */
+#define V5_MDCM_CFG_DLMB                    12
+#define V5_MICM_CFG_DLMSZ                   15
 
 /* mmsc_cfg */
 #define MASK_MMSC_CFG_ECC                   (0x01)
