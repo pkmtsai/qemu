@@ -540,11 +540,8 @@ static void andes_cpu_lm_realize(DeviceState *dev)
     env->mask_dlm->ops = &local_mem_ops;
     env->mask_dlm->opaque = env->mask_dlm;
 
-    /* round down to valid value */
     int ilmsz = 31 - __builtin_clz(env->ilm_size) - 9;
     int dlmsz = 31 - __builtin_clz(env->dlm_size) - 9;
-    env->ilm_size = 1 << (ilmsz + 9);
-    env->dlm_size = 1 << (dlmsz + 9);
 
     /* initial local memory csr */
     env->andes_csr.csrno[CSR_MICM_CFG] = (1UL << V5_MICM_CFG_ILMB) |

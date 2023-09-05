@@ -324,6 +324,13 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     char *plic_hart_config, *plicsw_hart_config;
     NICInfo *nd = &nd_table[0];
 
+    /* round down local memory size to valid value */
+    s->ilm_size = 1 << (31 - __builtin_clz(s->ilm_size));
+    s->dlm_size = 1 << (31 - __builtin_clz(s->dlm_size));
+    /* align local memory base to local memory size */
+    s->ilm_base &= ~(s->ilm_size - 1);
+    s->dlm_base &= ~(s->dlm_size - 1);
+
     qdev_prop_set_bit(DEVICE(&s->cpus), "ilm_default_enable",
                         s->ilm_default_enable);
     qdev_prop_set_bit(DEVICE(&s->cpus), "dlm_default_enable",
