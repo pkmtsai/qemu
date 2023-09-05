@@ -556,24 +556,27 @@ static RISCVException write_lmb(CPURISCVState *env,
                                 target_ulong val)
 {
     uint64_t enable = val & 0x1;
+    bool ilm_mapped, dlm_mapped;
     bool locked = false;
     if (!qemu_mutex_iothread_locked()) {
         locked = true;
         qemu_mutex_lock_iothread();
     }
     if (csrno == CSR_MILMB) {
-        if (enable) {
+        ilm_mapped = memory_region_is_mapped(env->mask_ilm);
+        if(enable && !ilm_mapped) {
             memory_region_add_subregion_overlap(env->cpu_as_root,
                                 env->ilm_base, env->mask_ilm, 1);
-        } else if (memory_region_is_mapped(env->mask_ilm)) {
+        } else if (!enable && ilm_mapped) {
             memory_region_del_subregion(env->cpu_as_root, env->mask_ilm);
         }
     }
     if (csrno == CSR_MDLMB) {
-        if (enable) {
+        dlm_mapped = memory_region_is_mapped(env->mask_dlm);
+        if (enable && !dlm_mapped) {
             memory_region_add_subregion_overlap(env->cpu_as_root,
                                 env->dlm_base, env->mask_dlm, 1);
-        } else if (memory_region_is_mapped(env->mask_dlm)) {
+        } else if (!enable && dlm_mapped) {
             memory_region_del_subregion(env->cpu_as_root, env->mask_dlm);
         }
     }
