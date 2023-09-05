@@ -550,6 +550,7 @@ static RISCVException write_all_ignore(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
+#ifndef CONFIG_USER_ONLY
 static RISCVException write_lmb(CPURISCVState *env,
                                 int csrno,
                                 target_ulong val)
@@ -583,6 +584,7 @@ static RISCVException write_lmb(CPURISCVState *env,
     }
     return RISCV_EXCP_NONE;
 }
+#endif
 
 void andes_csr_init(AndesCsr *andes_csr)
 {
@@ -659,8 +661,13 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MSTATUS_CRASHSAVE] = { "mstatus_crashsave", any, read_csr },
 
     /* Memory CSRs */
+#ifndef CONFIG_USER_ONLY
     [CSR_MILMB]          = { "milmb",             any, read_csr, write_lmb  },
     [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_lmb  },
+#else
+    [CSR_MILMB]          = { "milmb",             any, read_csr, write_csr  },
+    [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_csr  },
+#endif
     [CSR_MECC_CODE]      = { "mecc_code",         ecc, read_csr,
                                                        write_mecc_code      },
     [CSR_MNVEC]          = { "mnvec",             any, read_csr,
