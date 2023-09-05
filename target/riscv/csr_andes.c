@@ -19,6 +19,15 @@ static RISCVException any(CPURISCVState *env,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException any32(CPURISCVState *env, int csrno)
+{
+    if (riscv_cpu_mxl(env) != MXL_RV32) {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+
+    return any(env, csrno);
+}
+
 static RISCVException smode(CPURISCVState *env, int csrno)
 {
     if (riscv_has_ext(env, RVS)) {
@@ -153,7 +162,7 @@ static RISCVException veccfg(CPURISCVState *env, int csrno)
         }
         else {
             veccfgbit = get_field(csr->csrno[CSR_MMSC_CFG],
-                                  MASK_MMSC_CFG_RVARCH);
+                                  MASK_MMSC_CFG_VECCFG);
         }
         if (veccfgbit) {
             return RISCV_EXCP_NONE;
@@ -275,8 +284,21 @@ static RISCVException write_csr(CPURISCVState *env,
 static RISCVException write_mecc_code(CPURISCVState *env, int csrno,
                                       target_ulong val)
 {
-    env->andes_csr.csrno[CSR_MECC_CODE] = val & WRITE_MASK_CSR_MECC_CODE;
-    return RISCV_EXCP_NONE;
+    switch(riscv_cpu_mxl(env))
+    {
+        case MXL_RV32:
+            env->andes_csr.csrno[CSR_MECC_CODE] =
+                val & WRITE_MASK_CSR_MECC_CODE_32;
+            return RISCV_EXCP_NONE;
+            break;
+        case MXL_RV64:
+            env->andes_csr.csrno[CSR_MECC_CODE] =
+                val & WRITE_MASK_CSR_MECC_CODE_64;
+            return RISCV_EXCP_NONE;
+            break;
+        default:
+            return RISCV_EXCP_ILLEGAL_INST;
+    }
 }
 
 static RISCVException write_ucode(CPURISCVState *env, int csrno,
@@ -628,7 +650,7 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MICM_CFG]     = { "micm_cfg",          any,    read_csr },
     [CSR_MDCM_CFG]     = { "mdcm_cfg",          any,    read_csr },
     [CSR_MMSC_CFG]     = { "mmsc_cfg",          any,    read_csr },
-    [CSR_MMSC_CFG2]    = { "mmsc_cfg2",         any,    read_csr },
+    [CSR_MMSC_CFG2]    = { "mmsc_cfg2",         any32,  read_csr },
     [CSR_MVEC_CFG]     = { "mvec_cfg",          veccfg, read_csr },
     [CSR_MRVARCH_CFG]  = { "mrvarch_cfg",       rvarch, read_csr },
 

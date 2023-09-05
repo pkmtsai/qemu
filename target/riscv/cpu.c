@@ -904,6 +904,11 @@ static void rv64_andes_nx45v_cpu_init(Object *obj)
     set_satp_mode_max_supported(RISCV_CPU(obj), VM_1_10_MBARE);
 #endif
 
+    /* RVV extension */
+    cfg->vext_spec = g_strdup("v1.0");
+    cfg->vlen = 512;
+    cfg->elen = 64;
+
     /* Set CPU ID & Implementation ID */
     cfg->marchid = (uint64_t)0x1 << 63 | 0x8045;
     cfg->mimpid = 0x1;

@@ -147,7 +147,8 @@ typedef struct AndesVec {
 #define MASK_MRVARCH_CFG_SVNAPOT            (0x1 << 24)
 #define MASK_MRVARCH_CFG_ZIHINTPAUSE        (0x1 << 25)
 
-#define WRITE_MASK_CSR_MECC_CODE            0xFF
+#define WRITE_MASK_CSR_MECC_CODE_32         0x7F
+#define WRITE_MASK_CSR_MECC_CODE_64         0xFF
 #define WRITE_MASK_CSR_UITB_32              0xFFFFFFFC
 #define WRITE_MASK_CSR_UITB_64              0xFFFFFFFFFFFFFFFC
 #define WRITE_MASK_CSR_MPFT_CTL             0x1F0
