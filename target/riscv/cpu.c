@@ -547,7 +547,7 @@ static void andes_cpu_lm_realize(DeviceState *dev)
     env->andes_csr.csrno[CSR_MICM_CFG] = (1UL << V5_MICM_CFG_ILMB) |
                                      (ilmsz << V5_MICM_CFG_ILMSZ);
     env->andes_csr.csrno[CSR_MDCM_CFG] = (1UL << V5_MDCM_CFG_DLMB) |
-                                     (dlmsz << V5_MICM_CFG_DLMSZ);
+                                     (dlmsz << V5_MDCM_CFG_DLMSZ);
 
     env->andes_csr.csrno[CSR_MILMB] = env->ilm_base | env->ilm_default_enable;
     env->andes_csr.csrno[CSR_MDLMB] = env->dlm_base | env->dlm_default_enable;

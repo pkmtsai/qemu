@@ -37,9 +37,33 @@ typedef struct AndesVec {
 /* micm_cfg */
 #define V5_MICM_CFG_ILMB                    12
 #define V5_MICM_CFG_ILMSZ                   15
+#define MASK_MICM_CFG_ISET                  (0x07)
+#define MASK_MICM_CFG_IWAY                  (0x07 << 3)
+#define MASK_MICM_CFG_ISZ                   (0x07 << 6)
+#define MASK_MICM_CFG_ILCK                  (0x01 << 9)
+#define MASK_MICM_CFG_IC_ECC                (0x03 << 10)
+#define MASK_MICM_CFG_ILMB                  (0x07 << 12)
+#define MASK_MICM_CFG_ILMSZ                 (0x1F << 15)
+#define MASK_MICM_CFG_ULM_2BANK             (0x01 << 20)
+#define MASK_MICM_CFG_ILM_ECC               (0x03 << 21)
+#define MASK_MICM_CFG_ILM_XONLY             (0x01 << 23)
+#define MASK_MICM_CFG_SETH                  (0x01 << 24)
+#define MASK_MICM_CFG_IC_REPL               (0x03 << 25)
+
 /* mdcm_cfg */
 #define V5_MDCM_CFG_DLMB                    12
-#define V5_MICM_CFG_DLMSZ                   15
+#define V5_MDCM_CFG_DLMSZ                   15
+#define MASK_MDCM_CFG_DSET                  (0x07)
+#define MASK_MDCM_CFG_DWAY                  (0x07 << 3)
+#define MASK_MDCM_CFG_DSZ                   (0x07 << 6)
+#define MASK_MDCM_CFG_DLCK                  (0x01 << 9)
+#define MASK_MDCM_CFG_DC_ECC                (0x03 << 10)
+#define MASK_MDCM_CFG_DLMB                  (0x07 << 12)
+#define MASK_MDCM_CFG_DLMSZ                 (0x1F << 15)
+#define MASK_MDCM_CFG_ULM_2BANK             (0x01 << 20)
+#define MASK_MDCM_CFG_DLM_ECC               (0x03 << 21)
+#define MASK_MDCM_CFG_SETH                  (0x01 << 24)
+#define MASK_MDCM_CFG_DC_REPL               (0x03 << 25)
 
 /* mmsc_cfg */
 #define MASK_MMSC_CFG_ECC                   (0x01)
@@ -167,6 +191,7 @@ typedef struct AndesVec {
 #define WRITE_MASK_CSR_SDCAUSE              0x7F
 #define WRITE_MASK_CSR_MMISC_CTL            0x3F7F
 #define WRITE_MASK_CSR_SMISC_CTL            0x30
+#define WRITE_MASK_CSR_MCACHE_CTL           0x7FFFFF
 
 void andes_csr_init(AndesCsr *);
 void andes_vec_init(AndesVec *);

@@ -130,6 +130,40 @@ static RISCVException fio(CPURISCVState *env, int csrno)
     }
 }
 
+static RISCVException ilmb(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (get_field(csr->csrno[CSR_MICM_CFG], MASK_MICM_CFG_ILMB) != 0) {
+        return RISCV_EXCP_NONE;
+    }
+    else {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+}
+
+static RISCVException dlmb(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (get_field(csr->csrno[CSR_MDCM_CFG], MASK_MDCM_CFG_DLMB) != 0) {
+        return RISCV_EXCP_NONE;
+    }
+    else {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+}
+
+static RISCVException isz_dsz(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (get_field(csr->csrno[CSR_MICM_CFG], MASK_MICM_CFG_ISZ) != 0) {
+        return RISCV_EXCP_NONE;
+    }
+    if (get_field(csr->csrno[CSR_MDCM_CFG], MASK_MDCM_CFG_DSZ) != 0) {
+        return RISCV_EXCP_NONE;
+    }
+    return RISCV_EXCP_ILLEGAL_INST;
+}
+
 static RISCVException rvarch(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -261,7 +295,7 @@ static RISCVException write_mcache_ctl(CPURISCVState *env,
     } else {
         val &= ~(1UL << V5_MCACHE_CTL_DC_COHSTA);
     }
-    env->andes_csr.csrno[csrno] = val;
+    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MCACHE_CTL;
     return RISCV_EXCP_NONE;
 }
 
@@ -666,18 +700,18 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
 
     /* Memory CSRs */
 #ifndef CONFIG_USER_ONLY
-    [CSR_MILMB]          = { "milmb",             any, read_csr, write_lmb  },
-    [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_lmb  },
+    [CSR_MILMB]          = { "milmb",             ilmb, read_csr, write_lmb },
+    [CSR_MDLMB]          = { "mdlmb",             dlmb, read_csr, write_lmb },
 #else
-    [CSR_MILMB]          = { "milmb",             any, read_csr, write_csr  },
-    [CSR_MDLMB]          = { "mdlmb",             any, read_csr, write_csr  },
+    [CSR_MILMB]          = { "milmb",             ilmb, read_csr, write_csr },
+    [CSR_MDLMB]          = { "mdlmb",             dlmb, read_csr, write_csr },
 #endif
     [CSR_MECC_CODE]      = { "mecc_code",         ecc, read_csr,
                                                        write_mecc_code      },
     [CSR_MNVEC]          = { "mnvec",             any, read_csr,
                                                        write_all_ignore     },
-    [CSR_MCACHE_CTL]     = { "mcache_ctl",        any, read_csr,
-                                                       write_mcache_ctl     },
+    [CSR_MCACHE_CTL]     = { "mcache_ctl",        isz_dsz, read_csr,
+                                                           write_mcache_ctl },
     [CSR_MCCTLBEGINADDR] = { "mcctlbeginaddr",    any, read_csr, write_csr  },
     [CSR_MCCTLCOMMAND]   = { "mcctlcommand",      any, read_csr, write_csr  },
     [CSR_MCCTLDATA]      = { "mcctldata",         any, read_csr, write_csr  },
