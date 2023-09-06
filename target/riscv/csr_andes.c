@@ -570,6 +570,7 @@ static RISCVException write_lmb(CPURISCVState *env,
         } else if (!enable && ilm_mapped) {
             memory_region_del_subregion(env->cpu_as_root, env->mask_ilm);
         }
+        env->andes_csr.csrno[csrno] = env->ilm_base | (val & 0xf);
     }
     if (csrno == CSR_MDLMB) {
         dlm_mapped = memory_region_is_mapped(env->mask_dlm);
@@ -579,9 +580,9 @@ static RISCVException write_lmb(CPURISCVState *env,
         } else if (!enable && dlm_mapped) {
             memory_region_del_subregion(env->cpu_as_root, env->mask_dlm);
         }
+        env->andes_csr.csrno[csrno] = env->dlm_base | (val & 0xf);
     }
     tlb_flush(env_cpu(env));
-    env->andes_csr.csrno[csrno] = val;
     if (locked) {
         qemu_mutex_unlock_iothread();
     }
