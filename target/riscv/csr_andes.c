@@ -164,6 +164,43 @@ static RISCVException isz_dsz(CPURISCVState *env, int csrno)
     return RISCV_EXCP_ILLEGAL_INST;
 }
 
+static RISCVException cctlcsr(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_CCTLCSR) == 1) {
+        return RISCV_EXCP_NONE;
+    }
+    return RISCV_EXCP_ILLEGAL_INST;
+}
+
+static RISCVException mcctl(CPURISCVState *env, int csrno)
+{
+    if (isz_dsz(env, csrno) == RISCV_EXCP_NONE) {
+        return cctlcsr(env, csrno);
+    }
+    return RISCV_EXCP_ILLEGAL_INST;
+}
+
+static RISCVException ucctl(CPURISCVState *env, int csrno)
+{
+    if (riscv_has_ext(env, RVU)) {
+        if (isz_dsz(env, csrno) == RISCV_EXCP_NONE) {
+            return cctlcsr(env, csrno);
+        }
+    }
+    return RISCV_EXCP_ILLEGAL_INST;
+}
+
+static RISCVException scctl(CPURISCVState *env, int csrno)
+{
+    if (riscv_has_ext(env, RVS)) {
+        if (isz_dsz(env, csrno) == RISCV_EXCP_NONE) {
+            return cctlcsr(env, csrno);
+        }
+    }
+    return RISCV_EXCP_ILLEGAL_INST;
+}
+
 static RISCVException rvarch(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -177,6 +214,26 @@ static RISCVException rvarch(CPURISCVState *env, int csrno)
     }
 
     if (rvarchbit) {
+        return RISCV_EXCP_NONE;
+    }
+    else {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+}
+
+static RISCVException ccache(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    bool ccachebit;
+
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        ccachebit = get_field(csr->csrno[CSR_MMSC_CFG2], MASK_MMSC_CFG2_CCACHE);
+    }
+    else {
+        ccachebit = get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_CCACHE);
+    }
+
+    if (ccachebit) {
         return RISCV_EXCP_NONE;
     }
     else {
@@ -687,12 +744,13 @@ void andes_cpu_do_interrupt_post(CPUState *cs)
 riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     /* ================== AndeStar V5 machine mode CSRs ================== */
     /* Configuration Registers */
-    [CSR_MICM_CFG]     = { "micm_cfg",          any,    read_csr },
-    [CSR_MDCM_CFG]     = { "mdcm_cfg",          any,    read_csr },
-    [CSR_MMSC_CFG]     = { "mmsc_cfg",          any,    read_csr },
-    [CSR_MMSC_CFG2]    = { "mmsc_cfg2",         any32,  read_csr },
-    [CSR_MVEC_CFG]     = { "mvec_cfg",          veccfg, read_csr },
-    [CSR_MRVARCH_CFG]  = { "mrvarch_cfg",       rvarch, read_csr },
+    [CSR_MICM_CFG]          = { "micm_cfg",          any,    read_csr },
+    [CSR_MDCM_CFG]          = { "mdcm_cfg",          any,    read_csr },
+    [CSR_MMSC_CFG]          = { "mmsc_cfg",          any,    read_csr },
+    [CSR_MMSC_CFG2]         = { "mmsc_cfg2",         any32,  read_csr },
+    [CSR_MVEC_CFG]          = { "mvec_cfg",          veccfg, read_csr },
+    [CSR_MRVARCH_CFG]       = { "mrvarch_cfg",       rvarch, read_csr },
+    [CSR_MCCACHE_CTL_BASE]  = { "mccache_ctl_base",  ccache, read_csr },
 
     /* Crash Debug CSRs */
     [CSR_MCRASH_STATESAVE]  = { "mcrash_statesave",  any, read_csr },
@@ -707,16 +765,16 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MDLMB]          = { "mdlmb",             dlmb, read_csr, write_csr },
 #endif
     [CSR_MECC_CODE]      = { "mecc_code",         ecc, read_csr,
-                                                       write_mecc_code      },
+                                                       write_mecc_code       },
     [CSR_MNVEC]          = { "mnvec",             any, read_csr,
-                                                       write_all_ignore     },
+                                                       write_all_ignore      },
     [CSR_MCACHE_CTL]     = { "mcache_ctl",        isz_dsz, read_csr,
-                                                           write_mcache_ctl },
-    [CSR_MCCTLBEGINADDR] = { "mcctlbeginaddr",    any, read_csr, write_csr  },
-    [CSR_MCCTLCOMMAND]   = { "mcctlcommand",      any, read_csr, write_csr  },
-    [CSR_MCCTLDATA]      = { "mcctldata",         any, read_csr, write_csr  },
-    [CSR_MPPIB]          = { "mppib",             ppi, read_csr, write_mppib},
-    [CSR_MFIOB]          = { "mfiob",             fio, read_csr, write_mfiob},
+                                                           write_mcache_ctl  },
+    [CSR_MCCTLBEGINADDR] = { "mcctlbeginaddr",    mcctl, read_csr, write_csr },
+    [CSR_MCCTLCOMMAND]   = { "mcctlcommand",      mcctl, read_csr, write_csr },
+    [CSR_MCCTLDATA]      = { "mcctldata",         mcctl, read_csr, write_csr },
+    [CSR_MPPIB]          = { "mppib",             ppi, read_csr, write_mppib },
+    [CSR_MFIOB]          = { "mfiob",             fio, read_csr, write_mfiob },
 
     /* Hardware Stack Protection & Recording */
     [CSR_MHSP_CTL]     = { "mhsp_ctl",            hsp, read_csr,
@@ -823,18 +881,20 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
                                                          write_shpmevent    },
 
     /* Supervisor control registers */
-    [CSR_SCCTLDATA] = { "scctldata",              any, read_csr, write_csr    },
+    [CSR_SCCTLDATA] = { "scctldata",              scctl,     read_csr,
+                                                             write_csr        },
     [CSR_SMISC_CTL] = { "smisc_ctl",              smisc_ctl, read_csr,
                                                              write_smisc_ctl  },
 
     /* =================== AndeStar V5 user mode CSRs =================== */
     /* User mode control registers */
-    [CSR_UITB]           = { "uitb",              ecd,  read_csr, write_uitb },
-    [CSR_UCODE]          = { "ucode",             edsp, read_csr, write_ucode},
-    [CSR_UDCAUSE]        = { "udcause",           any, read_csr, write_csr},
-    [CSR_UCCTLBEGINADDR] = { "ucctlbeginaddr",    any, read_csr, write_csr},
-    [CSR_UCCTLCOMMAND]   = { "ucctlcommand",      any, read_csr, write_csr},
-    [CSR_WFE]            = { "wfe",               any, read_csr, write_csr},
-    [CSR_SLEEPVALUE]     = { "sleepvalue",        any, read_csr, write_csr},
-    [CSR_TXEVT]          = { "csr_txevt",         any, read_csr, write_csr},
+    [CSR_UITB]           = { "uitb",              ecd,   read_csr, write_uitb },
+    [CSR_UCODE]          = { "ucode",             edsp,  read_csr,
+                                                         write_ucode          },
+    [CSR_UDCAUSE]        = { "udcause",           any,   read_csr, write_csr  },
+    [CSR_UCCTLBEGINADDR] = { "ucctlbeginaddr",    ucctl, read_csr, write_csr  },
+    [CSR_UCCTLCOMMAND]   = { "ucctlcommand",      ucctl, read_csr, write_csr  },
+    [CSR_WFE]            = { "wfe",               any,   read_csr, write_csr  },
+    [CSR_SLEEPVALUE]     = { "sleepvalue",        any,   read_csr, write_csr  },
+    [CSR_TXEVT]          = { "csr_txevt",         any,   read_csr, write_csr  },
 };
