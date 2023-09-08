@@ -703,6 +703,8 @@ void andes_csr_init(AndesCsr *andes_csr)
                                         (1UL << V5_MCACHE_CTL_DC_FIRST_WORD);
     andes_csr->csrno[CSR_MSP_BOUND] =   ~((target_ulong)0);  // all-one reset value
     andes_csr->csrno[CSR_MSP_BASE] =    ~((target_ulong)0);
+    andes_csr->csrno[CSR_MICM_CFG] = (3 << V5_MICM_CFG_ISZ);
+    andes_csr->csrno[CSR_MDCM_CFG] = (3 << V5_MDCM_CFG_DSZ);
 }
 
 void andes_vec_init(AndesVec *andes_vec)

@@ -35,6 +35,7 @@ typedef struct AndesVec {
 #define V5_MCACHE_CTL_DC_COHSTA             20
 
 /* micm_cfg */
+#define V5_MICM_CFG_ISZ                     6
 #define V5_MICM_CFG_ILMB                    12
 #define V5_MICM_CFG_ILMSZ                   15
 #define MASK_MICM_CFG_ISET                  (0x07)
@@ -51,6 +52,7 @@ typedef struct AndesVec {
 #define MASK_MICM_CFG_IC_REPL               (0x03 << 25)
 
 /* mdcm_cfg */
+#define V5_MDCM_CFG_DSZ                     6
 #define V5_MDCM_CFG_DLMB                    12
 #define V5_MDCM_CFG_DLMSZ                   15
 #define MASK_MDCM_CFG_DSET                  (0x07)
