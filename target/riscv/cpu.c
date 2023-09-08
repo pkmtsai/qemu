@@ -1616,6 +1616,10 @@ static void riscv_cpu_realize(DeviceState *dev, Error **errp)
         return;
     }
 
+#ifndef CONFIG_USER_ONLY
+    andes_cpu_lm_realize(dev);
+#endif
+
     riscv_cpu_register_gdb_regs_for_features(cs);
 
 #ifndef CONFIG_USER_ONLY
@@ -1625,9 +1629,6 @@ static void riscv_cpu_realize(DeviceState *dev, Error **errp)
 #endif
 
     qemu_init_vcpu(cs);
-#ifndef CONFIG_USER_ONLY
-    andes_cpu_lm_realize(dev);
-#endif
     cpu_reset(cs);
 
     mcc->parent_realize(dev, errp);
@@ -2057,9 +2058,6 @@ static Property riscv_cpu_properties[] = {
     DEFINE_PROP_END_OF_LIST(),
 };
 
-<<<<<<< HEAD
-static const gchar *riscv_gdb_arch_name(CPUState *cs)
-=======
 static Property andes_cpu_property[] = {
     /* Defaults for standard extensions */
 #ifndef CONFIG_USER_ONLY
@@ -2084,8 +2082,7 @@ static void register_andes_cpu_props(Object *obj)
     }
 }
 
-static gchar *riscv_gdb_arch_name(CPUState *cs)
->>>>>>> 5fab65d54b (target/riscv: local memory: support local memory on AE350)
+static const gchar *riscv_gdb_arch_name(CPUState *cs)
 {
     RISCVCPU *cpu = RISCV_CPU(cs);
     CPURISCVState *env = &cpu->env;
