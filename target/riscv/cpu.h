@@ -420,6 +420,7 @@ struct CPUArchState {
 
     /* Add Vender CSR */
     AndesCsr andes_csr;
+    fp_spec_csr_init_fn andes_spec_csr_init;
 
     /* Andes vectored-plic */
     AndesVec andes_vec;

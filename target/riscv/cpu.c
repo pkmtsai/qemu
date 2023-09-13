@@ -540,17 +540,6 @@ static void andes_cpu_lm_realize(DeviceState *dev)
     env->mask_dlm->ops = &local_mem_ops;
     env->mask_dlm->opaque = env->mask_dlm;
 
-    int ilmsz = 31 - __builtin_clz(env->ilm_size) - 9;
-    int dlmsz = 31 - __builtin_clz(env->dlm_size) - 9;
-
-    /* initial local memory csr */
-    env->andes_csr.csrno[CSR_MICM_CFG] |= (1UL << V5_MICM_CFG_ILMB) |
-                                     (ilmsz << V5_MICM_CFG_ILMSZ);
-    env->andes_csr.csrno[CSR_MDCM_CFG] |= (1UL << V5_MDCM_CFG_DLMB) |
-                                     (dlmsz << V5_MDCM_CFG_DLMSZ);
-
-    env->andes_csr.csrno[CSR_MILMB] = env->ilm_base | env->ilm_default_enable;
-    env->andes_csr.csrno[CSR_MDLMB] = env->dlm_base | env->dlm_default_enable;
     if (env->ilm_default_enable) {
         memory_region_add_subregion_overlap(env->cpu_as_root, env->ilm_base,
                                     env->mask_ilm, 1);
@@ -699,9 +688,7 @@ static void rv128_base_cpu_init(Object *obj)
 #endif
 }
 
-typedef void (*fp_csr_init_fn)(AndesCsr *);
-
-static void rv64_andes_common_cpu_init(Object *obj, fp_csr_init_fn spec_csr_init)
+static void rv64_andes_common_cpu_init(Object *obj, fp_spec_csr_init_fn spec_csr_init)
 {
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
@@ -718,10 +705,8 @@ static void rv64_andes_common_cpu_init(Object *obj, fp_csr_init_fn spec_csr_init
 #endif
 
     /* Setup Andes Custom CSR */
+    env->andes_spec_csr_init = spec_csr_init;
     andes_csr_init(&env->andes_csr);
-    if (spec_csr_init != NULL) {
-        spec_csr_init(&env->andes_csr);
-    }
     andes_vec_init(&env->andes_vec);
 
 #ifndef CONFIG_USER_ONLY
@@ -1016,10 +1001,8 @@ static void rv32_andes_common_cpu_init(Object *obj, fp_csr_init_fn spec_csr_init
 #endif
 
     /* Setup Andes Custom CSR */
+    env->andes_spec_csr_init = spec_csr_init;
     andes_csr_init(&env->andes_csr);
-    if (spec_csr_init != NULL) {
-        spec_csr_init(&env->andes_csr);
-    }
     andes_vec_init(&env->andes_vec);
 
 #ifndef CONFIG_USER_ONLY
@@ -1314,15 +1297,38 @@ static void andes_csr_reset_common(CPURISCVState *env)
     env->andes_csr.csrno[CSR_UITB] = 0;
     env->andes_csr.csrno[CSR_MMSC_CFG] = (1UL << V5_MMSC_CFG_ECD) |
                                          (1UL << V5_MMSC_CFG_LMSLVP)|
+                                         (1UL << V5_MMSC_CFG_CCTLCSR)|
                                          (1UL << V5_MMSC_CFG_PPMA);
     env->andes_csr.csrno[CSR_MMISC_CTL] = (1UL << V5_MMISC_CTL_BRPE) |
                                           (1UL << V5_MMISC_CTL_MSA_OR_UNA);
     env->andes_csr.csrno[CSR_MCACHE_CTL] =
                     (1UL << V5_MCACHE_CTL_IC_FIRST_WORD) |
                     (1UL << V5_MCACHE_CTL_DC_FIRST_WORD);
+    env->andes_csr.csrno[CSR_MICM_CFG] = (3 << V5_MICM_CFG_ISZ);
+    env->andes_csr.csrno[CSR_MDCM_CFG] = (3 << V5_MDCM_CFG_DSZ);
+
+    /* initial local memory csr */
+    int ilmsz = 31 - __builtin_clz(env->ilm_size) - 9;
+    int dlmsz = 31 - __builtin_clz(env->dlm_size) - 9;
+
+    env->andes_csr.csrno[CSR_MICM_CFG] = (3 << V5_MICM_CFG_ISZ) |
+                                         (1UL << V5_MICM_CFG_ILMB) |
+                                         (ilmsz << V5_MICM_CFG_ILMSZ);
+    env->andes_csr.csrno[CSR_MDCM_CFG] = (3 << V5_MDCM_CFG_DSZ) |
+                                         (1UL << V5_MDCM_CFG_DLMB) |
+                                         (dlmsz << V5_MDCM_CFG_DLMSZ);
+
+    env->andes_csr.csrno[CSR_MILMB] = env->ilm_base | env->ilm_default_enable;
+    env->andes_csr.csrno[CSR_MDLMB] = env->dlm_base | env->dlm_default_enable;
+
     /* all-one reset value */
     env->andes_csr.csrno[CSR_MSP_BOUND] = ~((target_ulong)0);
     env->andes_csr.csrno[CSR_MSP_BASE] = ~((target_ulong)0);
+
+    // spec_csr_init() may overwrite previous CSR values
+    if (env->andes_spec_csr_init != NULL) {
+        env->andes_spec_csr_init(&env->andes_csr);
+    }
 }
 #endif
 
@@ -1385,9 +1391,6 @@ static void riscv_cpu_reset_hold(Object *obj)
         env->pmp_state.addr[i].ea = 0;
     }
     env->pmp_state.num_rules = 0;
-
-    env->andes_csr.csrno[CSR_MILMB] = env->ilm_base | env->ilm_default_enable;
-    env->andes_csr.csrno[CSR_MDLMB] = env->dlm_base | env->dlm_default_enable;
 
     bool locked = false;
     if (!qemu_mutex_iothread_locked()) {

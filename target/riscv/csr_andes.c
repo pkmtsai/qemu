@@ -691,20 +691,6 @@ void andes_csr_init(AndesCsr *andes_csr)
             riscv_set_csr_ops(i, &andes_csr_ops[i]);
         }
     }
-
-    /* Initilaize Andes CSRs default value */
-    andes_csr->csrno[CSR_UITB] = 0;
-    andes_csr->csrno[CSR_MMSC_CFG] =    (1UL << V5_MMSC_CFG_ECD) |
-                                        (1UL << V5_MMSC_CFG_LMSLVP) |
-                                        (1UL << V5_MMSC_CFG_PPMA);
-    andes_csr->csrno[CSR_MMISC_CTL] =   (1UL << V5_MMISC_CTL_BRPE) |
-                                        (1UL << V5_MMISC_CTL_MSA_OR_UNA);
-    andes_csr->csrno[CSR_MCACHE_CTL] =  (1UL << V5_MCACHE_CTL_IC_FIRST_WORD) |
-                                        (1UL << V5_MCACHE_CTL_DC_FIRST_WORD);
-    andes_csr->csrno[CSR_MSP_BOUND] =   ~((target_ulong)0);  // all-one reset value
-    andes_csr->csrno[CSR_MSP_BASE] =    ~((target_ulong)0);
-    andes_csr->csrno[CSR_MICM_CFG] = (3 << V5_MICM_CFG_ISZ);
-    andes_csr->csrno[CSR_MDCM_CFG] = (3 << V5_MDCM_CFG_DSZ);
 }
 
 void andes_vec_init(AndesVec *andes_vec)

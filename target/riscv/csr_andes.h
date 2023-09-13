@@ -14,9 +14,12 @@ typedef struct AndesVec {
     int vectored_irq_s;
 } AndesVec;
 
+typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
+
 /* mmsc_cfg */
 #define V5_MMSC_CFG_ECD                     3
 #define V5_MMSC_CFG_LMSLVP                  14
+#define V5_MMSC_CFG_CCTLCSR                 16
 #define V5_MMSC_CFG_PPMA                    30
 #define V5_MMSC_CFG_L2C                     46
 #define V5_MMSC_CFG2_L2C                    14
