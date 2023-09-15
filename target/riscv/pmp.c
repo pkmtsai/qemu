@@ -667,6 +667,21 @@ target_ulong pmp_get_tlb_size(CPURISCVState *env, target_ulong addr)
         }
     }
 
+    if (env->andes_csr.csrno[CSR_MILMB] & 0x1) {
+        if (env->ilm_base <= tlb_sa &&
+            env->ilm_base + env->ilm_size - 1 >= tlb_ea) {
+            return TARGET_PAGE_SIZE;
+        } else {
+            return 1;
+        }
+    } else if (env->andes_csr.csrno[CSR_MDLMB] & 0x1) {
+        if (env->dlm_base <= tlb_sa &&
+            env->dlm_base + env->dlm_size - 1 >= tlb_ea) {
+            return  TARGET_PAGE_SIZE;
+        } else {
+            return 1;
+        }
+    }
     /*
      * If no PMP entry matches the TLB page, the TLB page will also not be
      * split into regions with different permissions by PMP so we set the size

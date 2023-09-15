@@ -14,7 +14,7 @@ static void decode_opc_andes(CPURISCVState *env,
      * that are tested in-order until a decoder matches onto the opcode.
      */
     static const struct {
-        bool (*guard_func)(DisasContext *);
+        bool (*guard_func)(const RISCVCPUConfig *);
         bool (*decode_func)(DisasContext *, uint32_t);
     } decoders[] = {
         { always_true_p,  decode_insn32 },
@@ -23,7 +23,7 @@ static void decode_opc_andes(CPURISCVState *env,
     };
 
     static const struct {
-        bool (*guard_func)(DisasContext *);
+        bool (*guard_func)(const RISCVCPUConfig *);
         bool (*decode_func)(DisasContext *, uint16_t);
     } decoders_16[] = {
         { always_true_p,  decode_insn16 },
@@ -39,7 +39,7 @@ static void decode_opc_andes(CPURISCVState *env,
             ctx->opcode = opcode16;
 
             for (size_t i = 0; i < ARRAY_SIZE(decoders_16); ++i) {
-                if (decoders_16[i].guard_func(ctx) &&
+                if (decoders_16[i].guard_func(ctx->cfg_ptr) &&
                     decoders_16[i].decode_func(ctx, opcode16)) {
                     return;
                 }
@@ -48,7 +48,7 @@ static void decode_opc_andes(CPURISCVState *env,
     } else {
         ctx->opcode = opcode;
         for (size_t i = 0; i < ARRAY_SIZE(decoders); ++i) {
-            if (decoders[i].guard_func(ctx) &&
+            if (decoders[i].guard_func(ctx->cfg_ptr) &&
                 decoders[i].decode_func(ctx, opcode)) {
                 return;
             }

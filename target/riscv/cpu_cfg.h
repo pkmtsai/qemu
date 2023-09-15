@@ -133,7 +133,6 @@ struct RISCVCPUConfig {
     bool ext_xtheadmempair;
     bool ext_xtheadsync;
     bool ext_XVentanaCondOps;
-    bool ext_XVentanaCondOps;
     bool ext_XAndesV5Ops;
     bool ext_XAndesCodenseOps;
 

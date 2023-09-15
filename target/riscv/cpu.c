@@ -698,7 +698,7 @@ static void rv64_andes_common_cpu_init(Object *obj, fp_spec_csr_init_fn spec_csr
     }
     riscv_cpu_add_user_properties(obj);
     register_andes_cpu_props(obj);
-    set_priv_version(env, PRIV_VERSION_1_12_0);
+    env->priv_ver = PRIV_VERSION_1_12_0;
 
 #ifndef CONFIG_USER_ONLY
     set_satp_mode_max_supported(RISCV_CPU(obj), VM_1_10_SV48);
@@ -772,7 +772,6 @@ static void rv64_andes_ax45mpv_cpu_init(Object *obj)
     cfg->ext_zbs = true;
 
     /* Vector */
-    cfg->ext_v = true;
     cfg->vext_spec = g_strdup("v1.0");
     cfg->vlen  = 1024;
     cfg->elen  = 64;
@@ -994,7 +993,7 @@ static void rv32_andes_common_cpu_init(Object *obj, fp_csr_init_fn spec_csr_init
     }
     riscv_cpu_add_user_properties(obj);
     register_andes_cpu_props(obj);
-    set_priv_version(env, PRIV_VERSION_1_12_0);
+    env->priv_ver = PRIV_VERSION_1_12_0;
 
 #ifndef CONFIG_USER_ONLY
     set_satp_mode_max_supported(RISCV_CPU(obj), VM_1_10_SV32);

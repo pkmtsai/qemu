@@ -25,7 +25,7 @@ riscv_ss.add(files(
   'm128_helper.c',
   'crypto_helper.c',
   'vcrypto_helper.c'
-  'zce_helper.c'
+  'zce_helper.c',
   'andes_helper.c',
   'csr_andes.c',
   'csr_andes_nx45v.c'

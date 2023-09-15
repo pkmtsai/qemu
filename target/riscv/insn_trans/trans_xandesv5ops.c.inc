@@ -76,11 +76,13 @@ static void andes_v5_gen_branch_tcgv(DisasContext *ctx, uint32_t opc,
         return;
     }
 
-    gen_goto_tb(ctx, 1, ctx->pc_succ_insn);
+    gen_goto_tb(ctx, 1, ctx->cur_insn_len);
     gen_set_label(label); /* branch taken */
     if (!has_ext(ctx, RVC) && ((ctx->base.pc_next + imm) & 0x3)) {
         /* misaligned */
-        gen_exception_inst_addr_mis(ctx);
+        TCGv target_pc = tcg_temp_new();
+        gen_pc_plus_diff(target_pc, ctx, imm);
+        gen_exception_inst_addr_mis(ctx, target_pc);
     } else {
         gen_goto_tb(ctx, 0, ctx->base.pc_next + imm);
     }

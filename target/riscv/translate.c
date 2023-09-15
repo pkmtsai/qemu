@@ -1079,13 +1079,6 @@ static uint32_t opcode_at(DisasContextBase *dcbase, target_ulong pc)
     return cpu_ldl_code(env, pc);
 }
 
-/* Include the auto-generated decoder for 16 bit insn */
-#include "decode-insn16.c.inc"
-/* Include decoders for factored-out extensions */
-#include "decode-XVentanaCondOps.c.inc"
-#include "decode-XAndesV5Ops.c.inc"
-#include "decode-XAndesCodenseOps.c.inc"
-
 /* Include insn module translation function */
 #include "insn_trans/trans_rvi.c.inc"
 #include "insn_trans/trans_rvm.c.inc"
@@ -1115,6 +1108,10 @@ static uint32_t opcode_at(DisasContextBase *dcbase, target_ulong pc)
 
 /* Include decoders for factored-out extensions */
 #include "decode-XVentanaCondOps.c.inc"
+
+/* Include AndeStar V5 extensions */
+#include "decode-XAndesV5Ops.c.inc"
+#include "decode-XAndesCodenseOps.c.inc"
 #include "insn_trans/trans_xandesv5ops.c.inc"
 #include "insn_trans/trans_xandescodenseops.c.inc"
 
@@ -1143,7 +1140,7 @@ static void decode_opc(CPURISCVState *env, DisasContext *ctx, uint16_t opcode)
     };
 
     static const struct {
-        bool (*guard_func)(DisasContext *);
+        bool (*guard_func)(const RISCVCPUConfig *);
         bool (*decode_func)(DisasContext *, uint16_t);
     } decoders_16[] = {
         { always_true_p,  decode_insn16 },
@@ -1160,7 +1157,7 @@ static void decode_opc(CPURISCVState *env, DisasContext *ctx, uint16_t opcode)
             ctx->opcode = opcode;
 
             for (size_t i = 0; i < ARRAY_SIZE(decoders_16); ++i) {
-                if (decoders_16[i].guard_func(ctx) &&
+                if (decoders_16[i].guard_func(ctx->cfg_ptr) &&
                     decoders_16[i].decode_func(ctx, opcode)) {
                     return;
                 }
