@@ -115,11 +115,11 @@ void andes_spec_csr_init_nx45v(AndesCsr *andes_csr)
     andes_csr->csrno[CSR_MXSTATUS] = 0;
     andes_csr->csrno[CSR_MMISC_CTL] = 0x48;
 
-    andes_csr_ops[CSR_MMSC_CFG].read = read_mmsc_cfg_nx45v;
-    andes_csr_ops[CSR_MRVARCH_CFG].read = read_mrvarch_cfg_nx45v;
-    andes_csr_ops[CSR_MCLK_CTL].write = write_mclk_ctl_nx45v;
-    andes_csr_ops[CSR_MXSTATUS].write = write_mxstatus_nx45v;
-    andes_csr_ops[CSR_MDCAUSE].write = write_smdcause_nx45v;
-    andes_csr_ops[CSR_SDCAUSE].write = write_smdcause_nx45v;
-    andes_csr_ops[CSR_MMISC_CTL].write = write_mmisc_ctl_nx45v;
+    csr_ops[CSR_MMSC_CFG].read = read_mmsc_cfg_nx45v;
+    csr_ops[CSR_MRVARCH_CFG].read = read_mrvarch_cfg_nx45v;
+    csr_ops[CSR_MCLK_CTL].write = write_mclk_ctl_nx45v;
+    csr_ops[CSR_MXSTATUS].write = write_mxstatus_nx45v;
+    csr_ops[CSR_MDCAUSE].write = write_smdcause_nx45v;
+    csr_ops[CSR_SDCAUSE].write = write_smdcause_nx45v;
+    csr_ops[CSR_MMISC_CTL].write = write_mmisc_ctl_nx45v;
 }
