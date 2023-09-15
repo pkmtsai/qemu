@@ -510,7 +510,7 @@ static RISCVException write_smdcause(CPURISCVState *env, int csrno,
     }
 
     if (interrupt) {
-        env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MDCAUSE;
+        env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_SMDCAUSE;
     }
     else {
         env->andes_csr.csrno[csrno] = val;

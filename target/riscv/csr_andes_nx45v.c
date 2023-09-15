@@ -92,10 +92,10 @@ static RISCVException write_smdcause_nx45v(CPURISCVState *env, int csrno,
     }
 
     if (interrupt) {
-        env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MDCAUSE_EXCP_NX45V;
+        env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MDCAUSE_INT_NX45V;
     }
     else {
-        env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MDCAUSE_INT_NX45V;
+        env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MDCAUSE_EXCP_NX45V;
     }
     return RISCV_EXCP_NONE;
 }
