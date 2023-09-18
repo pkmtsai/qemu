@@ -51,6 +51,7 @@ static void andes_v5_gen_branch_tcgv(DisasContext *ctx, uint32_t opc,
                             TCGv source1, TCGv source2, target_long imm)
 {
     TCGLabel *label = gen_new_label();
+    target_ulong orig_pc_save = ctx->pc_save;
 
     switch (opc) {
     case OPC_RISC_BEQ:
@@ -77,6 +78,8 @@ static void andes_v5_gen_branch_tcgv(DisasContext *ctx, uint32_t opc,
     }
 
     gen_goto_tb(ctx, 1, ctx->cur_insn_len);
+    ctx->pc_save = orig_pc_save;
+
     gen_set_label(label); /* branch taken */
     if (!has_ext(ctx, RVC) && ((ctx->base.pc_next + imm) & 0x3)) {
         /* misaligned */
@@ -84,8 +87,10 @@ static void andes_v5_gen_branch_tcgv(DisasContext *ctx, uint32_t opc,
         gen_pc_plus_diff(target_pc, ctx, imm);
         gen_exception_inst_addr_mis(ctx, target_pc);
     } else {
-        gen_goto_tb(ctx, 0, ctx->base.pc_next + imm);
+        gen_goto_tb(ctx, 0, imm);
     }
+
+    ctx->pc_save = -1;
     ctx->base.is_jmp = DISAS_NORETURN;
 }
 
