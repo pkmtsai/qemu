@@ -151,10 +151,10 @@ static void riscv_plic_update(void *opaque)
         int level = riscv_plic_irqs_pending(plic, addrid);
         switch (mode) {
         case PLICMode_M:
-            riscv_cpu_update_mip(RISCV_CPU(cpu), MIP_MEIP, BOOL_TO_MASK(level));
+            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_MEIP, BOOL_TO_MASK(level));
             break;
         case PLICMode_S:
-            riscv_cpu_update_mip(RISCV_CPU(cpu), MIP_SEIP, BOOL_TO_MASK(level));
+            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_SEIP, BOOL_TO_MASK(level));
             break;
         default:
             break;

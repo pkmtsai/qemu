@@ -75,7 +75,7 @@ void andes_plichw_update(void *plic)
                         riscv_plic->riscv_plic_claim(riscv_plic, target_id);
                     assert(vec->vectored_irq_m);
             }
-            riscv_cpu_update_mip(RISCV_CPU(cpu), MIP_MEIP, BOOL_TO_MASK(level));
+            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_MEIP, BOOL_TO_MASK(level));
             break;
         case PlicMode_S:
             if (!vec->vectored_irq_s &&
@@ -85,7 +85,7 @@ void andes_plichw_update(void *plic)
                         riscv_plic->riscv_plic_claim(riscv_plic, target_id);
                     assert(vec->vectored_irq_s);
             }
-            riscv_cpu_update_mip(RISCV_CPU(cpu), MIP_SEIP, BOOL_TO_MASK(level));
+            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_SEIP, BOOL_TO_MASK(level));
             break;
         default:
             break;
@@ -112,10 +112,10 @@ void andes_plicsw_update(void *plic)
 
         switch (mode) {
         case PlicMode_M:
-            riscv_cpu_update_mip(RISCV_CPU(cpu), MIP_MSIP, BOOL_TO_MASK(level));
+            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_MSIP, BOOL_TO_MASK(level));
             break;
         case PlicMode_S:
-            riscv_cpu_update_mip(RISCV_CPU(cpu), MIP_SSIP, BOOL_TO_MASK(level));
+            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_SSIP, BOOL_TO_MASK(level));
             break;
         default:
             break;
