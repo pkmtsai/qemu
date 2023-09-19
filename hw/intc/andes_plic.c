@@ -205,11 +205,11 @@ andes_plic_realize(DeviceState *dev, Error **errp)
 
     if (strstr(andes_plic->plic_name , "SW") != NULL) {
         riscv_plic->riscv_plic_update = andes_plicsw_update;
-
     } else {
         riscv_plic->riscv_plic_update = andes_plichw_update;
     }
-    /* Let Andes PLIC and SWPLIC disable IO re-entrant check, 
+    /* Let Andes PLIC and SWPLIC to disable IO re-entrant checking,
+     * since both PLIC and SWPLIC are using riscv.plic type
      * see softmmu/memory.c:access_with_adjusted_size() 
      */
     riscv_plic->mmio.disable_reentrancy_guard = true;
