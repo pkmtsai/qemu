@@ -1401,7 +1401,7 @@ static void riscv_cpu_reset_hold(Object *obj)
             memory_region_add_subregion_overlap(env->cpu_as_root,
                                 env->ilm_base, env->mask_ilm, 1);
         }
-    } else if (memory_region_is_mapped(env->mask_ilm)) {
+    } else if (env->mask_ilm && memory_region_is_mapped(env->mask_ilm)) {
         memory_region_del_subregion(env->cpu_as_root, env->mask_ilm);
     }
     if (env->dlm_default_enable) {
@@ -1409,7 +1409,7 @@ static void riscv_cpu_reset_hold(Object *obj)
             memory_region_add_subregion_overlap(env->cpu_as_root,
                                 env->dlm_base, env->mask_dlm, 1);
         }
-    } else if (memory_region_is_mapped(env->mask_dlm)) {
+    } else if (env->mask_dlm && memory_region_is_mapped(env->mask_dlm)) {
         memory_region_del_subregion(env->cpu_as_root, env->mask_dlm);
     }
     tlb_flush(env_cpu(env));
@@ -1619,7 +1619,10 @@ static void riscv_cpu_realize(DeviceState *dev, Error **errp)
     }
 
 #ifndef CONFIG_USER_ONLY
-    andes_cpu_lm_realize(dev);
+    /* if local memory is initialized */
+    if(env->cpu_as_root) {
+        andes_cpu_lm_realize(dev);
+    }
 #endif
 
     riscv_cpu_register_gdb_regs_for_features(cs);
