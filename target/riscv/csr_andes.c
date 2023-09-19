@@ -268,17 +268,18 @@ static RISCVException bf16cvt(CPURISCVState *env, int csrno)
     bool bf16bit;
 
     if (riscv_has_ext(env, RVV)) {
-        if (riscv_cpu_mxl(env) == MXL_RV32) {
-            bf16bit = get_field(csr->csrno[CSR_MMSC_CFG2],
-                                MASK_MMSC_CFG2_BF16CVT);
-        }
-        else {
-            bf16bit = get_field(csr->csrno[CSR_MMSC_CFG],
-                                  MASK_MMSC_CFG_BF16CVT);
-        }
-        if (bf16bit) {
             return RISCV_EXCP_NONE;
-        }
+    }
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        bf16bit = get_field(csr->csrno[CSR_MMSC_CFG2],
+                            MASK_MMSC_CFG2_BF16CVT);
+    }
+    else {
+        bf16bit = get_field(csr->csrno[CSR_MMSC_CFG],
+                                MASK_MMSC_CFG_BF16CVT);
+    }
+    if (bf16bit) {
+        return RISCV_EXCP_NONE;
     }
     return RISCV_EXCP_ILLEGAL_INST;
 }

@@ -95,8 +95,8 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MMSC_CFG_ECLIC                 (0x01 << 28)
 #define MASK_MMSC_CFG_EDSP                  (0x01 << 29)
 #define MASK_MMSC_CFG_PPMA                  (0x01 << 30)
-#define MASK_MMSC_CFG_MSC_EXT               (0x01 << 31)
-/* for 64-bit mmsc_cfg */
+#define MASK_MMSC_CFG_MSC_EXT               (0x01 << 31)  // only exists in RV32
+/* for RV64 mmsc_cfg */
 #define MASK_MMSC_CFG_BF16CVT               ((uint64_t)0x01 << 32)
 #define MASK_MMSC_CFG_ZFH                   ((uint64_t)0x01 << 33)
 #define MASK_MMSC_CFG_VL4                   ((uint64_t)0x01 << 34)
@@ -113,6 +113,16 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MMSC_CFG_IO_COHP               ((uint64_t)0x01 << 47)
 #define MASK_MMSC_CFG_CORE_PCLUS            ((uint64_t)0x0F << 48)
 #define MASK_MMSC_CFG_RVARCH                ((uint64_t)0x01 << 52)
+#define MASK_MMSC_CFG_TLB_RAM_CMD           ((uint64_t)0x01 << 53)
+#define MASK_MMSC_CFG_CCTL_FL_UL            ((uint64_t)0x01 << 54)
+#define MASK_MMSC_CFG_HSPO                  ((uint64_t)0x01 << 55)
+#define MASK_MMSC_CFG_XCSR                  ((uint64_t)0x01 << 56)
+#define MASK_MMSC_CFG_ALT_FP_FMT            ((uint64_t)0x01 << 57)
+#define MASK_MMSC_CFG_D_LMSLVP              ((uint64_t)0x01 << 58)
+#define MASK_MMSC_CFG_I_LMSLVP              ((uint64_t)0x01 << 59)
+#define MASK_MMSC_CFG_RVARCH2               ((uint64_t)0x01 << 60)
+#define MASK_MMSC_CFG_BTB_ECC               ((uint64_t)0x03 << 61)
+#define MASK_MMSC_CFG_MSC_EXT3              ((uint64_t)0x01 << 63)
 
 /* mmsc_cfg2 */
 #define MASK_MMSC_CFG2_BF16CVT              (0x01)
@@ -131,6 +141,16 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MMSC_CFG2_IO_COHP              (0x01 << 15)
 #define MASK_MMSC_CFG2_CORE_PCLUS           (0x0F << 16)
 #define MASK_MMSC_CFG2_RVARCH               (0x01 << 20)
+#define MASK_MMSC_CFG2_TLB_RAM_CMD          (0x01 << 21)
+#define MASK_MMSC_CFG2_CCTL_FL_UL           (0x01 << 22)
+#define MASK_MMSC_CFG2_HSPO                 (0x01 << 23)
+#define MASK_MMSC_CFG2_XCSR                 (0x01 << 24)
+#define MASK_MMSC_CFG2_ALT_FP_FMT           (0x01 << 25)
+#define MASK_MMSC_CFG2_D_LMSLVP             (0x01 << 26)
+#define MASK_MMSC_CFG2_I_LMSLVP             (0x01 << 27)
+#define MASK_MMSC_CFG2_RVARCH2              (0x01 << 28)
+#define MASK_MMSC_CFG2_BTB_ECC              (0x03 << 29)
+#define MASK_MMSC_CFG2_MSC_EXT3             (0x01 << 31)
 
 /* mcause */
 #define MASK_MCAUSE_EXCEPTION_CODE_32       (~MASK_MCAUSE_INTERRUPT_32)
