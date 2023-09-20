@@ -204,7 +204,8 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define WRITE_MASK_CSR_MHSP_CTL             0x3F
 #define WRITE_MASK_CSR_COUNTER              0x7D
 #define WRITE_MASK_CSR_HPMEVENT             0x1FF
-#define WRITE_MASK_CSR_SLIEP                0x10F0000
+#define WRITE_MASK_CSR_SLIE                 0x10F0000
+#define WRITE_MASK_CSR_SLIP                 0xF0000
 #define WRITE_MASK_CSR_MPPIB_32             0xFFFFFC3F
 #define WRITE_MASK_CSR_MPPIB_64             0xFFFFFFFFFFFFFC3F
 #define WRITE_MASK_CSR_MFIOB_32             0xFFFFFC3F

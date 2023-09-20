@@ -618,10 +618,17 @@ static RISCVException write_shpmevent(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
-static RISCVException write_sliep(CPURISCVState *env, int csrno,
-                                  target_ulong val)
+static RISCVException write_slie(CPURISCVState *env, int csrno,
+                                 target_ulong val)
 {
-    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_SLIEP;
+    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_SLIE;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_slip(CPURISCVState *env, int csrno,
+                                 target_ulong val)
+{
+    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_SLIP;
     return RISCV_EXCP_NONE;
 }
 
@@ -831,8 +838,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
 
     /* ================ AndeStar V5 supervisor mode CSRs ================ */
     /* Supervisor trap registers */
-    [CSR_SLIE]    = { "slie",                     smode, read_csr, write_sliep},
-    [CSR_SLIP]    = { "slip",                     smode, read_csr, write_sliep},
+    [CSR_SLIE]    = { "slie",                     smode, read_csr, write_slie},
+    [CSR_SLIP]    = { "slip",                     smode, read_csr, write_slip},
     [CSR_SDCAUSE] = { "sdcause",                  smode, read_csr,
                                                          write_smdcause       },
 
