@@ -191,6 +191,37 @@ static RISCVException isz_dsz(CPURISCVState *env, int csrno)
     return RISCV_EXCP_ILLEGAL_INST;
 }
 
+static RISCVException tlb_btb_ram_cmd(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    bool tlbbit = false;
+    bool btbbit = false;
+
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        if (mcfg2(env, csrno) == RISCV_EXCP_NONE) {
+            if (get_field(csr->csrno[CSR_MMSC_CFG2], MASK_MMSC_CFG2_TLB_RAM_CMD) == 1) {
+                tlbbit = true;
+            }
+        }
+    }
+    else {
+        if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_TLB_RAM_CMD) == 1) {
+            tlbbit = true;
+        }
+    }
+    if (mcfg3(env, csrno) == RISCV_EXCP_NONE) {
+        if (get_field(csr->csrno[CSR_MMSC_CFG3], MASK_MMSC_CFG3_BTB_RAM_CMD) == 1) {
+            btbbit = true;
+        }
+    }
+    if (tlbbit || btbbit) {
+        return RISCV_EXCP_NONE;
+    }
+    else {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+}
+
 static RISCVException cctlcsr(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -202,7 +233,8 @@ static RISCVException cctlcsr(CPURISCVState *env, int csrno)
 
 static RISCVException mcctl(CPURISCVState *env, int csrno)
 {
-    if (isz_dsz(env, csrno) == RISCV_EXCP_NONE) {
+    if (isz_dsz(env, csrno) == RISCV_EXCP_NONE
+          || tlb_btb_ram_cmd(env, csrno) == RISCV_EXCP_NONE) {
         return cctlcsr(env, csrno);
     }
     return RISCV_EXCP_ILLEGAL_INST;
@@ -211,7 +243,8 @@ static RISCVException mcctl(CPURISCVState *env, int csrno)
 static RISCVException ucctl(CPURISCVState *env, int csrno)
 {
     if (riscv_has_ext(env, RVU)) {
-        if (isz_dsz(env, csrno) == RISCV_EXCP_NONE) {
+        if (isz_dsz(env, csrno) == RISCV_EXCP_NONE
+              || tlb_btb_ram_cmd(env, csrno) == RISCV_EXCP_NONE) {
             return cctlcsr(env, csrno);
         }
     }
@@ -221,7 +254,8 @@ static RISCVException ucctl(CPURISCVState *env, int csrno)
 static RISCVException scctl(CPURISCVState *env, int csrno)
 {
     if (riscv_has_ext(env, RVS)) {
-        if (isz_dsz(env, csrno) == RISCV_EXCP_NONE) {
+        if (isz_dsz(env, csrno) == RISCV_EXCP_NONE
+              || tlb_btb_ram_cmd(env, csrno) == RISCV_EXCP_NONE) {
             return cctlcsr(env, csrno);
         }
     }
@@ -315,9 +349,9 @@ static RISCVException mmisc_ctl(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
     if (get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_ACE) == 1
-        || get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_VPLIC) == 1
-        || get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_ECD) == 1
-        || get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_EV5PE) == 1) {
+          || get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_VPLIC) == 1
+          || get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_ECD) == 1
+          || get_field(csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_EV5PE) == 1) {
         return RISCV_EXCP_NONE;
     }
     return RISCV_EXCP_ILLEGAL_INST;
