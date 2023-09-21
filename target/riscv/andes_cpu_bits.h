@@ -11,6 +11,7 @@
 #define CSR_MDCM_CFG            0xfc1
 #define CSR_MMSC_CFG            0xfc2
 #define CSR_MMSC_CFG2           0xfc3
+#define CSR_MMSC_CFG3           0xfc4
 #define CSR_MVEC_CFG            0xfc7
 #define CSR_MRVARCH_CFG         0xfca
 #define CSR_MCCACHE_CTL_BASE    0xfcf

@@ -1298,6 +1298,10 @@ static void andes_csr_reset_common(CPURISCVState *env)
                                          (1UL << V5_MMSC_CFG_LMSLVP)|
                                          (1UL << V5_MMSC_CFG_CCTLCSR)|
                                          (1UL << V5_MMSC_CFG_PPMA);
+    // enable mmsc_cfg2 in RV32
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        env->andes_csr.csrno[CSR_MMSC_CFG] |= MASK_MMSC_CFG_MSC_EXT;
+    }
     env->andes_csr.csrno[CSR_MMISC_CTL] = (1UL << V5_MMISC_CTL_BRPE) |
                                           (1UL << V5_MMISC_CTL_MSA_OR_UNA);
     env->andes_csr.csrno[CSR_MCACHE_CTL] =

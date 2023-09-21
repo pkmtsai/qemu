@@ -152,6 +152,12 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MMSC_CFG2_BTB_ECC              (0x03 << 29)
 #define MASK_MMSC_CFG2_MSC_EXT3             (0x01 << 31)
 
+/* mmsc_cfg3 */
+#define MASK_MMSC_CFG3_BTB_RAM_CMD          (0x01)
+#define MASK_MMSC_CFG3_NO_CCTL_VA           (0x01 << 1)
+#define MASK_MMSC_CFG3_NO_CCTL_AL           (0x01 << 2)
+#define MASK_MMSC_CFG3_NO_CCTL_IX_INVWB     (0x01 << 3)
+
 /* mcause */
 #define MASK_MCAUSE_EXCEPTION_CODE_32       (~MASK_MCAUSE_INTERRUPT_32)
 #define MASK_MCAUSE_INTERRUPT_32            (1 << 31)
@@ -195,6 +201,17 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MRVARCH_CFG_SVPBMT             (0x1 << 23)
 #define MASK_MRVARCH_CFG_SVNAPOT            (0x1 << 24)
 #define MASK_MRVARCH_CFG_ZIHINTPAUSE        (0x1 << 25)
+#define MASK_MRVARCH_CFG_ZCA                (0x1 << 26)
+#define MASK_MRVARCH_CFG_ZCB                (0x1 << 27)
+#define MASK_MRVARCH_CFG_ZCD                (0x1 << 28)
+#define MASK_MRVARCH_CFG_ZCF                (0x1 << 29)
+#define MASK_MRVARCH_CFG_ZCMP               (0x1 << 30)
+#define MASK_MRVARCH_CFG_ZCMT               (0x1 << 31)
+#define MASK_MRVARCH_CFG_ZFBFMIN            ((uint64_t)0x1 << 32)
+#define MASK_MRVARCH_CFG_ZVFBFMIN           ((uint64_t)0x1 << 33)
+#define MASK_MRVARCH_CFG_ZVFBFWMA           ((uint64_t)0x1 << 34)
+#define MASK_MRVARCH_CFG_ZVQMAC             ((uint64_t)0x1 << 35)
+#define MASK_MRVARCH_CFG_ZVLSSEG            ((uint64_t)0x1 << 36)
 
 #define WRITE_MASK_CSR_MECC_CODE_32         0x7F
 #define WRITE_MASK_CSR_MECC_CODE_64         0xFF

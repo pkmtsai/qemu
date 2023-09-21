@@ -37,6 +37,33 @@ static RISCVException smode(CPURISCVState *env, int csrno)
     return RISCV_EXCP_ILLEGAL_INST;
 }
 
+static RISCVException mcfg2(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if ((csr->csrno[CSR_MMSC_CFG] & MASK_MMSC_CFG_MSC_EXT) > 0) {
+        return any32(env, csrno);
+    }
+    else {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+}
+
+static RISCVException mcfg3(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        if ((csr->csrno[CSR_MMSC_CFG2] & MASK_MMSC_CFG2_MSC_EXT3) > 0) {
+            return RISCV_EXCP_NONE;
+        }
+    }
+    else {
+        if ((csr->csrno[CSR_MMSC_CFG] & MASK_MMSC_CFG_MSC_EXT3) > 0) {
+            return RISCV_EXCP_NONE;
+        }
+    }
+    return RISCV_EXCP_ILLEGAL_INST;
+}
+
 static RISCVException ecc(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -732,7 +759,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MICM_CFG]          = { "micm_cfg",          any,    read_csr },
     [CSR_MDCM_CFG]          = { "mdcm_cfg",          any,    read_csr },
     [CSR_MMSC_CFG]          = { "mmsc_cfg",          any,    read_csr },
-    [CSR_MMSC_CFG2]         = { "mmsc_cfg2",         any32,  read_csr },
+    [CSR_MMSC_CFG2]         = { "mmsc_cfg2",         mcfg2,  read_csr },
+    [CSR_MMSC_CFG3]         = { "mmsc_cfg3",         mcfg3,  read_csr },
     [CSR_MVEC_CFG]          = { "mvec_cfg",          veccfg, read_csr },
     [CSR_MRVARCH_CFG]       = { "mrvarch_cfg",       rvarch, read_csr },
     [CSR_MCCACHE_CTL_BASE]  = { "mccache_ctl_base",  ccache, read_csr },
