@@ -1624,6 +1624,7 @@ static void riscv_cpu_realize(DeviceState *dev, Error **errp)
 
 #ifndef CONFIG_USER_ONLY
     /* if local memory is initialized */
+    CPURISCVState *env = &cpu->env;
     if(env->cpu_as_root) {
         andes_cpu_lm_realize(dev);
     }
