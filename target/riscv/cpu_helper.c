@@ -823,12 +823,6 @@ static int get_physical_address(CPURISCVState *env, hwaddr *physical,
         use_background = true;
     }
 
-    if (mode == PRV_M || !riscv_cpu_cfg(env)->mmu) {
-        *physical = addr;
-        *ret_prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
-        return TRANSLATE_SUCCESS;
-    }
-
     /* Access local memory */
     if (env->andes_csr.csrno[CSR_MILMB] & 0x1 &&
         addr >= env->ilm_base &&
@@ -843,6 +837,13 @@ static int get_physical_address(CPURISCVState *env, hwaddr *physical,
         *ret_prot = PAGE_READ | PAGE_WRITE;
         return TRANSLATE_SUCCESS;
     }
+
+    if (mode == PRV_M || !riscv_cpu_cfg(env)->mmu) {
+        *physical = addr;
+        *ret_prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
+        return TRANSLATE_SUCCESS;
+    }
+
 
     *ret_prot = 0;
 
