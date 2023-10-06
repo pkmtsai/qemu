@@ -828,7 +828,7 @@ static int get_physical_address(CPURISCVState *env, hwaddr *physical,
         addr >= env->ilm_base &&
         addr < env->ilm_base + env->ilm_size) {
         *physical = addr;
-        *ret_prot = PAGE_EXEC;
+        *ret_prot = PAGE_READ | PAGE_WRITE | PAGE_EXEC;
         return TRANSLATE_SUCCESS;
     } else if (env->andes_csr.csrno[CSR_MDLMB] & 0x1 &&
                addr >= env->dlm_base &&
