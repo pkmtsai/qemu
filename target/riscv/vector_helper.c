@@ -5109,3 +5109,448 @@ GEN_VEXT_INT_EXT(vsext_vf2_d, int64_t, int32_t, H8, H4)
 GEN_VEXT_INT_EXT(vsext_vf4_w, int32_t, int8_t,  H4, H1)
 GEN_VEXT_INT_EXT(vsext_vf4_d, int64_t, int16_t, H8, H2)
 GEN_VEXT_INT_EXT(vsext_vf8_d, int64_t, int8_t,  H8, H1)
+
+
+/* AndeStar V5 V1.5 */
+#define WOP_SSS_W4 int32_t, int8_t, int8_t, int32_t, int32_t
+#define WOP_SSS_D4 int64_t, int16_t, int16_t, int64_t, int64_t
+#define WOP_UUU_W4 uint32_t, uint8_t, uint8_t, uint32_t, uint32_t
+#define WOP_UUU_D4 uint64_t, uint16_t, uint16_t, uint64_t, uint64_t
+/* VS1 = signed, VS2 = unsigned */
+#define WOP_SSU_W4 int32_t, int8_t, uint8_t, int32_t, uint32_t
+#define WOP_SSU_D4 int64_t, int16_t, uint16_t, int64_t, uint64_t
+/* VS1/RS1 = unsigned, VS2 = signed */
+#define WOP_SUS_W4 int32_t, uint8_t, int8_t, uint32_t, int32_t
+#define WOP_SUS_D4 int64_t, uint16_t, int16_t, uint64_t, int64_t
+
+typedef uint8_t uint4_t;
+typedef int8_t int4_t;
+/* extract int4 data from int8, and extend it then return as uint8 */
+static uint8_t extract_int4_from_int8(uint32_t odd, uint8_t data)
+{
+    uint8_t val;
+    if (odd) {
+        val = (data >> 4);
+        val &= 0x0f; /* mask bits 7:4 to zero */
+    } else {
+        val = (data & 0x0f); /* mask bits 7:4 to zero */
+    }
+    return val;
+}
+
+static uint4_t uint8_to_uint4(uint8_t val)
+{
+    /* zero-extend */
+    val &= 0x0f;
+    return (uint4_t)val;
+}
+static int4_t int8_to_int4(uint8_t val)
+{
+    /* check bit 3 */
+    if (val & (1 << 3)) {
+        /* sign-extend for negative */
+        val |= 0xf0;
+    } else {
+        /* sign-extend for positive */
+        val &= 0x0f;
+    }
+    return (int4_t)val;
+}
+/* Vector Integer Extension for small int (int4) */
+#define GEN_VEXT_INT4_EXT(NAME, ETYPE, DTYPE, HD, HS1, OP)       \
+void HELPER(NAME)(void *vd, void *v0, void *vs2,                 \
+                  CPURISCVState *env, uint32_t desc)             \
+{                                                                \
+    uint32_t vl = env->vl;                                       \
+    uint32_t vm = vext_vm(desc);                                 \
+    uint32_t esz = sizeof(ETYPE);                                \
+    uint32_t total_elems = vext_get_total_elems(env, desc, esz); \
+    uint32_t vta = vext_vta(desc);                               \
+    uint32_t vma = vext_vma(desc);                               \
+    uint32_t i;                                                  \
+                                                                 \
+    for (i = env->vstart; i < vl; i++) {                         \
+        if (!vm && !vext_elem_mask(v0, i)) {                     \
+            /* set masked-off elements to 1s */                  \
+            vext_set_elems_1s(vd, vma, i * esz, (i + 1) * esz);  \
+            continue;                                            \
+        }                                                        \
+        uint8_t tmp = extract_int4_from_int8(i % 2,              \
+                      *((DTYPE *)vs2 + HS1(i / 2)));             \
+        *((ETYPE *)vd + HD(i)) = (DTYPE)OP(tmp);                 \
+    }                                                            \
+    env->vstart = 0;                                             \
+    /* set tail elements to 1s */                                \
+    vext_set_elems_1s(vd, vta, vl * esz, total_elems * esz);     \
+}
+
+/* last argument H1 should be host int4 */
+GEN_VEXT_INT4_EXT(vzext_vf2_b, uint8_t,  uint4_t, H1, H1, uint8_to_uint4)
+GEN_VEXT_INT4_EXT(vzext_vf4_h, uint16_t, uint4_t, H2, H1, uint8_to_uint4)
+GEN_VEXT_INT4_EXT(vzext_vf8_w, uint32_t, uint4_t, H4, H1, uint8_to_uint4)
+GEN_VEXT_INT4_EXT(vsext_vf2_b, int8_t,   int4_t,  H1, H1, int8_to_int4)
+GEN_VEXT_INT4_EXT(vsext_vf4_h, int16_t,  int4_t,  H2, H1, int8_to_int4)
+GEN_VEXT_INT4_EXT(vsext_vf8_w, int32_t,  int4_t,  H4, H1, int8_to_int4)
+
+
+
+RVVCALL(OPFVV1, andes_vfwcvt_s_bf16, WOP_UU_H, H4, H2, bfloat16_to_float32)
+GEN_VEXT_V_ENV(andes_vfwcvt_s_bf16, 4)
+
+RVVCALL(OPFVV1, andes_vfncvt_bf16_s, NOP_UU_H, H2, H4, float32_to_bfloat16)
+GEN_VEXT_V_ENV(andes_vfncvt_bf16_s, 2)
+
+
+#define OPFVF9(NAME, TD, T1, T2, TX1, TX2, HD, HS1, HS2, OP)                \
+static void do_##NAME(void *vd, uint64_t s1, uint64_t s2,                   \
+        void *vs2, int i, CPURISCVState *env)                               \
+{                                                                           \
+    TX2 s = *((T2 *)vs2 + HS2(i));                                          \
+    *((TD *)vd + HD(i)) = OP(s, (TX1)(T1)s1, (TX2)(T2)s2, &env->fp_status); \
+}
+
+#define GEN_VEXT_VF_TB(NAME, ESZ)                         \
+void HELPER(NAME)(void *vd, void *v0, uint64_t s1,        \
+                  uint64_t tb,                            \
+                  void *vs2, CPURISCVState *env,          \
+                  uint32_t desc)                          \
+{                                                         \
+    uint32_t vm = vext_vm(desc);                          \
+    uint32_t vl = env->vl;                                \
+    uint32_t total_elems =                                \
+        vext_get_total_elems(env, desc, ESZ);             \
+    uint32_t vta = vext_vta(desc);                        \
+    uint32_t vma = vext_vma(desc);                        \
+    uint32_t i;                                           \
+                                                          \
+    uint16_t top, bottom;                                 \
+    /* tb is true for top, false for bottom */            \
+    if (tb == true) {                                     \
+        top = ((s1 >> 16) & 0xffff);                      \
+        bottom = (s1 & 0xffff);                           \
+    } else {                                              \
+        top = (s1 & 0xffff);                              \
+        bottom = ((s1 >> 16) & 0xffff);                   \
+    }                                                     \
+    for (i = env->vstart; i < vl; i++) {                  \
+        if (!vm && !vext_elem_mask(v0, i)) {              \
+            /* set masked-off elements to 1s */           \
+            vext_set_elems_1s(vd, vma, i * ESZ,           \
+                              (i + 1) * ESZ);             \
+            continue;                                     \
+        }                                                 \
+        do_##NAME(vd, top, bottom, vs2, i, env);          \
+    }                                                     \
+    env->vstart = 0;                                      \
+    /* set tail elements to 1s */                         \
+    vext_set_elems_1s(vd, vta, vl * ESZ,                  \
+                      total_elems * ESZ);                 \
+}
+
+
+RVVCALL(OPFVF9, vfpmad_vf, OP_UUU_H, H2, H2, H2, fmacc16)
+GEN_VEXT_VF_TB(vfpmad_vf, 2)
+
+
+/*
+ *** stride: access vector element from (uni-)strided memory
+ */
+/* Modify vd data to byte half */
+static void lde_to_bh(uint32_t odd,
+                   uint32_t sign, uint32_t idx, void *vd)
+{
+    /* we directly use uint8_t and H1 for byte access */
+    uint8_t *cur = ((uint8_t *)vd + H1(idx));
+    uint8_t val;
+    if (odd) {
+        val = (*cur) >> 4;
+        val &= 0x0f; /* mask bits 7:4 to zero */
+    } else {
+        val = (*cur) & 0x0f; /* mask bits 7:4 to zero */
+    }
+    if (sign) {
+        /* check bit 3 */
+        if (val & 0x8) {
+            /* sign-extend for negative */
+            val |= 0xf0;
+        } else {
+            /* sign-extend for positive */
+            val &= 0x0f;
+        }
+    } else {
+        /* zero-extend */
+        val &= 0x0f;
+    }
+    /* write back to vd */
+    *cur = val;
+}
+
+static void
+vext_ldst_int4_stride(void *vd, void *v0, target_ulong base,
+                 target_ulong stride, CPURISCVState *env,
+                 uint32_t desc, uint32_t vm, uint32_t is_sign,
+                 vext_ldst_elem_fn *ldst_elem,
+                 uint32_t log2_esz, uintptr_t ra)
+{
+    uint32_t i, k;
+    uint32_t nf = vext_nf(desc);
+    uint32_t max_elems = vext_max_elems(desc, log2_esz);
+    uint32_t esz = 1 << log2_esz;
+    uint32_t vma = vext_vma(desc);
+
+    /* Element_size = 8;
+     *  i = 0..(VL-1)
+     *  addr = rs1 + floor(i/2);
+     *  part = i%2;
+     *  nibble[3:0] = MEM(addr)[4*part+3:4*part+0];
+     *  if (vm.E[i] == 1) {
+     *      vd.E[i] = [Sign|Zero]-Extend(nibble[3:0]);
+     *  }
+     */
+    for (i = 0; i < env->vl; i++) {
+        k = 0;
+        while (k < nf) {
+            if (!vm && !vext_elem_mask(v0, i)) {
+                /* set masked-off elements to 1s */
+                vext_set_elems_1s(vd, vma, (i + k * max_elems) * esz,
+                                  (i + k * max_elems + 1) * esz);
+                k++;
+                continue;
+            }
+            /* since int4 use the same address for a pair data,
+             * so we caculate address should divide by 2.
+             * Here we don't care about k(nf) > 1 case now
+             */
+            target_ulong addr = base + stride * (i / 2) + (k << log2_esz);
+            ldst_elem(env, adjust_addr(env, addr), i + k * max_elems, vd, ra);
+            lde_to_bh(i % 2, is_sign, i + k * max_elems, vd);
+            k++;
+        }
+    }
+    env->vstart = 0;
+
+    vext_set_tail_elems_1s(env->vl, vd, desc, nf, esz, max_elems);
+}
+
+/*
+ * masked unit-stride load and store operation will be a special case of stride,
+ * stride = NF * sizeof (MTYPE)
+ */
+
+#define GEN_VEXT_LD_US_INT4(NAME, ETYPE, LOAD_FN)                       \
+void HELPER(NAME##_mask)(void *vd, void *v0, target_ulong base,         \
+                         uint32_t is_sign, CPURISCVState *env,          \
+                         uint32_t desc)                                 \
+{                                                                       \
+    uint32_t stride = vext_nf(desc) << ctzl(sizeof(ETYPE));             \
+    vext_ldst_int4_stride(vd, v0, base, stride, env, desc,              \
+                          false, is_sign, LOAD_FN,                      \
+                          ctzl(sizeof(ETYPE)), GETPC());                \
+}                                                                       \
+                                                                        \
+void HELPER(NAME)(void *vd, void *v0, target_ulong base,                \
+                    uint32_t is_sign, CPURISCVState *env,               \
+                    uint32_t desc)                                      \
+{                                                                       \
+    uint32_t stride = vext_nf(desc) << ctzl(sizeof(ETYPE));             \
+    vext_ldst_int4_stride(vd, v0, base, stride, env, desc,              \
+                          true, is_sign, LOAD_FN,                       \
+                          ctzl(sizeof(ETYPE)), GETPC());                \
+}
+
+GEN_VEXT_LD_US_INT4(vln8_v, int8_t, lde_b)
+
+/* Vector Signed Dot Product on 1/4 of SEW */
+#define OPIVV9(NAME, TD, T1, T2, TX1, TX2, HD, HS1, HS2, OP, OP2)       \
+static void do_##NAME(void *vd, void *vs1, void *vs2, int i)            \
+{                                                                       \
+    int j;                                                              \
+    TD sum = 0;                                                         \
+    for (j = 0; j < 4; j++) {                                           \
+        TX1 s1 = *((T1 *)vs1 + HS1(i + j));                             \
+        TX2 s2 = *((T2 *)vs2 + HS2(i + j));                             \
+        sum = OP2(s2, s1, sum);                                         \
+    }                                                                   \
+    TD d = *((TD *)vd + HD(i));                                         \
+    *((TD *)vd + HD(i)) = OP(d, sum);                                   \
+}
+
+RVVCALL(OPIVV9, vd4dots_vv_w, WOP_SSS_W4, H4, H1, H1, DO_ADD, DO_MACC)
+RVVCALL(OPIVV9, vd4dots_vv_d, WOP_SSS_D4, H8, H2, H2, DO_ADD, DO_MACC)
+RVVCALL(OPIVV9, vd4dotu_vv_w, WOP_UUU_W4, H4, H1, H1, DO_ADD, DO_MACC)
+RVVCALL(OPIVV9, vd4dotu_vv_d, WOP_UUU_D4, H8, H2, H2, DO_ADD, DO_MACC)
+RVVCALL(OPIVV9, vd4dotsu_vv_w, WOP_SSU_W4, H4, H1, H1, DO_ADD, DO_MACC)
+RVVCALL(OPIVV9, vd4dotsu_vv_d, WOP_SSU_D4, H8, H2, H2, DO_ADD, DO_MACC)
+GEN_VEXT_VV(vd4dots_vv_w, 4)
+GEN_VEXT_VV(vd4dots_vv_d, 8)
+GEN_VEXT_VV(vd4dotu_vv_w, 4)
+GEN_VEXT_VV(vd4dotu_vv_d, 8)
+GEN_VEXT_VV(vd4dotsu_vv_w, 4)
+GEN_VEXT_VV(vd4dotsu_vv_d, 8)
+
+/* Vector Small INT Handling extension */
+void HELPER(vle4_v)(void *vd, target_ulong base,
+                    CPURISCVState *env, uint32_t desc)
+{
+    target_ulong i;
+    target_ulong vl;
+    uint8_t vl_is_odd = env->vl % 2;
+    uint8_t tmp;
+    void *ptr = &tmp;
+    /* Element_size = 4;
+     * i = 0..(VL-1)
+     * addr = rs1 + floor(i/2);
+     * part = i%2;
+     * nibble[3:0] = MEM(addr)[4*part+3:4*part+0];
+     * vd.E[i] = nibble[3:0];
+     */
+    /* int4 uses the same address for a pair data
+     * loads memory data by byte, once for 2 elements
+     */
+    vl = env->vl / 2;
+    for (i = 0; i < vl; i++) {
+        target_ulong addr = base + i;
+        lde_b(env, adjust_addr(env, addr), i, vd, GETPC());
+    }
+    /* process last element if vl is an odd number */
+    if (vl_is_odd) {
+        target_ulong addr = base + vl;
+        /* Loads byte memory data into tmp variable */
+        lde_b(env, adjust_addr(env, addr), 0, ptr, GETPC());
+        uint8_t *cur = ((uint8_t *)vd + H1(vl));
+        uint8_t val = (*cur) & 0xf; /* keep bit[0:3] */
+        tmp &= 0xf0; /* keep bit[4:7] */
+        *cur = (tmp | val);
+    }
+}
+
+/* From softfloat.c */
+static float32 int4_to_float16(int8_t a, float_status *status)
+{
+    /* check bit 3 */
+    if (a & 0x8) {
+        /* sign-extend for negative */
+        a |= 0xf0;
+    } else {
+        /* sign-extend for positive */
+        a &= 0x0f;
+    }
+    return int64_to_float16_scalbn(a, 0, status);
+}
+
+static float32 uint4_to_float16(uint8_t a, float_status *status)
+{
+    /* zero-extend */
+    a &= 0x0f;
+    return uint64_to_float16_scalbn(a, 0, status);
+}
+
+static float32 int4_to_float32(int8_t a, float_status *status)
+{
+    /* check bit 3 */
+    if (a & 0x8) {
+        /* sign-extend for negative */
+        a |= 0xf0;
+    } else {
+        /* sign-extend for positive */
+        a &= 0x0f;
+    }
+    return int64_to_float32_scalbn(a, 0, status);
+}
+
+static float32 uint4_to_float32(uint8_t a, float_status *status)
+{
+    /* zero-extend */
+    a &= 0x0f;
+    return uint64_to_float32_scalbn(a, 0, status);
+}
+
+static float32 int8_to_float32(int8_t a, float_status *status)
+{
+    return int64_to_float32_scalbn(a, 0, status);
+}
+
+static float32 uint8_to_float32(uint8_t a, float_status *status)
+{
+    return uint64_to_float32_scalbn(a, 0, status);
+}
+
+
+/*
+ * Assume
+ * part = i%2;
+ * nibble[3:0] = vs[i/2][4*part+3:4*part+0];
+ * vd.E[i] = float(nibble[3:0]);
+ */
+
+#define OPFVV9(NAME, TD, T2, TX2, HD, HS2, OP)         \
+static void do_##NAME(void *vd, void *vs2, int i,      \
+        CPURISCVState *env)                            \
+{                                                      \
+    TX2 s2 = *((T2 *)vs2 + HS2(i / 2));                \
+    TX2 val;                                           \
+    if (i % 2) {                                       \
+        val = s2 & 0x0f;                               \
+    } else {                                           \
+        val = s2 >> 4;                                 \
+        val &= 0x0f;                                   \
+    }                                                  \
+    *((TD *)vd + HD(i)) = OP(val, &env->fp_status);    \
+}
+
+#define SOP_UU_HB4 uint16_t, uint4_t,  uint4_t
+#define SOP_UU_WB4 uint32_t, uint4_t,  uint4_t
+#define SOP_UU_HB uint16_t, uint8_t,  uint8_t
+#define SOP_UU_WB uint32_t, uint8_t,  uint8_t
+RVVCALL(OPFVV9, vfwcvt_f_n_v16, SOP_UU_HB4, H2, H1, int4_to_float16)
+GEN_VEXT_V_ENV(vfwcvt_f_n_v16, 4)
+RVVCALL(OPFVV9, vfwcvt_f_n_v32, SOP_UU_WB4, H4, H1, int4_to_float32)
+GEN_VEXT_V_ENV(vfwcvt_f_n_v32, 8)
+
+RVVCALL(OPFVV9, vfwcvt_f_nu_v16, SOP_UU_HB4, H2, H1, uint4_to_float16)
+GEN_VEXT_V_ENV(vfwcvt_f_nu_v16, 4)
+RVVCALL(OPFVV9, vfwcvt_f_nu_v32, SOP_UU_WB4, H4, H1, uint4_to_float32)
+GEN_VEXT_V_ENV(vfwcvt_f_nu_v32, 8)
+
+RVVCALL(OPFVV1, vfwcvt_f_b_v16, SOP_UU_HB, H2, H1, int8_to_float16)
+GEN_VEXT_V_ENV(vfwcvt_f_b_v16, 4)
+RVVCALL(OPFVV1, vfwcvt_f_b_v32, SOP_UU_WB, H4, H1, int8_to_float32)
+GEN_VEXT_V_ENV(vfwcvt_f_b_v32, 8)
+
+RVVCALL(OPFVV1, vfwcvt_f_bu_v16, SOP_UU_HB, H2, H1, uint8_to_float16)
+GEN_VEXT_V_ENV(vfwcvt_f_bu_v16, 4)
+RVVCALL(OPFVV1, vfwcvt_f_bu_v32, SOP_UU_WB, H4, H1, uint8_to_float32)
+GEN_VEXT_V_ENV(vfwcvt_f_bu_v32, 8)
+
+
+/* Vector Quad-Widening Integer Multiply-Add Instructions */
+RVVCALL(OPIVV3, vqmaccu_vv_b, WOP_UUU_W4, H4, H1, H1, DO_MACC)
+RVVCALL(OPIVV3, vqmaccu_vv_h, WOP_UUU_D4, H8, H2, H2, DO_MACC)
+RVVCALL(OPIVV3, vqmacc_vv_b, WOP_SSS_W4, H4, H1, H1, DO_MACC)
+RVVCALL(OPIVV3, vqmacc_vv_h, WOP_SSS_D4, H8, H2, H2, DO_MACC)
+RVVCALL(OPIVV3, vqmaccsu_vv_b, WOP_SSU_W4, H4, H1, H1, DO_MACC)
+RVVCALL(OPIVV3, vqmaccsu_vv_h, WOP_SSU_D4, H8, H2, H2, DO_MACC)
+GEN_VEXT_VV(vqmaccu_vv_b, 4)
+GEN_VEXT_VV(vqmaccu_vv_h, 8)
+GEN_VEXT_VV(vqmacc_vv_b, 4)
+GEN_VEXT_VV(vqmacc_vv_h, 8)
+GEN_VEXT_VV(vqmaccsu_vv_b, 4)
+GEN_VEXT_VV(vqmaccsu_vv_h, 8)
+
+RVVCALL(OPIVX3, vqmaccu_vx_b, WOP_UUU_W4, H4, H1, DO_MACC)
+RVVCALL(OPIVX3, vqmaccu_vx_h, WOP_UUU_D4, H8, H2, DO_MACC)
+RVVCALL(OPIVX3, vqmacc_vx_b, WOP_SSS_W4, H4, H1, DO_MACC)
+RVVCALL(OPIVX3, vqmacc_vx_h, WOP_SSS_D4, H8, H2, DO_MACC)
+RVVCALL(OPIVX3, vqmaccsu_vx_b, WOP_SSU_W4, H4, H1, DO_MACC)
+RVVCALL(OPIVX3, vqmaccsu_vx_h, WOP_SSU_D4, H8, H2, DO_MACC)
+RVVCALL(OPIVX3, vqmaccus_vx_b, WOP_SUS_W4, H4, H1, DO_MACC)
+RVVCALL(OPIVX3, vqmaccus_vx_h, WOP_SUS_D4, H8, H2, DO_MACC)
+GEN_VEXT_VX(vqmaccu_vx_b, 4)
+GEN_VEXT_VX(vqmaccu_vx_h, 8)
+GEN_VEXT_VX(vqmacc_vx_b, 4)
+GEN_VEXT_VX(vqmacc_vx_h, 8)
+GEN_VEXT_VX(vqmaccsu_vx_b, 4)
+GEN_VEXT_VX(vqmaccsu_vx_h, 8)
+GEN_VEXT_VX(vqmaccus_vx_b, 4)
+GEN_VEXT_VX(vqmaccus_vx_h, 8)
+

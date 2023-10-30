@@ -1,3 +1,9 @@
+/*
+ * RISC-V translation routines for Andes CoDense
+ *
+ * Copyright (c) 2023 Andes Technology Corp.
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 #include "andes_cpu_bits.h"
 
 #define ANDES_V5_GET_JAL_UIMM(inst) ((extract32(inst, 21, 10) << 1) \
@@ -106,4 +112,3 @@ static bool trans_execit(DisasContext *ctx, arg_execit *a)
     andes_v5_gen_codense_exec_it(ctx, a);
     return true;
 }
-

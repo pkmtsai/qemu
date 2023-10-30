@@ -1,20 +1,10 @@
 #
-# RISC-V translation routines for the RVXI Base Integer Instruction Set.
+# RISC-V translation routines for AndeStar V5
 #
-# Copyright (c) 2018 Peer Adelt, peer.adelt@hni.uni-paderborn.de
-#                    Bastian Koppelmann, kbastian@mail.uni-paderborn.de
+# Copyright (c) 2023 Andes Technology Corp.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
-# This program is free software; you can redistribute it and/or modify it
-# under the terms and conditions of the GNU General Public License,
-# version 2 or later, as published by the Free Software Foundation.
-#
-# This program is distributed in the hope it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-# more details.
-#
-# You should have received a copy of the GNU General Public License along with
-# this program.  If not, see <http://www.gnu.org/licenses/>.
+
 
 # Fields:
 %rs3       27:5
@@ -39,11 +29,18 @@
 &r_andes    rd rs1 rs2
 &s_andes    imm rs1 rs2
 &u_andes    imm rd
+&rmr_andes        vm rd rs1
+&rmr2_andes       vm rd rs2
+&rmrr_andes       vm rd rs1 rs2
+&rr         rd rs1
+&rr2        rd rs2
 &shift_andes     shamt rs1 rd
 &atomic_andes    aq rl rs2 rs1 rd
 
 # Formats 32:
 @r       .......   ..... ..... ... ..... ....... &r_andes                %rs2 %rs1 %rd
+@rr      .......   ..... ..... ... ..... ....... &rr                     %rs1 %rd
+@rr2     .......   ..... ..... ... ..... ....... &rr2                    %rs2 %rd
 
 # *** Custom 0 instructions ***
 ## Similar to U-type
@@ -123,3 +120,47 @@ f_ffb     0010000   ..... ..... 000 .....  1011011 @r #0x10
 f_ffzmism 0010001   ..... ..... 000 .....  1011011 @r #0x11
 f_ffmism  0010010   ..... ..... 000 .....  1011011 @r #0x12
 f_flmism  0010011   ..... ..... 000 .....  1011011 @r #0x13
+
+## VMR-type
+@vmr            ...... vm:1 ..... ..... ... ..... ....... &rmr_andes %rs1 %rd
+@vmr2           ...... vm:1 ..... ..... ... ..... ....... &rmr2_andes %rs2 %rd
+@vmrr           ...... vm:1 ..... ..... ... ..... ....... &rmrr_andes %rs2 %rs1 %rd
+#Andes INT4 Vector Load Extension
+#vln_v          000001 . 00000 ..... 100 ..... 1011011 @vmr
+#vlnu_v         000001 . 00001 ..... 100 ..... 1011011 @vmr
+vln8_v          000001 . 00010 ..... 100 ..... 1011011 @vmr
+vlnu8_v         000001 . 00011 ..... 100 ..... 1011011 @vmr
+
+#Andes Scalar BFLOAT16 Conversion Extension
+nfcvt_s_bf16     0000000 ..... 00010 100 ..... 1011011 @rr2
+nfcvt_bf16_s     0000000 ..... 00011 100 ..... 1011011 @rr2
+
+#Andes Vector BFLOAT16 Conversion Extension
+vfwcvt_s_bf16   0000000 ..... 00000 100 ..... 1011011 @rr2
+vfncvt_bf16_s   0000000 ..... 00001 100 ..... 1011011 @rr2
+
+#Andes V5 Vector Packed FP16 extension
+vfpmadt_vf      000010 . ..... ..... 100 ..... 1011011 @vmrr
+vfpmadb_vf      000011 . ..... ..... 100 ..... 1011011 @vmrr
+
+#Andes V5 Vector Dot Product extension
+vd4dots_vv      000100 . ..... ..... 100 ..... 1011011 @vmrr
+vd4dotu_vv      000111 . ..... ..... 100 ..... 1011011 @vmrr
+vd4dotsu_vv     000101 . ..... ..... 100 ..... 1011011 @vmrr
+
+#Andes V5 Vector Small INT Handling extension
+vle4_v          000001 1 00000 ..... 100 ..... 1011011 @rr
+vfwcvt_f_n_v    000000 . ..... 00100 100 ..... 1011011 @vmr2
+vfwcvt_f_nu_v   000000 . ..... 00101 100 ..... 1011011 @vmr2
+vfwcvt_f_b_v    000000 . ..... 00110 100 ..... 1011011 @vmr2
+vfwcvt_f_bu_v   000000 . ..... 00111 100 ..... 1011011 @vmr2
+
+#Andes Vector Quad-Widening Integer Multiply-Add extension
+vqmaccu_vv      111100 . ..... ..... 000 ..... 1010111 @vmrr
+vqmaccu_vx      111100 . ..... ..... 100 ..... 1010111 @vmrr
+vqmacc_vv       111101 . ..... ..... 000 ..... 1010111 @vmrr
+vqmacc_vx       111101 . ..... ..... 100 ..... 1010111 @vmrr
+vqmaccsu_vv     111111 . ..... ..... 000 ..... 1010111 @vmrr
+vqmaccsu_vx     111111 . ..... ..... 100 ..... 1010111 @vmrr
+vqmaccus_vx     111110 . ..... ..... 100 ..... 1010111 @vmrr
+

@@ -3664,9 +3664,16 @@ GEN_VMV_WHOLE_TRANS(vmv2r_v, 2)
 GEN_VMV_WHOLE_TRANS(vmv4r_v, 4)
 GEN_VMV_WHOLE_TRANS(vmv8r_v, 8)
 
+/* Andes VSIH cfg check */
+bool vsih_check(DisasContext *ctx);
+
 static bool int_ext_check(DisasContext *s, arg_rmr *a, uint8_t div)
 {
     uint8_t from = (s->sew + 3) - div;
+    /* If enable Andes VSIH config */
+    if (vsih_check(s)) {
+        from = (s->sew + 4) - div;
+    }
     bool ret = require_rvv(s) &&
         (from >= 3 && from <= 8) &&
         (a->rd != a->rs2) &&
@@ -3686,28 +3693,28 @@ static bool int_ext_op(DisasContext *s, arg_rmr *a, uint8_t seq)
 
     static gen_helper_gvec_3_ptr * const fns[6][4] = {
         {
-            NULL, gen_helper_vzext_vf2_h,
+            gen_helper_vzext_vf2_b, gen_helper_vzext_vf2_h,
             gen_helper_vzext_vf2_w, gen_helper_vzext_vf2_d
         },
         {
-            NULL, NULL,
+            NULL, gen_helper_vzext_vf4_h,
             gen_helper_vzext_vf4_w, gen_helper_vzext_vf4_d,
         },
         {
             NULL, NULL,
-            NULL, gen_helper_vzext_vf8_d
+            gen_helper_vzext_vf8_w, gen_helper_vzext_vf8_d
         },
         {
-            NULL, gen_helper_vsext_vf2_h,
+            gen_helper_vsext_vf2_b, gen_helper_vsext_vf2_h,
             gen_helper_vsext_vf2_w, gen_helper_vsext_vf2_d
         },
         {
-            NULL, NULL,
+            NULL, gen_helper_vsext_vf4_h,
             gen_helper_vsext_vf4_w, gen_helper_vsext_vf4_d,
         },
         {
             NULL, NULL,
-            NULL, gen_helper_vsext_vf8_d
+            gen_helper_vsext_vf8_w, gen_helper_vsext_vf8_d
         }
     };
 

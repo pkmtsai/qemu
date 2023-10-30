@@ -1,4 +1,65 @@
+/*
+ * RISC-V translation routines for Andes V5 instructions
+ *
+ * Copyright (c) 2023 Andes Technology Corp.
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 #define GP 3
+
+#define REQUIRE_CFG(CSRNO, CSRFIELD) do {\
+    CPURISCVState *env = ctx->cs->env_ptr; \
+    RISCVException ret; \
+    target_ulong value; \
+    ret = riscv_csrrw(env, CSRNO, &value, 0, 0); \
+    if (ret != RISCV_EXCP_NONE) \
+        return false; \
+    if (!(value & CSRFIELD)) \
+        return false; \
+} while (0);
+
+#define REQUIRE_BF16CVT do { \
+    CPURISCVState *env = ctx->cs->env_ptr; \
+    if (env->misa_mxl == MXL_RV32) { \
+        REQUIRE_CFG(CSR_MMSC_CFG2, MASK_MMSC_CFG2_BF16CVT) \
+    } \
+    REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_BF16CVT) \
+} while (0)
+
+#define MASK_MVEC_CFG_MFSEW (0x3 << 16)
+#define REQUIRE_MFSEW  \
+    REQUIRE_CFG(CSR_MVEC_CFG, MASK_MVEC_CFG_MFSEW)
+
+#define REQUIRE_VPFH do { \
+    CPURISCVState *env = ctx->cs->env_ptr; \
+    if (env->misa_mxl == MXL_RV32) { \
+        REQUIRE_CFG(CSR_MMSC_CFG2, MASK_MMSC_CFG2_VPFH) \
+    } \
+    REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VPFH) \
+} while (0)
+
+#define REQUIRE_VL4 do { \
+    CPURISCVState *env = ctx->cs->env_ptr; \
+    if (env->misa_mxl == MXL_RV32) { \
+        REQUIRE_CFG(CSR_MMSC_CFG2, MASK_MMSC_CFG2_VL4) \
+    } \
+    REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VL4) \
+} while (0)
+
+#define REQUIRE_VDOT do { \
+    CPURISCVState *env = ctx->cs->env_ptr; \
+    if (env->misa_mxl == MXL_RV32) { \
+        REQUIRE_CFG(CSR_MMSC_CFG2, MASK_MMSC_CFG2_VDOT) \
+    } \
+    REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VDOT) \
+} while (0)
+
+#define REQUIRE_VSIH do { \
+    CPURISCVState *env = ctx->cs->env_ptr; \
+    if (env->misa_mxl == MXL_RV32) { \
+        REQUIRE_CFG(CSR_MMSC_CFG2, MASK_MMSC_CFG2_VSIH) \
+    } \
+    REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VSIH) \
+} while (0)
 
 enum andes_v5_inst_id {
     /* Code Dense Extension */
@@ -382,4 +443,521 @@ static bool trans_sdgp(DisasContext *ctx, arg_sdgp *a)
     gen_store_legacy(ctx, OPC_RISC_SD, GP, a->rs2, a->imm_c1);
     return true;
 }
+
+/* Andes INT4 Vector Load Extension */
+/*
+ *** INT4 unit stride load and store
+ */
+typedef void gen_helper_ldst_us_int4(TCGv_ptr, TCGv_ptr, TCGv,
+                                TCGv_i32, TCGv_env, TCGv_i32);
+
+static bool ldst_us_int4_trans(uint32_t vd, uint32_t rs1, uint32_t data,
+                          gen_helper_ldst_us_int4 *fn, DisasContext *s,
+                          bool is_store, bool is_sign)
+{
+    TCGv_ptr dest, mask;
+    TCGv base;
+    TCGv_i32 desc, sign;
+
+    TCGLabel *over = gen_new_label();
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_vl, 0, over);
+    tcg_gen_brcond_tl(TCG_COND_GEU, cpu_vstart, cpu_vl, over);
+
+    dest = tcg_temp_new_ptr();
+    mask = tcg_temp_new_ptr();
+    base = get_gpr(s, rs1, EXT_NONE);
+
+    /*
+     * As simd_desc supports at most 2048 bytes, and in this implementation,
+     * the max vector group length is 4096 bytes. So split it into two parts.
+     *
+     * The first part is vlen in bytes, encoded in maxsz of simd_desc.
+     * The second part is lmul, encoded in data of simd_desc.
+     */
+    desc = tcg_constant_i32(simd_desc(s->cfg_ptr->vlen / 8,
+                                      s->cfg_ptr->vlen / 8, data));
+    sign = tcg_constant_i32(is_sign);
+
+    tcg_gen_addi_ptr(dest, cpu_env, vreg_ofs(s, vd));
+    tcg_gen_addi_ptr(mask, cpu_env, vreg_ofs(s, 0));
+
+    fn(dest, mask, base, sign, cpu_env, desc);
+
+    if (!is_store) {
+        mark_vs_dirty(s);
+    }
+
+    gen_set_label(over);
+    return true;
+}
+
+static bool ld_us_int4_op(DisasContext *s, arg_rmr_andes *a,
+                          uint8_t eew, uint32_t is_sign)
+{
+    uint32_t data = 0;
+    gen_helper_ldst_us_int4 *fn;
+    static gen_helper_ldst_us_int4 * const fns[2][1] = {
+        /* masked unit stride load */
+        { gen_helper_vln8_v_mask},
+        /* unmasked unit stride load */
+        { gen_helper_vln8_v}
+    };
+
+    fn =  fns[a->vm][eew];
+    if (fn == NULL) {
+        return false;
+    }
+
+    /*
+     * Vector load/store instructions have the EEW encoded
+     * directly in the instructions. The maximum vector size is
+     * calculated with EMUL rather than LMUL.
+     */
+    uint8_t emul = vext_get_emul(s, eew);
+    data = FIELD_DP32(data, VDATA, VM, a->vm);
+    data = FIELD_DP32(data, VDATA, LMUL, emul);
+    /* assume nf field value = 1(000) */
+    data = FIELD_DP32(data, VDATA, NF, 1);
+    data = FIELD_DP32(data, VDATA, VTA, s->vta);
+    data = FIELD_DP32(data, VDATA, VMA, s->vma);
+    return ldst_us_int4_trans(a->rd, a->rs1, data, fn, s, false, is_sign);
+}
+
+static bool ld_us_int4_check(DisasContext *s, arg_rmr_andes* a, uint8_t eew)
+{
+    return require_rvv(s) &&
+           vext_check_isa_ill(s) &&
+           require_vm(a->vm, a->rd);
+}
+
+#define GEN_VEXT_SIGN_TRANS(NAME, EEW, ARGTYPE, OP, CHECK, SIGN)    \
+static bool trans_##NAME(DisasContext *ctx, arg_##ARGTYPE * a)      \
+{                                                                   \
+    REQUIRE_VL4;                                                    \
+    if (CHECK(ctx, a, EEW)) {                                       \
+        return OP(ctx, a, EEW, SIGN);                               \
+    }                                                               \
+    return false;                                                   \
+}
+
+GEN_VEXT_SIGN_TRANS(vln8_v,  MO_8,  rmr_andes, ld_us_int4_op,
+                    ld_us_int4_check, true)
+GEN_VEXT_SIGN_TRANS(vlnu8_v, MO_8,  rmr_andes, ld_us_int4_op,
+                    ld_us_int4_check, false)
+
+
+/* Andes Scalar BFLOAT16 Conversion Extension */
+/* Like Zfbfmin's fcvt_s_bf16 */
+static bool trans_nfcvt_s_bf16(DisasContext *ctx, arg_nfcvt_s_bf16 *a)
+{
+    REQUIRE_FPU;
+    REQUIRE_BF16CVT;
+
+    TCGv_i64 dest = dest_fpr(ctx, a->rd);
+    TCGv_i64 src2 = get_fpr_hs(ctx, a->rs2);
+
+    gen_set_rm(ctx, RISCV_FRM_DYN);
+    gen_helper_andes_nfcvt_s_bf16(dest, cpu_env, src2);
+    gen_set_fpr_hs(ctx, a->rd, dest);
+    mark_fs_dirty(ctx);
+    return true;
+}
+
+/* Like Zfbfmin's fcvt_bf16_s */
+static bool trans_nfcvt_bf16_s(DisasContext *ctx, arg_nfcvt_bf16_s *a)
+{
+    REQUIRE_FPU;
+    REQUIRE_BF16CVT;
+
+    TCGv_i64 dest = dest_fpr(ctx, a->rd);
+    TCGv_i64 src2 = get_fpr_hs(ctx, a->rs2);
+
+    gen_set_rm(ctx, RISCV_FRM_DYN);
+    gen_helper_andes_nfcvt_bf16_s(dest, cpu_env, src2);
+    gen_set_fpr_hs(ctx, a->rd, dest);
+    mark_fs_dirty(ctx);
+    return true;
+}
+
+/* Andes Vector BFLOAT16 Conversion Extension */
+/* Like ZVFBFMIN's vfwcvtbf16_f_f_v*/
+static bool trans_vfwcvt_s_bf16(DisasContext *ctx, arg_vfwcvt_s_bf16 *a)
+{
+    REQUIRE_FPU;
+    REQUIRE_MFSEW;
+    REQUIRE_BF16CVT;
+
+    /* Only support in SEW = 16 */
+    if (require_rvv(ctx) && vext_check_isa_ill(ctx) &&
+        vext_check_ds(ctx, a->rd, a->rs2, 1) && ctx->sew == MO_16) {
+        uint32_t data = 0;
+        TCGLabel *over = gen_new_label();
+
+        gen_set_rm_chkfrm(ctx, RISCV_FRM_DYN);
+        tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_vl, 0, over);
+        tcg_gen_brcond_tl(TCG_COND_GEU, cpu_vstart, cpu_vl, over);
+
+        /* Set Vector Mask Encoding to 1 = unmasked */
+        data = FIELD_DP32(data, VDATA, VM, 1);
+        data = FIELD_DP32(data, VDATA, LMUL, ctx->lmul);
+        data = FIELD_DP32(data, VDATA, VTA, ctx->vta);
+        data = FIELD_DP32(data, VDATA, VMA, ctx->vma);
+        tcg_gen_gvec_3_ptr(vreg_ofs(ctx, a->rd), vreg_ofs(ctx, 0),
+                           vreg_ofs(ctx, a->rs2), cpu_env,
+                           ctx->cfg_ptr->vlen / 8,
+                           ctx->cfg_ptr->vlen / 8, data,
+                           gen_helper_andes_vfwcvt_s_bf16);
+        mark_vs_dirty(ctx);
+        gen_set_label(over);
+        return true;
+    }
+    return false;
+}
+
+/* Like ZVFBFMIN's vfncvtbf16_f_f_w */
+static bool trans_vfncvt_bf16_s(DisasContext *ctx, arg_vfncvt_bf16_s *a)
+{
+    REQUIRE_FPU;
+    REQUIRE_MFSEW;
+    REQUIRE_BF16CVT;
+
+    /* Only support in SEW = 16 */
+    if (require_rvv(ctx) && vext_check_isa_ill(ctx) &&
+        vext_check_sd(ctx, a->rd, a->rs2, 1) && ctx->sew == MO_16) {
+        uint32_t data = 0;
+        TCGLabel *over = gen_new_label();
+
+        gen_set_rm(ctx, RISCV_FRM_DYN);
+        tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_vl, 0, over);
+        tcg_gen_brcond_tl(TCG_COND_GEU, cpu_vstart, cpu_vl, over);
+
+        /* Set Vector Mask Encoding to 1 = unmasked */
+        data = FIELD_DP32(data, VDATA, VM, 1);
+        data = FIELD_DP32(data, VDATA, LMUL, ctx->lmul);
+        data = FIELD_DP32(data, VDATA, VTA, ctx->vta);
+        data = FIELD_DP32(data, VDATA, VMA, ctx->vma);
+        tcg_gen_gvec_3_ptr(vreg_ofs(ctx, a->rd), vreg_ofs(ctx, 0),
+                           vreg_ofs(ctx, a->rs2), cpu_env,
+                           ctx->cfg_ptr->vlen / 8,
+                           ctx->cfg_ptr->vlen / 8, data,
+                           gen_helper_andes_vfncvt_bf16_s);
+        mark_vs_dirty(ctx);
+        gen_set_label(over);
+        return true;
+    }
+    return false;
+}
+
+/* Andes V5 Vector Packed FP16 extension */
+static bool andes_vfpmad_vf(DisasContext *ctx, arg_vfpmadt_vf *a, bool top)
+{
+    REQUIRE_FPU;
+    REQUIRE_EXT(ctx, RVV);
+    REQUIRE_VPFH;
+
+    /* Only support in SEW = 16 */
+    if (ctx->sew != MO_16) {
+        return false;
+    }
+    TCGv_ptr dest, src2, mask;
+    TCGv_i32 desc;
+    TCGv_i64 t1, t2;
+
+    TCGLabel *over = gen_new_label();
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_vl, 0, over);
+    tcg_gen_brcond_tl(TCG_COND_GEU, cpu_vstart, cpu_vl, over);
+
+    uint32_t data = 0;
+
+    gen_set_rm(ctx, RISCV_FRM_DYN);
+    data = FIELD_DP32(data, VDATA, VM, a->vm);
+    data = FIELD_DP32(data, VDATA, LMUL, ctx->lmul);
+    data = FIELD_DP32(data, VDATA, VTA, ctx->vta);
+    data = FIELD_DP32(data, VDATA, VMA, ctx->vma);
+    dest = tcg_temp_new_ptr();
+    mask = tcg_temp_new_ptr();
+    src2 = tcg_temp_new_ptr();
+    desc = tcg_constant_i32(simd_desc(ctx->cfg_ptr->vlen / 8,
+                                      ctx->cfg_ptr->vlen / 8, data));
+
+    tcg_gen_addi_ptr(dest, cpu_env, vreg_ofs(ctx, a->rd));
+    tcg_gen_addi_ptr(src2, cpu_env, vreg_ofs(ctx, a->rs2));
+    tcg_gen_addi_ptr(mask, cpu_env, vreg_ofs(ctx, 0));
+
+    t1 = get_fpr_hs(ctx, a->rs1);
+    t2 = tcg_constant_i64(top);
+
+    gen_helper_vfpmad_vf(dest, mask, t1, t2, src2, cpu_env, desc);
+
+    mark_vs_dirty(ctx);
+    gen_set_label(over);
+    return true;
+}
+
+static bool trans_vfpmadt_vf(DisasContext *ctx, arg_vfpmadt_vf *a)
+{
+    return andes_vfpmad_vf(ctx, a, true);
+}
+
+static bool trans_vfpmadb_vf(DisasContext *ctx, arg_vfpmadb_vf *a)
+{
+    return andes_vfpmad_vf(ctx, a, false);
+}
+
+/* Andes V5 Vector Dot Product extension */
+#define GEN_OPIVV_WIDEN_4_TRANS(NAME, CHECK) \
+static bool trans_##NAME(DisasContext *ctx, arg_rmrr_andes *a) \
+{                                                            \
+    REQUIRE_VDOT;                                            \
+    static gen_helper_gvec_4_ptr * const fns[2] = {          \
+        gen_helper_##NAME##_w,                               \
+        gen_helper_##NAME##_d                                \
+    };                                                       \
+    /* only support sew = 2(32), 3(64) */                    \
+    if (ctx->sew >= MO_32)                                   \
+        return do_opivv_widen(ctx,                           \
+            (arg_rmrr *)a, fns[ctx->sew - 2], CHECK);        \
+    return false;                                            \
+}
+
+GEN_OPIVV_WIDEN_4_TRANS(vd4dots_vv, opivv_widen_check)
+GEN_OPIVV_WIDEN_4_TRANS(vd4dotu_vv, opivv_widen_check)
+GEN_OPIVV_WIDEN_4_TRANS(vd4dotsu_vv, opivv_widen_check)
+
+/* Andes V5 Vector Small INT Handling extension */
+bool vsih_check(DisasContext *ctx)
+{
+    REQUIRE_VSIH;
+    return true;
+}
+
+static bool ld_small_int(DisasContext *s, arg_rr *a)
+{
+    TCGv_ptr dest;
+    TCGv base;
+    TCGv_i32 desc;
+    uint32_t data = 0;
+    /* Uses spec EMUL=(4/SEW)*LMUL */
+    uint8_t emul = (4 / (8 << s->sew)) * s->lmul;
+    /* non-mask, set vm to 1 */
+    data = FIELD_DP32(data, VDATA, VM, 1);
+    data = FIELD_DP32(data, VDATA, LMUL, emul);
+    /* assume nf field value = 1(000) */
+    data = FIELD_DP32(data, VDATA, NF, 1);
+    data = FIELD_DP32(data, VDATA, VTA, s->vta);
+    data = FIELD_DP32(data, VDATA, VMA, s->vma);
+
+    TCGLabel *over = gen_new_label();
+    tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_vl, 0, over);
+    tcg_gen_brcond_tl(TCG_COND_GEU, cpu_vstart, cpu_vl, over);
+
+    dest = tcg_temp_new_ptr();
+    base = get_gpr(s, a->rs1, EXT_NONE);
+
+    /*
+     * As simd_desc supports at most 2048 bytes, and in this implementation,
+     * the max vector group length is 4096 bytes. So split it into two parts.
+     *
+     * The first part is vlen in bytes, encoded in maxsz of simd_desc.
+     * The second part is lmul, encoded in data of simd_desc.
+     */
+    desc = tcg_constant_i32(simd_desc(s->cfg_ptr->vlen / 8,
+                                      s->cfg_ptr->vlen / 8, data));
+
+    tcg_gen_addi_ptr(dest, cpu_env, vreg_ofs(s, a->rd));
+
+    gen_helper_vle4_v(dest, base, cpu_env, desc);
+
+    mark_vs_dirty(s);
+
+    gen_set_label(over);
+    return true;
+}
+
+static bool ld_small_int_check(DisasContext *s, arg_vle4_v *a)
+{
+    return require_rvv(s) &&
+           vext_check_isa_ill(s);
+}
+
+static bool trans_vle4_v(DisasContext *ctx, arg_vle4_v *a)
+{
+    REQUIRE_VSIH;
+    if (ld_small_int_check(ctx, a)) {
+        return ld_small_int(ctx, a);
+    }
+    return false;
+}
+
+static bool opfbv_check(DisasContext *ctx, arg_rmr2_andes *a)
+{
+    REQUIRE_VSIH;
+    return require_rvv(ctx) &&
+           require_scale_rvf(ctx) &&
+           vext_check_isa_ill(ctx) &&
+           /* OPFV widening instructions ignore vs1 check */
+           vext_check_ds(ctx, a->rd, a->rs2, a->vm);
+}
+
+/* Only SEW = 16 and 32 is valid, sew=1 or sew=2 */
+#define GEN_OPFBV_WIDEN_TRANS(NAME)                                \
+static bool trans_##NAME(DisasContext *s, arg_rmr2_andes *a)       \
+{                                                                  \
+    if (opfbv_check(s, a)) {                                       \
+        if (s->sew != MO_16 && s->sew != MO_32)                    \
+            return false;                                          \
+        uint32_t data = 0;                                         \
+        static gen_helper_gvec_3_ptr * const fns[2] = {            \
+            gen_helper_##NAME##16,                                 \
+            gen_helper_##NAME##32,                                 \
+        };                                                         \
+        TCGLabel *over = gen_new_label();                          \
+        gen_set_rm(s, RISCV_FRM_DYN);                              \
+        tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_vl, 0, over);          \
+        tcg_gen_brcond_tl(TCG_COND_GEU, cpu_vstart, cpu_vl, over); \
+                                                                   \
+        data = FIELD_DP32(data, VDATA, VM, a->vm);                 \
+        data = FIELD_DP32(data, VDATA, LMUL, s->lmul);             \
+        data = FIELD_DP32(data, VDATA, VTA, s->vta);               \
+        data = FIELD_DP32(data, VDATA, VMA, s->vma);               \
+        tcg_gen_gvec_3_ptr(vreg_ofs(s, a->rd), vreg_ofs(s, 0),     \
+                           vreg_ofs(s, a->rs2), cpu_env,           \
+                           s->cfg_ptr->vlen / 8,                   \
+                           s->cfg_ptr->vlen / 8, data,             \
+                           fns[s->sew - 1]);                       \
+        mark_vs_dirty(s);                                          \
+        gen_set_label(over);                                       \
+        return true;                                               \
+    }                                                              \
+    return false;                                                  \
+}
+
+GEN_OPFBV_WIDEN_TRANS(vfwcvt_f_n_v)
+GEN_OPFBV_WIDEN_TRANS(vfwcvt_f_nu_v)
+GEN_OPFBV_WIDEN_TRANS(vfwcvt_f_b_v)
+GEN_OPFBV_WIDEN_TRANS(vfwcvt_f_bu_v)
+
+/* Andes Vector Quad-Widening Integer Multiply-Add extension */
+/* OPIVV with WIDEN */
+/*
+ * Common check function for vector quad-widening instructions
+ * of quad-width result (4*SEW).
+ *
+ * Rules to be checked here:
+ *   1. The largest vector register group used by an instruction
+ *      can not be greater than 8 vector registers :
+ *      => LMUL < 4 (since dst EMUL must <= 8)
+ *      => SEW < 32.
+ *   2. Quad-width SEW cannot greater than ELEN.
+ *   3. Destination vector register number is multiples of 4 * LMUL.
+ *   4. Destination vector register group for a masked vector
+ *      instruction cannot overlap the source mask register (v0).
+ */
+
+static bool vext_quad_wide_check_common(DisasContext *s, int vd, int vm)
+{
+    return (s->lmul < 2) &&
+           (s->sew < MO_32) &&
+           ((s->sew + 2) <= (s->cfg_ptr->elen >> 4)) &&
+           require_align(vd, s->lmul + 2) &&
+           require_vm(vm, vd);
+}
+
+static bool vext_check_qs(DisasContext *s, int vd, int vs, int vm)
+{
+    return vext_quad_wide_check_common(s, vd, vm) &&
+        require_align(vs, s->lmul) &&
+        require_noover(vd, s->lmul + 2, vs, s->lmul);
+}
+
+static bool vext_check_qss(DisasContext *s, int vd, int vs1, int vs2, int vm)
+{
+    return vext_check_qs(s, vd, vs2, vm) &&
+        require_align(vs1, s->lmul) &&
+        require_noover(vd, s->lmul + 2, vs1, s->lmul);
+}
+
+static bool opivv_quad_widen_check(DisasContext *s, arg_rmrr_andes *a)
+{
+    return require_rvv(s) &&
+           vext_check_isa_ill(s) &&
+           vext_check_qss(s, a->rd, a->rs1, a->rs2, a->vm);
+}
+
+static bool do_opivv_quad_widen(DisasContext *s, arg_rmrr_andes *a,
+                           gen_helper_gvec_4_ptr *fn,
+                           bool (*checkfn)(DisasContext *, arg_rmrr_andes *))
+{
+    if (checkfn(s, a)) {
+        uint32_t data = 0;
+        TCGLabel *over = gen_new_label();
+        tcg_gen_brcondi_tl(TCG_COND_EQ, cpu_vl, 0, over);
+        tcg_gen_brcond_tl(TCG_COND_GEU, cpu_vstart, cpu_vl, over);
+
+        data = FIELD_DP32(data, VDATA, VM, a->vm);
+        data = FIELD_DP32(data, VDATA, LMUL, s->lmul);
+        data = FIELD_DP32(data, VDATA, VTA, s->vta);
+        data = FIELD_DP32(data, VDATA, VMA, s->vma);
+        tcg_gen_gvec_4_ptr(vreg_ofs(s, a->rd), vreg_ofs(s, 0),
+                           vreg_ofs(s, a->rs1),
+                           vreg_ofs(s, a->rs2),
+                           cpu_env, s->cfg_ptr->vlen / 8,
+                           s->cfg_ptr->vlen / 8,
+                           data, fn);
+        mark_vs_dirty(s);
+        gen_set_label(over);
+        return true;
+    }
+    return false;
+}
+
+#define GEN_OPIVV_QUAD_WIDEN_TRANS(NAME, CHECK) \
+static bool trans_##NAME(DisasContext *s, arg_rmrr_andes *a) \
+{                                                            \
+    if (s->sew >= MO_32)                                     \
+        return false;                                        \
+    static gen_helper_gvec_4_ptr * const fns[2] = {          \
+        gen_helper_##NAME##_b,                               \
+        gen_helper_##NAME##_h,                               \
+    };                                                       \
+    return do_opivv_quad_widen(s, a, fns[s->sew], CHECK);    \
+}
+
+/* OPIVX with QUAD-WIDEN */
+static bool opivx_quad_widen_check(DisasContext *s, arg_rmrr_andes *a)
+{
+    return require_rvv(s) &&
+           vext_check_isa_ill(s) &&
+           vext_check_qs(s, a->rd, a->rs2, a->vm);
+}
+
+static bool do_opivx_quad_widen(DisasContext *s, arg_rmrr_andes *a,
+                           gen_helper_opivx *fn)
+{
+    if (opivx_quad_widen_check(s, a)) {
+        return opivx_trans(a->rd, a->rs1, a->rs2, a->vm, fn, s);
+    }
+    return false;
+}
+
+#define GEN_OPIVX_QUAD_WIDEN_TRANS(NAME) \
+static bool trans_##NAME(DisasContext *s, arg_rmrr_andes *a) \
+{                                                            \
+    if (s->sew >= MO_32)                                     \
+        return false;                                        \
+    static gen_helper_opivx * const fns[2] = {               \
+        gen_helper_##NAME##_b,                               \
+        gen_helper_##NAME##_h,                               \
+    };                                                       \
+    return do_opivx_quad_widen(s, a, fns[s->sew]);           \
+}
+
+
+GEN_OPIVV_QUAD_WIDEN_TRANS(vqmaccu_vv, opivv_quad_widen_check)
+GEN_OPIVV_QUAD_WIDEN_TRANS(vqmacc_vv, opivv_quad_widen_check)
+GEN_OPIVV_QUAD_WIDEN_TRANS(vqmaccsu_vv, opivv_quad_widen_check)
+GEN_OPIVX_QUAD_WIDEN_TRANS(vqmaccu_vx)
+GEN_OPIVX_QUAD_WIDEN_TRANS(vqmacc_vx)
+GEN_OPIVX_QUAD_WIDEN_TRANS(vqmaccsu_vx)
+GEN_OPIVX_QUAD_WIDEN_TRANS(vqmaccus_vx)
 
