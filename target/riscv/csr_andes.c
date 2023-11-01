@@ -282,6 +282,26 @@ static RISCVException rvarch(CPURISCVState *env, int csrno)
     }
 }
 
+static RISCVException rvarch2(CPURISCVState *env, int csrno)
+{
+    AndesCsr *csr = &env->andes_csr;
+    bool rvarch2bit;
+
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        rvarch2bit = get_field(csr->csrno[CSR_MMSC_CFG2], MASK_MMSC_CFG2_RVARCH2);
+    }
+    else {
+        rvarch2bit = false;
+    }
+
+    if (rvarch2bit) {
+        return RISCV_EXCP_NONE;
+    }
+    else {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+}
+
 static RISCVException ccache(CPURISCVState *env, int csrno)
 {
     AndesCsr *csr = &env->andes_csr;
@@ -790,14 +810,15 @@ void andes_cpu_do_interrupt_post(CPUState *cs)
 riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     /* ================== AndeStar V5 machine mode CSRs ================== */
     /* Configuration Registers */
-    [CSR_MICM_CFG]          = { "micm_cfg",          any,    read_csr },
-    [CSR_MDCM_CFG]          = { "mdcm_cfg",          any,    read_csr },
-    [CSR_MMSC_CFG]          = { "mmsc_cfg",          any,    read_csr },
-    [CSR_MMSC_CFG2]         = { "mmsc_cfg2",         mcfg2,  read_csr },
-    [CSR_MMSC_CFG3]         = { "mmsc_cfg3",         mcfg3,  read_csr },
-    [CSR_MVEC_CFG]          = { "mvec_cfg",          veccfg, read_csr },
-    [CSR_MRVARCH_CFG]       = { "mrvarch_cfg",       rvarch, read_csr },
-    [CSR_MCCACHE_CTL_BASE]  = { "mccache_ctl_base",  ccache, read_csr },
+    [CSR_MICM_CFG]          = { "micm_cfg",          any,     read_csr },
+    [CSR_MDCM_CFG]          = { "mdcm_cfg",          any,     read_csr },
+    [CSR_MMSC_CFG]          = { "mmsc_cfg",          any,     read_csr },
+    [CSR_MMSC_CFG2]         = { "mmsc_cfg2",         mcfg2,   read_csr },
+    [CSR_MMSC_CFG3]         = { "mmsc_cfg3",         mcfg3,   read_csr },
+    [CSR_MVEC_CFG]          = { "mvec_cfg",          veccfg,  read_csr },
+    [CSR_MRVARCH_CFG]       = { "mrvarch_cfg",       rvarch,  read_csr },
+    [CSR_MRVARCH_CFG2]      = { "mrvarch_cfg2",      rvarch2, read_csr },
+    [CSR_MCCACHE_CTL_BASE]  = { "mccache_ctl_base",  ccache,  read_csr },
 
     /* Crash Debug CSRs */
     [CSR_MCRASH_STATESAVE]  = { "mcrash_statesave",  any, read_csr },

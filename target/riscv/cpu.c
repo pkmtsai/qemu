@@ -894,6 +894,9 @@ static void rv64_andes_nx45v_cpu_init(Object *obj)
     set_satp_mode_max_supported(RISCV_CPU(obj), VM_1_10_MBARE);
 #endif
 
+    /* Set CPU extensions */
+    cfg->ext_zfh = true;
+
     /* RVV extension */
     cfg->vext_spec = g_strdup("v1.0");
     cfg->vlen = 512;
@@ -1349,42 +1352,55 @@ static void andes_csr_sync_cpu_ext(CPURISCVState *env, RISCVCPU *cpu)
 {
     target_ulong mrvarch_cfg;
     csr_ops[CSR_MRVARCH_CFG].read(env, CSR_MRVARCH_CFG, &mrvarch_cfg);
-    cpu->cfg.ext_zba = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBA);
-    cpu->cfg.ext_zbb = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBB);
-    cpu->cfg.ext_zbc = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBC);
-    cpu->cfg.ext_zbs = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBS);
-    cpu->cfg.ext_svinval = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_SVINVAL);
-    cpu->cfg.ext_smstateen = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_SMSTATEEN);
-    cpu->cfg.ext_sscofpmf = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_SSCOFPMF);
-    cpu->cfg.ext_sstc = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_SSTC);
-    cpu->cfg.ext_zkn = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKN);
-    cpu->cfg.ext_zks = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKS);
-    cpu->cfg.ext_zkt = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKT);
-    cpu->cfg.ext_zkr = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKR);
-    cpu->cfg.ext_svpbmt = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_SVPBMT);
-    cpu->cfg.ext_svnapot = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_SVNAPOT);
-    cpu->cfg.ext_zihintpause = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZIHINTPAUSE);
-    cpu->cfg.ext_zca = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCA);
-    cpu->cfg.ext_zcb = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCB);
-    cpu->cfg.ext_zcd = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCD);
-    cpu->cfg.ext_zcf = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCF);
-    cpu->cfg.ext_zcmt = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCMT);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBA, cpu->cfg.ext_zba);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBB, cpu->cfg.ext_zbb);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBC, cpu->cfg.ext_zbc);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBS, cpu->cfg.ext_zbs);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SVINVAL, cpu->cfg.ext_svinval);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SMSTATEEN, cpu->cfg.ext_smstateen);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SSCOFPMF, cpu->cfg.ext_sscofpmf);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SSTC, cpu->cfg.ext_sstc);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKN, cpu->cfg.ext_zkn);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKS, cpu->cfg.ext_zks);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKT, cpu->cfg.ext_zkt);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKR, cpu->cfg.ext_zkr);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SVPBMT, cpu->cfg.ext_svpbmt);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SVNAPOT, cpu->cfg.ext_svnapot);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZIHINTPAUSE, cpu->cfg.ext_zihintpause);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCA, cpu->cfg.ext_zca);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCB, cpu->cfg.ext_zcb);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCD, cpu->cfg.ext_zcd);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCF, cpu->cfg.ext_zcf);
+    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCMT, cpu->cfg.ext_zcmt);
+    csr_ops[CSR_MRVARCH_CFG].write(env, CSR_MRVARCH_CFG, mrvarch_cfg);
 
     if (riscv_cpu_mxl(env) == MXL_RV32) {
         target_ulong mmsc_cfg2;
+        target_ulong mrvarch_cfg2;
         if (csr_ops[CSR_MMSC_CFG2].predicate(env, CSR_MMSC_CFG2) ==
                 RISCV_EXCP_NONE) {
             csr_ops[CSR_MMSC_CFG2].read(env, CSR_MMSC_CFG2, &mmsc_cfg2);
-            cpu->cfg.ext_zfh = get_field(mmsc_cfg2, MASK_MMSC_CFG2_ZFH);
+            mmsc_cfg2 = set_field(mmsc_cfg2, MASK_MMSC_CFG2_ZFH, cpu->cfg.ext_zfh);
+            csr_ops[CSR_MMSC_CFG2].write(env, CSR_MMSC_CFG2, mmsc_cfg2);
+        }
+        if (csr_ops[CSR_MRVARCH_CFG2].predicate(env, CSR_MRVARCH_CFG2) ==
+                RISCV_EXCP_NONE) {
+            csr_ops[CSR_MRVARCH_CFG2].read(env, CSR_MRVARCH_CFG2, &mrvarch_cfg2);
+            mrvarch_cfg2 = set_field(mrvarch_cfg2, MASK_MRVARCH_CFG2_ZFBFMIN, cpu->cfg.ext_zfbfmin);
+            mrvarch_cfg2 = set_field(mrvarch_cfg2, MASK_MRVARCH_CFG2_ZVFBFMIN, cpu->cfg.ext_zvfbfmin);
+            mrvarch_cfg2 = set_field(mrvarch_cfg2, MASK_MRVARCH_CFG2_ZVFBFWMA, cpu->cfg.ext_zvfbfwma);
+            csr_ops[CSR_MRVARCH_CFG2].write(env, CSR_MRVARCH_CFG2, mrvarch_cfg2);
         }
     }
     else {
         target_ulong mmsc_cfg;
         csr_ops[CSR_MMSC_CFG].read(env, CSR_MMSC_CFG, &mmsc_cfg);
-        cpu->cfg.ext_zfh = get_field(mmsc_cfg, MASK_MMSC_CFG_ZFH);
-        cpu->cfg.ext_zfbfmin = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZFBFMIN);
-        cpu->cfg.ext_zvfbfmin = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZVFBFMIN);
-        cpu->cfg.ext_zvfbfwma = get_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZVFBFWMA);
+        mmsc_cfg = set_field(mmsc_cfg, MASK_MMSC_CFG_ZFH, cpu->cfg.ext_zfh);
+        csr_ops[CSR_MMSC_CFG].write(env, CSR_MMSC_CFG, mmsc_cfg);
+        mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZFBFMIN, cpu->cfg.ext_zfbfmin);
+        mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZVFBFMIN, cpu->cfg.ext_zvfbfmin);
+        mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZVFBFWMA, cpu->cfg.ext_zvfbfwma);
+        csr_ops[CSR_MRVARCH_CFG].write(env, CSR_MRVARCH_CFG, mrvarch_cfg);
     }
 }
 #endif

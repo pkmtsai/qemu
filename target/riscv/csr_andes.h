@@ -213,6 +213,13 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MRVARCH_CFG_ZVQMAC             ((uint64_t)0x1 << 35)
 #define MASK_MRVARCH_CFG_ZVLSSEG            ((uint64_t)0x1 << 36)
 
+/* mrvarch_cfg2 */
+#define MASK_MRVARCH_CFG2_ZFBFMIN           (0x1)
+#define MASK_MRVARCH_CFG2_ZVFBFMIN          (0x1 << 1)
+#define MASK_MRVARCH_CFG2_ZVFBFWMA          (0x1 << 2)
+#define MASK_MRVARCH_CFG2_ZVQMAC            (0x1 << 3)
+#define MASK_MRVARCH_CFG2_ZVLSSEQ           (0x1 << 4)
+
 #define WRITE_MASK_CSR_MECC_CODE_32         0x7F
 #define WRITE_MASK_CSR_MECC_CODE_64         0xFF
 #define WRITE_MASK_CSR_UITB_32              0xFFFFFFFC
