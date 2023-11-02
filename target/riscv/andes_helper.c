@@ -145,7 +145,7 @@ uint64_t helper_andes_nfcvt_bf16_s(CPURISCVState *env, uint64_t rs2)
 
 uint64_t helper_andes_nfcvt_s_bf16(CPURISCVState *env, uint64_t rs2)
 {
-    float16 frs = check_nanbox_h(env, rs2);
+    float16 frs = check_nanbox_h_bf16(env, rs2);
     return nanbox_s(env, bfloat16_to_float32(frs, &env->fp_status));
 }
 
