@@ -696,6 +696,7 @@ static void rv64_andes_common_cpu_init(Object *obj, fp_spec_csr_init_fn spec_csr
     if (!env->misa_ext) {
         set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
     }
+    riscv_cpu_add_user_properties(obj);
     register_andes_cpu_props(obj);
     env->priv_ver = PRIV_VERSION_1_12_0;
 
@@ -994,6 +995,7 @@ static void rv32_andes_common_cpu_init(Object *obj, fp_csr_init_fn spec_csr_init
     if (!env->misa_ext) {
         set_misa(env, MXL_RV32, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
     }
+    riscv_cpu_add_user_properties(obj);
     register_andes_cpu_props(obj);
     env->priv_ver = PRIV_VERSION_1_12_0;
 
