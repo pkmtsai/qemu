@@ -95,7 +95,8 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MMSC_CFG_ECLIC                 (0x01 << 28)
 #define MASK_MMSC_CFG_EDSP                  (0x01 << 29)
 #define MASK_MMSC_CFG_PPMA                  (0x01 << 30)
-#define MASK_MMSC_CFG_MSC_EXT               (0x01 << 31)  // only exists in RV32
+/* below is only exists in RV32 */
+#define MASK_MMSC_CFG_MSC_EXT               (0x01 << 31)
 /* for RV64 mmsc_cfg */
 #define MASK_MMSC_CFG_BF16CVT               ((uint64_t)0x01 << 32)
 #define MASK_MMSC_CFG_ZFH                   ((uint64_t)0x01 << 33)

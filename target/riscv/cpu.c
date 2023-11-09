@@ -688,7 +688,8 @@ static void rv128_base_cpu_init(Object *obj)
 #endif
 }
 
-static void rv64_andes_common_cpu_init(Object *obj, fp_spec_csr_init_fn spec_csr_init)
+static void rv64_andes_common_cpu_init(Object *obj,
+                                       fp_spec_csr_init_fn spec_csr_init)
 {
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
@@ -763,7 +764,8 @@ static void rv64_andes_ax45mpv_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
-    set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU | RVV);
+    set_misa(env, MXL_RV64,
+             RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU | RVV);
     rv64_andes_common_cpu_init(obj, andes_set_mmsc_cfg_l2c);
 
     /* Set CPU ID */
@@ -886,7 +888,8 @@ static void rv64_andes_nx45v_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
-    set_misa(env, MXL_RV64, RVA | RVC | RVD | RVF | RVI | RVM | RVN | RVU | RVV | RVX);
+    set_misa(env, MXL_RV64,
+             RVA | RVC | RVD | RVF | RVI | RVM | RVN | RVU | RVV | RVX);
     rv64_andes_common_cpu_init(obj, andes_spec_csr_init_nx45v);
     cfg->mmu = false;
 #ifndef CONFIG_USER_ONLY
@@ -990,7 +993,8 @@ static void rv32_imafcu_nommu_cpu_init(Object *obj)
 
 typedef void (*fp_csr_init_fn)(AndesCsr *);
 
-static void rv32_andes_common_cpu_init(Object *obj, fp_csr_init_fn spec_csr_init)
+static void rv32_andes_common_cpu_init(Object *obj,
+                                       fp_csr_init_fn spec_csr_init)
 {
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
@@ -1030,7 +1034,8 @@ static void rv32_andes_common_cpu_init(Object *obj, fp_csr_init_fn spec_csr_init
     cfg->ext_icsr = true;
 }
 
-static void rv32_andes_a25_cpu_init(Object *obj) {
+static void rv32_andes_a25_cpu_init(Object *obj)
+{
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
 
     rv32_andes_common_cpu_init(obj, NULL);
@@ -1309,10 +1314,10 @@ static void andes_csr_reset_common(CPURISCVState *env)
 
     env->andes_csr.csrno[CSR_UITB] = 0;
     env->andes_csr.csrno[CSR_MMSC_CFG] = (1UL << V5_MMSC_CFG_ECD) |
-                                         (1UL << V5_MMSC_CFG_LMSLVP)|
-                                         (1UL << V5_MMSC_CFG_CCTLCSR)|
+                                         (1UL << V5_MMSC_CFG_LMSLVP) |
+                                         (1UL << V5_MMSC_CFG_CCTLCSR) |
                                          (1UL << V5_MMSC_CFG_PPMA);
-    // enable mmsc_cfg2 in RV32
+    /* enable mmsc_cfg2 in RV32 */
     if (riscv_cpu_mxl(env) == MXL_RV32) {
         env->andes_csr.csrno[CSR_MMSC_CFG] |= MASK_MMSC_CFG_MSC_EXT;
     }
@@ -1342,7 +1347,7 @@ static void andes_csr_reset_common(CPURISCVState *env)
     env->andes_csr.csrno[CSR_MSP_BOUND] = ~((target_ulong)0);
     env->andes_csr.csrno[CSR_MSP_BASE] = ~((target_ulong)0);
 
-    // spec_csr_init() may overwrite previous CSR values
+    /* spec_csr_init() may overwrite previous CSR values */
     if (env->andes_spec_csr_init != NULL) {
         env->andes_spec_csr_init(&env->andes_csr);
     }
@@ -1352,26 +1357,47 @@ static void andes_csr_sync_cpu_ext(CPURISCVState *env, RISCVCPU *cpu)
 {
     target_ulong mrvarch_cfg;
     csr_ops[CSR_MRVARCH_CFG].read(env, CSR_MRVARCH_CFG, &mrvarch_cfg);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBA, cpu->cfg.ext_zba);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBB, cpu->cfg.ext_zbb);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBC, cpu->cfg.ext_zbc);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZBS, cpu->cfg.ext_zbs);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SVINVAL, cpu->cfg.ext_svinval);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SMSTATEEN, cpu->cfg.ext_smstateen);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SSCOFPMF, cpu->cfg.ext_sscofpmf);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SSTC, cpu->cfg.ext_sstc);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKN, cpu->cfg.ext_zkn);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKS, cpu->cfg.ext_zks);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKT, cpu->cfg.ext_zkt);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZKR, cpu->cfg.ext_zkr);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SVPBMT, cpu->cfg.ext_svpbmt);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_SVNAPOT, cpu->cfg.ext_svnapot);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZIHINTPAUSE, cpu->cfg.ext_zihintpause);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCA, cpu->cfg.ext_zca);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCB, cpu->cfg.ext_zcb);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCD, cpu->cfg.ext_zcd);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCF, cpu->cfg.ext_zcf);
-    mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZCMT, cpu->cfg.ext_zcmt);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZBA, cpu->cfg.ext_zba);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZBB, cpu->cfg.ext_zbb);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZBC, cpu->cfg.ext_zbc);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZBS, cpu->cfg.ext_zbs);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_SVINVAL, cpu->cfg.ext_svinval);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_SMSTATEEN, cpu->cfg.ext_smstateen);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_SSCOFPMF, cpu->cfg.ext_sscofpmf);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_SSTC, cpu->cfg.ext_sstc);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZKN, cpu->cfg.ext_zkn);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZKS, cpu->cfg.ext_zks);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZKT, cpu->cfg.ext_zkt);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZKR, cpu->cfg.ext_zkr);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_SVPBMT, cpu->cfg.ext_svpbmt);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_SVNAPOT, cpu->cfg.ext_svnapot);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZIHINTPAUSE,
+                            cpu->cfg.ext_zihintpause);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZCA, cpu->cfg.ext_zca);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZCB, cpu->cfg.ext_zcb);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZCD, cpu->cfg.ext_zcd);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZCF, cpu->cfg.ext_zcf);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZCMT, cpu->cfg.ext_zcmt);
     env->andes_csr.csrno[CSR_MRVARCH_CFG] = mrvarch_cfg;
 
     if (riscv_cpu_mxl(env) == MXL_RV32) {
@@ -1380,26 +1406,33 @@ static void andes_csr_sync_cpu_ext(CPURISCVState *env, RISCVCPU *cpu)
         if (csr_ops[CSR_MMSC_CFG2].predicate(env, CSR_MMSC_CFG2) ==
                 RISCV_EXCP_NONE) {
             csr_ops[CSR_MMSC_CFG2].read(env, CSR_MMSC_CFG2, &mmsc_cfg2);
-            mmsc_cfg2 = set_field(mmsc_cfg2, MASK_MMSC_CFG2_ZFH, cpu->cfg.ext_zfh);
+            mmsc_cfg2 = set_field(mmsc_cfg2,
+                                  MASK_MMSC_CFG2_ZFH, cpu->cfg.ext_zfh);
             env->andes_csr.csrno[CSR_MMSC_CFG2] = mmsc_cfg2;
         }
         if (csr_ops[CSR_MRVARCH_CFG2].predicate(env, CSR_MRVARCH_CFG2) ==
                 RISCV_EXCP_NONE) {
-            csr_ops[CSR_MRVARCH_CFG2].read(env, CSR_MRVARCH_CFG2, &mrvarch_cfg2);
-            mrvarch_cfg2 = set_field(mrvarch_cfg2, MASK_MRVARCH_CFG2_ZFBFMIN, cpu->cfg.ext_zfbfmin);
-            mrvarch_cfg2 = set_field(mrvarch_cfg2, MASK_MRVARCH_CFG2_ZVFBFMIN, cpu->cfg.ext_zvfbfmin);
-            mrvarch_cfg2 = set_field(mrvarch_cfg2, MASK_MRVARCH_CFG2_ZVFBFWMA, cpu->cfg.ext_zvfbfwma);
+            csr_ops[CSR_MRVARCH_CFG2].read(env,
+                                           CSR_MRVARCH_CFG2, &mrvarch_cfg2);
+            mrvarch_cfg2 = set_field(mrvarch_cfg2, MASK_MRVARCH_CFG2_ZFBFMIN,
+                                     cpu->cfg.ext_zfbfmin);
+            mrvarch_cfg2 = set_field(mrvarch_cfg2, MASK_MRVARCH_CFG2_ZVFBFMIN,
+                                     cpu->cfg.ext_zvfbfmin);
+            mrvarch_cfg2 = set_field(mrvarch_cfg2, MASK_MRVARCH_CFG2_ZVFBFWMA,
+                                     cpu->cfg.ext_zvfbfwma);
             env->andes_csr.csrno[CSR_MRVARCH_CFG2] = mrvarch_cfg2;
         }
-    }
-    else {
+    } else {
         target_ulong mmsc_cfg;
         csr_ops[CSR_MMSC_CFG].read(env, CSR_MMSC_CFG, &mmsc_cfg);
         mmsc_cfg = set_field(mmsc_cfg, MASK_MMSC_CFG_ZFH, cpu->cfg.ext_zfh);
         env->andes_csr.csrno[CSR_MMSC_CFG] = mmsc_cfg;
-        mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZFBFMIN, cpu->cfg.ext_zfbfmin);
-        mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZVFBFMIN, cpu->cfg.ext_zvfbfmin);
-        mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZVFBFWMA, cpu->cfg.ext_zvfbfwma);
+        mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZFBFMIN,
+                                cpu->cfg.ext_zfbfmin);
+        mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZVFBFMIN,
+                                cpu->cfg.ext_zvfbfmin);
+        mrvarch_cfg = set_field(mrvarch_cfg, MASK_MRVARCH_CFG_ZVFBFWMA,
+                                cpu->cfg.ext_zvfbfwma);
         env->andes_csr.csrno[CSR_MRVARCH_CFG] = mrvarch_cfg;
     }
 }
@@ -1696,7 +1729,7 @@ static void riscv_cpu_realize(DeviceState *dev, Error **errp)
 #ifndef CONFIG_USER_ONLY
     /* if local memory is initialized */
     CPURISCVState *env = &cpu->env;
-    if(env->cpu_as_root) {
+    if (env->cpu_as_root) {
         andes_cpu_lm_realize(dev);
     }
 #endif

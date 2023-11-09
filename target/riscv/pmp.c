@@ -671,7 +671,7 @@ target_ulong pmp_get_tlb_size(CPURISCVState *env, target_ulong addr)
         }
     }
 
-    if (env->andes_csr.csrno[CSR_MILMB] & 0x1 ) {
+    if (env->andes_csr.csrno[CSR_MILMB] & 0x1) {
         if (ilm_sa <= tlb_sa && ilm_ea >= tlb_ea) {
             return TARGET_PAGE_SIZE;
         } else if ((ilm_sa >= tlb_sa && ilm_sa <= tlb_ea) ||
@@ -679,7 +679,7 @@ target_ulong pmp_get_tlb_size(CPURISCVState *env, target_ulong addr)
             return 1;
         }
     }
-    if (env->andes_csr.csrno[CSR_MDLMB] & 0x1 ) {
+    if (env->andes_csr.csrno[CSR_MDLMB] & 0x1) {
         if (dlm_sa <= tlb_sa && dlm_ea >= tlb_ea) {
             return TARGET_PAGE_SIZE;
         } else if ((dlm_sa >= tlb_sa && dlm_sa <= tlb_ea) ||

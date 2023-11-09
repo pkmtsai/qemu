@@ -74,7 +74,7 @@ static bool riscv_hart_realize(RISCVHartArrayState *s, int idx,
 {
     object_initialize_child(OBJECT(s), "harts[*]", &s->harts[idx], cpu_type);
     qdev_prop_set_uint64(DEVICE(&s->harts[idx]), "resetvec", s->resetvec);
-    if(strncmp(cpu_type, "andes", 5) == 0) {
+    if (strncmp(cpu_type, "andes", 5) == 0) {
         andes_hart_prop_set(s, idx);
     }
     s->harts[idx].env.mhartid = s->hartid_base + idx;

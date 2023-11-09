@@ -86,15 +86,13 @@ static RISCVException write_smdcause_nx45v(CPURISCVState *env, int csrno,
 
     if (riscv_cpu_mxl(env) == MXL_RV32) {
         interrupt = get_field(mcause, MASK_MCAUSE_INTERRUPT_32);
-    }
-    else {
+    } else {
         interrupt = get_field(mcause, MASK_MCAUSE_INTERRUPT_64);
     }
 
     if (interrupt) {
         env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MDCAUSE_INT_NX45V;
-    }
-    else {
+    } else {
         env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_MDCAUSE_EXCP_NX45V;
     }
     return RISCV_EXCP_NONE;
