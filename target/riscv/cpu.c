@@ -1436,6 +1436,8 @@ static void andes_csr_sync_cpu_ext(CPURISCVState *env, RISCVCPU *cpu)
         env->andes_csr.csrno[CSR_MRVARCH_CFG] = mrvarch_cfg;
     }
 }
+
+static bool is_andes_riscv_cpu_type(Object *obj);
 #endif
 
 static void riscv_cpu_reset_hold(Object *obj)
@@ -1453,8 +1455,10 @@ static void riscv_cpu_reset_hold(Object *obj)
         mcc->parent_phases.hold(obj);
     }
 #ifndef CONFIG_USER_ONLY
-    andes_csr_reset_common(env);
-    andes_csr_sync_cpu_ext(env, cpu);
+    if (is_andes_riscv_cpu_type(obj)) {
+        andes_csr_reset_common(env);
+        andes_csr_sync_cpu_ext(env, cpu);
+    }
     env->misa_mxl = env->misa_mxl_max;
     env->priv = PRV_M;
     env->mstatus &= ~(MSTATUS_MIE | MSTATUS_MPRV);
@@ -2521,5 +2525,20 @@ static const TypeInfo riscv_cpu_type_infos[] = {
     DEFINE_DYNAMIC_CPU(TYPE_RISCV_CPU_BASE128,  rv128_base_cpu_init),
 #endif
 };
+
+#ifndef CONFIG_USER_ONLY
+static bool is_andes_riscv_cpu_type(Object *obj)
+{
+    size_t size = ARRAY_SIZE(riscv_cpu_type_infos);
+    for (int i = 0; i < size; i++) {
+        if (strstr(riscv_cpu_type_infos[i].name, "andes") != NULL) {
+            if (object_dynamic_cast(obj, riscv_cpu_type_infos[i].name)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+#endif
 
 DEFINE_TYPES(riscv_cpu_type_infos)
