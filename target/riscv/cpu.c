@@ -2533,7 +2533,7 @@ static bool is_andes_riscv_cpu_type(Object *obj)
     for (int i = 0; i < size; i++) {
         if (strstr(riscv_cpu_type_infos[i].name, "andes") != NULL) {
             if (object_dynamic_cast(obj, riscv_cpu_type_infos[i].name)) {
-                return true;
+                return RISCV_CPU(obj)->cfg.ext_XAndesV5Ops;
             }
         }
     }
