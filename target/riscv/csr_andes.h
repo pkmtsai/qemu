@@ -96,7 +96,7 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MMSC_CFG_EDSP                  (0x01 << 29)
 #define MASK_MMSC_CFG_PPMA                  (0x01 << 30)
 /* below is only exists in RV32 */
-#define MASK_MMSC_CFG_MSC_EXT               (0x01 << 31)
+#define MASK_MMSC_CFG_MSC_EXT               ((uint64_t)0x01 << 31)
 /* for RV64 mmsc_cfg */
 #define MASK_MMSC_CFG_BF16CVT               ((uint64_t)0x01 << 32)
 #define MASK_MMSC_CFG_ZFH                   ((uint64_t)0x01 << 33)
@@ -151,7 +151,7 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MMSC_CFG2_I_LMSLVP             (0x01 << 27)
 #define MASK_MMSC_CFG2_RVARCH2              (0x01 << 28)
 #define MASK_MMSC_CFG2_BTB_ECC              (0x03 << 29)
-#define MASK_MMSC_CFG2_MSC_EXT3             (0x01 << 31)
+#define MASK_MMSC_CFG2_MSC_EXT3             ((uint64_t)0x01 << 31)
 
 /* mmsc_cfg3 */
 #define MASK_MMSC_CFG3_BTB_RAM_CMD          (0x01)
@@ -161,7 +161,7 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 
 /* mcause */
 #define MASK_MCAUSE_EXCEPTION_CODE_32       (~MASK_MCAUSE_INTERRUPT_32)
-#define MASK_MCAUSE_INTERRUPT_32            (1 << 31)
+#define MASK_MCAUSE_INTERRUPT_32            ((uint64_t)1 << 31)
 #define MASK_MCAUSE_EXCEPTION_CODE_64       (~MASK_MCAUSE_INTERRUPT_64)
 #define MASK_MCAUSE_INTERRUPT_64            ((uint64_t)1 << 63)
 
@@ -207,7 +207,7 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MRVARCH_CFG_ZCD                (0x1 << 28)
 #define MASK_MRVARCH_CFG_ZCF                (0x1 << 29)
 #define MASK_MRVARCH_CFG_ZCMP               (0x1 << 30)
-#define MASK_MRVARCH_CFG_ZCMT               (0x1 << 31)
+#define MASK_MRVARCH_CFG_ZCMT               ((uint64_t)0x1 << 31)
 #define MASK_MRVARCH_CFG_ZFBFMIN            ((uint64_t)0x1 << 32)
 #define MASK_MRVARCH_CFG_ZVFBFMIN           ((uint64_t)0x1 << 33)
 #define MASK_MRVARCH_CFG_ZVFBFWMA           ((uint64_t)0x1 << 34)
