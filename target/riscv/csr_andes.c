@@ -883,13 +883,6 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_PMAADDR14] = { "pmaaddr14",              ppma, read_csr, write_csr},
     [CSR_PMAADDR15] = { "pmaaddr15",              ppma, read_csr, write_csr},
 
-    /* Debug/Trace Registers (shared with Debug Mode) */
-    [CSR_TSELECT] = { "tselect",                  any, read_csr, write_csr},
-    [CSR_TDATA1]  = { "tdata1",                   any, read_csr, write_csr},
-    [CSR_TDATA2]  = { "tdata2",                   any, read_csr, write_csr},
-    [CSR_TDATA3]  = { "tdata3",                   any, read_csr, write_csr},
-    [CSR_TINFO]   = { "tinfo",                    any, read_csr, write_csr},
-
     /* ================ AndeStar V5 supervisor mode CSRs ================ */
     /* Supervisor trap registers */
     [CSR_SLIE]    = { "slie",                     smode, read_csr, write_slie},
