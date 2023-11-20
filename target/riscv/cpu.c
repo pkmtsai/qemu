@@ -21,6 +21,7 @@
 #include "qemu/qemu-print.h"
 #include "qemu/ctype.h"
 #include "qemu/log.h"
+#include "qemu/main-loop.h"
 #include "cpu.h"
 #include "cpu_vendorid.h"
 #include "internals.h"
@@ -696,7 +697,6 @@ static void rv64_andes_common_cpu_init(Object *obj,
     if (!env->misa_ext) {
         riscv_cpu_set_misa(env, MXL_RV64, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
     }
-    riscv_cpu_add_user_properties(obj);
     register_andes_cpu_props(obj);
     env->priv_ver = PRIV_VERSION_1_12_0;
 
@@ -1001,7 +1001,6 @@ static void rv32_andes_common_cpu_init(Object *obj,
     if (!env->misa_ext) {
         riscv_cpu_set_misa(env, MXL_RV32, RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU);
     }
-    riscv_cpu_add_user_properties(obj);
     register_andes_cpu_props(obj);
     env->priv_ver = PRIV_VERSION_1_12_0;
 
@@ -2044,6 +2043,9 @@ const RISCVCPUMultiExtConfig riscv_cpu_extensions[] = {
     MULTI_EXT_CFG_BOOL("zvks", ext_zvks, false),
     MULTI_EXT_CFG_BOOL("zvksc", ext_zvksc, false),
     MULTI_EXT_CFG_BOOL("zvksg", ext_zvksg, false),
+
+    /* Optional CSR of sdtrig extension */
+    MULTI_EXT_CFG_BOOL("sdtrig_tcontrol", ext_sdtrig_tcontrol, false),
 
     DEFINE_PROP_END_OF_LIST(),
 };

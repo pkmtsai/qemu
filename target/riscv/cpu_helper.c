@@ -1788,6 +1788,13 @@ void riscv_cpu_do_interrupt(CPUState *cs)
             env->hstatus = set_field(env->hstatus, HSTATUS_GVA, write_gva);
         }
 
+        if (riscv_cpu_cfg(env)->ext_sdtrig_tcontrol) {
+            s = env->tcontrol;
+            s = set_field(s, TCONTROL_MPTE, get_field(s, TCONTROL_MTE));
+            s = set_field(s, TCONTROL_MTE, 0);
+            env->tcontrol = s;
+        }
+
         s = env->mstatus;
         s = set_field(s, MSTATUS_SPIE, get_field(s, MSTATUS_SIE));
         s = set_field(s, MSTATUS_SPP, env->priv);

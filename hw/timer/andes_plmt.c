@@ -99,7 +99,7 @@ andes_plmt_read(void *opaque, hwaddr addr, unsigned size)
         /* %8=0:timecmp_lo, %8=4:timecmp_hi */
         size_t hartid = (addr - plmt->timecmp_base) >> 3;
         CPUState *cpu = qemu_get_cpu(hartid);
-        CPURISCVState *env = cpu ? cpu->env_ptr : NULL;
+        CPURISCVState *env = cpu_env(cpu);
         if (!env) {
             error_report("plmt: invalid timecmp hartid: %zu", hartid);
         } else if ((addr & 0x7) == 0) {
@@ -134,7 +134,7 @@ andes_plmt_write(void *opaque, hwaddr addr, uint64_t value, unsigned size)
         /* %8=0:timecmp_lo, %8=4:timecmp_hi */
         size_t hartid = (addr - plmt->timecmp_base) >> 3;
         CPUState *cpu = qemu_get_cpu(hartid);
-        CPURISCVState *env = cpu ? cpu->env_ptr : NULL;
+        CPURISCVState *env = cpu_env(cpu);
         if (!env) {
             error_report("plmt: invalid timecmp hartid: %zu", hartid);
         } else if ((addr & 0x7) == 0) {
@@ -239,7 +239,7 @@ andes_plmt_create(hwaddr addr, hwaddr size, uint32_t num_harts,
     for (i = 0; i < num_harts; i++) {
         CPUState *cpu = qemu_get_cpu(i);
         RISCVCPU *rvcpu = RISCV_CPU(cpu);
-        CPURISCVState *env = cpu ? cpu->env_ptr : NULL;
+        CPURISCVState *env = cpu_env(cpu);
         if (!env) {
             continue;
         }

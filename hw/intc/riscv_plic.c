@@ -144,7 +144,7 @@ static void riscv_plic_update(void *opaque)
         uint32_t hartid = plic->addr_config[addrid].hartid;
         PLICMode mode = plic->addr_config[addrid].mode;
         CPUState *cpu = qemu_get_cpu(hartid);
-        CPURISCVState *env = cpu ? cpu->env_ptr : NULL;
+        CPURISCVState *env = cpu_env(cpu);
         if (!env) {
             continue;
         }

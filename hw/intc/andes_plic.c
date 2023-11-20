@@ -58,7 +58,7 @@ void andes_plichw_update(void *plic)
         uint32_t hart_id = riscv_plic->addr_config[target_id].hartid;
         PLICMode mode = riscv_plic->addr_config[target_id].mode;
         CPUState *cpu = qemu_get_cpu(hart_id);
-        CPURISCVState *env = cpu ? cpu->env_ptr : NULL;
+        CPURISCVState *env = cpu_env(cpu);
         if (!env) {
             continue;
         }
@@ -104,7 +104,7 @@ void andes_plicsw_update(void *plic)
         uint32_t hart_id = riscv_plic->addr_config[target_id].hartid;
         PLICMode mode = riscv_plic->addr_config[target_id].mode;
         CPUState *cpu = qemu_get_cpu(hart_id);
-        CPURISCVState *env = cpu ? cpu->env_ptr : NULL;
+        CPURISCVState *env = cpu_env(cpu);
         if (!env) {
             continue;
         }

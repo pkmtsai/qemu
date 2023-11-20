@@ -322,6 +322,14 @@ target_ulong helper_mret(CPURISCVState *env)
         riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, GETPC());
     }
 
+    if (riscv_cpu_cfg(env)->ext_sdtrig_tcontrol) {
+        uint64_t tcontrol = env->tcontrol;
+
+        tcontrol = set_field(tcontrol, TCONTROL_MTE,
+                             get_field(tcontrol, TCONTROL_MPTE));
+        env->tcontrol = tcontrol;
+    }
+
     target_ulong retpc = env->mepc;
     if (!riscv_has_ext(env, RVC) && (retpc & 0x3)) {
         riscv_raise_exception(env, RISCV_EXCP_INST_ADDR_MIS, GETPC());

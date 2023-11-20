@@ -549,6 +549,15 @@ static RISCVException debug(CPURISCVState *env, int csrno)
 
     return RISCV_EXCP_ILLEGAL_INST;
 }
+
+static RISCVException sdtrig_tcontrol(CPURISCVState *env, int csrno)
+{
+    if (riscv_cpu_cfg(env)->debug && riscv_cpu_cfg(env)->ext_sdtrig_tcontrol) {
+        return RISCV_EXCP_NONE;
+    }
+
+    return RISCV_EXCP_ILLEGAL_INST;
+}
 #endif
 
 static RISCVException seed(CPURISCVState *env, int csrno)
@@ -1482,6 +1491,15 @@ static RISCVException write_medeleg(CPURISCVState *env, int csrno,
                                     target_ulong val)
 {
     env->medeleg = (env->medeleg & ~DELEGABLE_EXCPS) | (val & DELEGABLE_EXCPS);
+
+    if (riscv_cpu_cfg(env)->ext_sdtrig_tcontrol) {
+        /*
+         * From debug specification section 5.4:
+         * If tcontrol is implemented, medeleg[3] is hard-wired to 0.
+         */
+        env->medeleg &= ~(1ULL << RISCV_EXCP_BREAKPOINT);
+    }
+
     return RISCV_EXCP_NONE;
 }
 
@@ -3900,6 +3918,20 @@ static RISCVException read_tinfo(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException read_tcontrol(CPURISCVState *env, int csrno,
+                                    target_ulong *val)
+{
+    *val = env->tcontrol;
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_tcontrol(CPURISCVState *env, int csrno,
+                                     target_ulong val)
+{
+    env->tcontrol = val & (TCONTROL_MPTE | TCONTROL_MTE);
+    return RISCV_EXCP_NONE;
+}
+
 /*
  * Functions to access Pointer Masking feature registers
  * We have to check if current priv lvl could modify
@@ -4794,11 +4826,13 @@ riscv_csr_operations csr_ops[CSR_TABLE_SIZE] = {
     [CSR_PMPADDR15] =  { "pmpaddr15", pmp, read_pmpaddr, write_pmpaddr },
 
     /* Debug CSRs */
-    [CSR_TSELECT]   =  { "tselect", debug, read_tselect, write_tselect },
-    [CSR_TDATA1]    =  { "tdata1",  debug, read_tdata,   write_tdata   },
-    [CSR_TDATA2]    =  { "tdata2",  debug, read_tdata,   write_tdata   },
-    [CSR_TDATA3]    =  { "tdata3",  debug, read_tdata,   write_tdata   },
-    [CSR_TINFO]     =  { "tinfo",   debug, read_tinfo,   write_ignore  },
+	[CSR_TSELECT]   =  { "tselect",  debug, read_tselect,  write_tselect },
+    [CSR_TDATA1]    =  { "tdata1",   debug, read_tdata,    write_tdata   },
+    [CSR_TDATA2]    =  { "tdata2",   debug, read_tdata,    write_tdata   },
+    [CSR_TDATA3]    =  { "tdata3",   debug, read_tdata,    write_tdata   },
+    [CSR_TINFO]     =  { "tinfo",    debug, read_tinfo,    write_ignore  },
+    [CSR_TCONTROL]  =  { "tcontrol", sdtrig_tcontrol,      read_tcontrol,
+                         write_tcontrol                                  },
 
     /* User Pointer Masking */
     [CSR_UMTE]    =    { "umte",    pointer_masking, read_umte,  write_umte },

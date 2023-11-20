@@ -11,10 +11,9 @@
 #include "andes_ace_helper.c.inc"
 static bool trans_andes_ace(DisasContext *ctx, arg_andes_ace *a)
 {
-    CPURISCVState *env = cpu_env(ctx->cs);
     if (!ctx->cfg_ptr->ext_XAndesAce) {
         qemu_printf("XAndesAce not set\n");
-        riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, GETPC());
+        riscv_raise_exception(cpu_env(ctx->cs), RISCV_EXCP_ILLEGAL_INST, GETPC());
     }
     REQUIRE_ACES;
     TCGv opc = tcg_constant_tl(ctx->opcode);

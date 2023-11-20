@@ -627,16 +627,33 @@ static void riscv_cpu_validate_andes_ace(RISCVCPU *cpu, Error **errp)
     CPURISCVState *env = &cpu->env;
 
     if (cpu->cfg.ext_XAndesAce && cpu->cfg.XAndesAceLib == NULL) {
-        error_setg(errp, "Invalid configuration: AndesACE requires XAndesAceLib setting");
+        error_setg(errp, "Invalid configuration: Andes ACE requires"
+                   " XAndesAceLib setting");
         return;
     }
 
-    if (cpu->cfg.ext_XAndesAce) { /* cfg.ext_XAndesAce is true, cfg.XAndesAceLib cannot be NULL since above check already */
-        if (load_qemu_ace_wrapper(cpu->cfg.XAndesAceLib) != 0) {
-            error_setg(errp, "xandesacelib '%s' cannot be loaded", cpu->cfg.XAndesAceLib);
+    /* cfg.ext_XAndesAce is true, cfg.XAndesAceLib cannot
+     * be NULL since above check already
+     */
+    if (cpu->cfg.ext_XAndesAce) {
+        target_ulong hartid;
+#ifndef CONFIG_USER_ONLY
+        hartid = env->mhartid;
+#else
+        hartid = 0;
+#endif
+        if (qemu_ace_load_wrapper(cpu->cfg.XAndesAceLib, hartid)) {
+            error_setg(errp, "xandesacelib '%s' cannot be loaded",
+                       cpu->cfg.XAndesAceLib);
             return;
         } else {
-            qemu_ace_agent_register(env);
+            /* Loaded ACE wrapper library, register callback function */
+            if (qemu_ace_agent_register(env, cpu->cfg.XAndesAceExtLibPath,
+                                    hartid, cpu->cfg.ext_XAndesAceMulti)) {
+                error_setg(errp, "xandesacelib '%s' register failed",
+                           cpu->cfg.XAndesAceLib);
+                return;
+            }
         }
     }
 }
