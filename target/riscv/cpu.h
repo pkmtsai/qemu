@@ -356,6 +356,8 @@ struct CPUArchState {
     int64_t last_icount;
     bool itrigger_enabled;
     target_ulong tcontrol;
+    target_ulong scontext;
+    target_ulong mcontext;
 
     /* machine specific rdtime callback */
     uint64_t (*rdtime_fn)(void *);

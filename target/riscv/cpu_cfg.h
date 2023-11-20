@@ -154,6 +154,9 @@ struct RISCVCPUConfig {
     bool debug;
     bool misa_w;
     bool ext_sdtrig_tcontrol;
+    bool ext_sdtrig_scontext;
+    bool ext_sdtrig_hcontext;
+    bool ext_sdtrig_mcontext;
 
     bool short_isa_string;
 
