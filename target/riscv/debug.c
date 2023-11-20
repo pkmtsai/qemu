@@ -217,6 +217,90 @@ static inline void warn_always_zero_bit(target_ulong val, target_ulong mask,
     }
 }
 
+static target_ulong textra_validate(CPURISCVState *env, target_ulong tdata3)
+{
+    target_ulong mhvalue, mhselect, sbytemask, svalue, sselect;
+    target_ulong mhvalue_new, mhselect_new;
+    target_ulong sbytemask_new, svalue_new, sselect_new;
+    target_ulong textra = 0;
+
+    const uint32_t mhselect_if_h[8] = { 0, 1, 2, 0, 4, 5, 6, 4 };
+    const uint32_t mhselect_no_h[8] = { 0, 0, 0, 0, 4, 4, 4, 4 };
+    const uint32_t sselect_if_s[4]  = { 0, 1, 2, 0 };
+
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        mhvalue_new   = mhvalue   = extract32(tdata3, 26,  6);
+        mhselect_new  = mhselect  = extract32(tdata3, 23,  3);
+        sbytemask_new = sbytemask = extract32(tdata3, 18,  2);
+        svalue_new    = svalue    = extract32(tdata3,  2, 16);
+        sselect_new   = sselect   = extract32(tdata3,  0,  2);
+    } else {
+        mhvalue_new   = mhvalue   = extract64(tdata3, 51, 13);
+        mhselect_new  = mhselect  = extract64(tdata3, 48,  3);
+        sbytemask_new = sbytemask = extract64(tdata3, 36,  5);
+        svalue_new    = svalue    = extract64(tdata3,  2, 34);
+        sselect_new   = sselect   = extract64(tdata3,  0,  2);
+    }
+
+    /* Validate mhvalue and mhselect. */
+    if (riscv_has_ext(env, RVH)) {
+        mhselect_new = mhselect_if_h[mhselect];
+    } else {
+        mhselect_new = mhselect_no_h[mhselect];
+    }
+
+    if ((mhselect_new == 1 || mhselect_new == 4 || mhselect_new == 5) &&
+        !riscv_cpu_cfg(env)->ext_sdtrig_mcontext) {
+        /* 1, 4, 5 are only illegal when CSR mcontext is implemented. */
+        mhselect_new = 0;
+    }
+
+    if (mhselect_new == 0) {
+        /* Hardwire mhvalue to 0 since mhselect is 0. */
+        mhvalue_new = 0;
+    }
+
+    /* Only set sselect when S-mode is enabled.  */
+    if (riscv_has_ext(env, RVS)) {
+        sselect_new = sselect_if_s[sselect];
+    } else {
+        sselect_new = 0;
+    }
+
+    if ((sselect_new == 1) && !riscv_cpu_cfg(env)->ext_sdtrig_scontext) {
+        /* 1 is only illegal when CSR scontext is implemented. */
+        sselect_new = 0;
+    }
+
+    if (sselect_new == 0) {
+        /* Hardwire svalue to 0 since sselect is 0 */
+        svalue_new = 0;
+    }
+
+    /* Write legal values into textra */
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        textra = set_field(textra, TEXTRA32_MHVALUE, mhvalue_new);
+        textra = set_field(textra, TEXTRA32_MHSELECT, mhselect_new);
+        textra = set_field(textra, TEXTRA32_SBYTEMASK, sbytemask_new);
+        textra = set_field(textra, TEXTRA32_SVALUE, svalue_new);
+        textra = set_field(textra, TEXTRA32_SSELECT, sselect_new);
+    } else {
+        textra = set_field(textra, TEXTRA64_MHVALUE, mhvalue_new);
+        textra = set_field(textra, TEXTRA64_MHSELECT, mhselect_new);
+        textra = set_field(textra, TEXTRA64_SBYTEMASK, sbytemask_new);
+        textra = set_field(textra, TEXTRA64_SVALUE, svalue_new);
+        textra = set_field(textra, TEXTRA64_SSELECT, sselect_new);
+    }
+
+    if (textra != tdata3) {
+        qemu_log_mask(LOG_GUEST_ERROR,
+                      "different value 0x" TARGET_FMT_lx " write to tdata3\n",
+                      textra);
+    }
+
+    return textra;
+}
+
 static void do_trigger_action(CPURISCVState *env, target_ulong trigger_index)
 {
     trigger_action_t action = get_trigger_action(env, trigger_index);
@@ -371,8 +455,10 @@ static void type2_reg_write(CPURISCVState *env, target_ulong index,
         }
         break;
     case TDATA3:
-        qemu_log_mask(LOG_UNIMP,
-                      "tdata3 is not supported for type 2 trigger\n");
+        new_val = textra_validate(env, val);
+        if (new_val != env->tdata3[index]) {
+            env->tdata3[index] = new_val;
+        }
         break;
     default:
         g_assert_not_reached();
@@ -488,8 +574,10 @@ static void type6_reg_write(CPURISCVState *env, target_ulong index,
         }
         break;
     case TDATA3:
-        qemu_log_mask(LOG_UNIMP,
-                      "tdata3 is not supported for type 6 trigger\n");
+        new_val = textra_validate(env, val);
+        if (new_val != env->tdata3[index]) {
+            env->tdata3[index] = new_val;
+        }
         break;
     default:
         g_assert_not_reached();
@@ -671,8 +759,10 @@ static void itrigger_reg_write(CPURISCVState *env, target_ulong index,
                       "tdata2 is not supported for icount trigger\n");
         break;
     case TDATA3:
-        qemu_log_mask(LOG_UNIMP,
-                      "tdata3 is not supported for icount trigger\n");
+        new_val = textra_validate(env, val);
+        if (new_val != env->tdata3[index]) {
+            env->tdata3[index] = new_val;
+        }
         break;
     default:
         g_assert_not_reached();
