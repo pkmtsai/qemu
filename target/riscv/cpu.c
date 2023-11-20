@@ -1080,6 +1080,10 @@ static void rv32_andes_n25_cpu_init(Object *obj)
 
     /* inherited from parent obj via riscv_cpu_init() */
     cfg->pmp = true;
+
+    /* Debug sdtrig extension optional CSR */
+    cfg->ext_sdtrig_tcontrol = true;
+    cfg->ext_sdtrig_mcontext = true;
 }
 
 static void rv32_andes_n45_cpu_init(Object *obj)
