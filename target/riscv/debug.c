@@ -861,6 +861,143 @@ void riscv_cpu_debug_excp_handler(CPUState *cs)
     }
 }
 
+static bool riscv_cpu_debug_check_textra(CPURISCVState *env,
+                                         target_ulong textra)
+{
+    target_ulong mhvalue, mhselect;
+    target_ulong svalue, sbytemask, sselect;
+    target_ulong asid, asidmax, vmid, vmidmax;
+    uint64_t bytemask;
+    int sbytemask_len;
+    bool rv32 = riscv_cpu_mxl(env) == MXL_RV32 ? true : false;
+
+    if (rv32) {
+        mhvalue   = extract32(textra, 26,  6);
+        mhselect  = extract32(textra, 23,  3);
+        sbytemask = extract32(textra, 18,  2);
+        svalue    = extract32(textra,  2, 16);
+        sselect   = extract32(textra,  0,  2);
+    } else {
+        mhvalue   = extract64(textra, 51, 13);
+        mhselect  = extract64(textra, 48,  3);
+        sbytemask = extract64(textra, 36,  5);
+        svalue    = extract64(textra,  2, 34);
+        sselect   = extract64(textra,  0,  2);
+    }
+
+    switch (sselect) {
+    case 1:
+        /* Generate bytemask */
+        if (rv32) {
+            bytemask = ((uint32_t)1 << TEXTRA32_SVALUE_LENGTH) - 1;
+            sbytemask_len = TEXTRA32_SBYTEMASK_LENGTH;
+        } else {
+            bytemask = ((uint64_t)1 << TEXTRA64_SVALUE_LENGTH) - 1;
+            sbytemask_len = TEXTRA64_SBYTEMASK_LENGTH;
+        }
+        for (int i = 0; i < sbytemask_len; i++) {
+            /* Ignore bits[8*(i+1)-1:8*i] when sbytemask[i] is 1. */
+            if (sbytemask & (1 << i)) {
+                bytemask &= ~((uint64_t)0xFF << (8 * i));
+            }
+        }
+
+        /* Match if the bytemasked low bits of scontext equal svalue. */
+        if ((env->scontext & bytemask) != (svalue & bytemask)) {
+            return false;
+        }
+        break;
+    case 2:
+        if (rv32) {
+            if (env->virt_enabled) {
+                asid = extract32(env->vsatp, 22, 9);
+            } else {
+                asid = extract32(env->satp, 22, 9);
+            }
+            asidmax = RV32_ASIDMAX;
+        } else {
+            if (env->virt_enabled) {
+                asid = extract64(env->vsatp, 44, 16);
+            } else {
+                asid = extract64(env->satp, 44, 16);
+            }
+            asidmax = RV64_ASIDMAX;
+        }
+
+        /* Match if ASID in vsatp/satp equals lower ASIDMAX bits of svalue. */
+        if (asid != (svalue & ((1 << asidmax) - 1))) {
+            return false;
+        }
+        break;
+    default:
+        break;
+    }
+
+    switch (mhselect) {
+    case 1:
+    case 5:
+        /* 1, 5 should shift mhvalue as {mhvalue, mhselect[2]} first. */
+        mhvalue = ((mhvalue << 1) | (mhselect >> 2));
+        /* fall through */
+    case 4:
+        /* Match if the low bits of mcontext/hcontext equal mhvalue. */
+        if (riscv_has_ext(env, RVH)) {
+            /* Compare mhvalue with hcontext(whole bits of mcontext) */
+            if (mhvalue != env->mcontext) {
+                return false;
+            }
+        } else {
+            /* Compare mhvalue with parts of bits of mcontext */
+            if (rv32 && (mhvalue != (env->mcontext & MCONTEXT32))) {
+                return false;
+            } else if (mhvalue != (env->mcontext & MCONTEXT64)) {
+                return false;
+            }
+        }
+        break;
+    case 2:
+    case 6:
+        if (rv32) {
+            vmid = extract32(env->hgatp, 22, 7);
+            vmidmax = RV32_VMIDMAX;
+        } else {
+            vmid = extract64(env->hgatp, 44, 14);
+            vmidmax = RV64_VMIDMAX;
+        }
+
+        /*
+         * Match if VMID in hgatp equals the lower VMIDMAX bits of
+         * {mhvalue, mhselect[2]}.
+         */
+        mhvalue = ((mhvalue << 1) | (mhselect >> 2));
+        if (vmid != (mhvalue & ((1 << vmidmax) - 1))) {
+            return false;
+        }
+        break;
+    default:
+        break;
+    }
+
+    return true;
+}
+
+static bool riscv_cpu_debug_check_tcontrol(CPURISCVState *env)
+{
+    /*
+     * tcontrol CSR controls whether the triggers can match/fire while the hart
+     * is in M-mode.
+     */
+    if (riscv_cpu_cfg(env)->ext_sdtrig_tcontrol && (env->priv == PRV_M)) {
+        if ((env->tcontrol & TCONTROL_MTE) == 0) {
+            qemu_log_mask(LOG_GUEST_ERROR,
+                          "trigger in M-mode but tcontrol.MTE is not set\n");
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool riscv_cpu_debug_check_breakpoint(CPUState *cs)
 {
     RISCVCPU *cpu = RISCV_CPU(cs);
@@ -868,6 +1005,7 @@ bool riscv_cpu_debug_check_breakpoint(CPUState *cs)
     CPUBreakpoint *bp;
     target_ulong ctrl;
     target_ulong pc;
+    target_ulong textra;
     int trigger_type;
     int i;
 
@@ -884,28 +1022,41 @@ bool riscv_cpu_debug_check_breakpoint(CPUState *cs)
 
                 ctrl = env->tdata1[i];
                 pc = env->tdata2[i];
+                textra = env->tdata3[i];
 
                 if ((ctrl & TYPE2_EXEC) && (bp->pc == pc)) {
                     /* check U/S/M bit against current privilege level */
                     if ((ctrl >> 3) & BIT(env->priv)) {
-                        return true;
+	                    /* check tcontrol and textra */
+                        if (riscv_cpu_debug_check_tcontrol(env) &&
+                            riscv_cpu_debug_check_textra(env, textra)) {
+                            return true;
+                        }
                     }
                 }
                 break;
             case TRIGGER_TYPE_AD_MATCH6:
                 ctrl = env->tdata1[i];
                 pc = env->tdata2[i];
+                textra = env->tdata3[i];
 
                 if ((ctrl & TYPE6_EXEC) && (bp->pc == pc)) {
                     if (env->virt_enabled) {
                         /* check VU/VS bit against current privilege level */
                         if ((ctrl >> 23) & BIT(env->priv)) {
-                            return true;
+	                        /* check textra */
+                            if (riscv_cpu_debug_check_textra(env, textra)) {
+                                return true;
+                            }
                         }
                     } else {
                         /* check U/S/M bit against current privilege level */
                         if ((ctrl >> 3) & BIT(env->priv)) {
-                            return true;
+	                        /* check tcontrol and textra */
+                            if (riscv_cpu_debug_check_tcontrol(env) &&
+                                riscv_cpu_debug_check_textra(env, textra)) {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -926,6 +1077,7 @@ bool riscv_cpu_debug_check_watchpoint(CPUState *cs, CPUWatchpoint *wp)
     CPURISCVState *env = &cpu->env;
     target_ulong ctrl;
     target_ulong addr;
+    target_ulong textra;
     int trigger_type;
     int flags;
     int i;
@@ -942,6 +1094,7 @@ bool riscv_cpu_debug_check_watchpoint(CPUState *cs, CPUWatchpoint *wp)
 
             ctrl = env->tdata1[i];
             addr = env->tdata2[i];
+            textra = env->tdata3[i];
             flags = 0;
 
             if (ctrl & TYPE2_LOAD) {
@@ -954,13 +1107,18 @@ bool riscv_cpu_debug_check_watchpoint(CPUState *cs, CPUWatchpoint *wp)
             if ((wp->flags & flags) && (wp->vaddr == addr)) {
                 /* check U/S/M bit against current privilege level */
                 if ((ctrl >> 3) & BIT(env->priv)) {
-                    return true;
+	                /* check tcontrol and textra */
+                    if (riscv_cpu_debug_check_tcontrol(env) &&
+                        riscv_cpu_debug_check_textra(env, textra)) {
+                        return true;
+                    }
                 }
             }
             break;
         case TRIGGER_TYPE_AD_MATCH6:
             ctrl = env->tdata1[i];
             addr = env->tdata2[i];
+            textra = env->tdata3[i];
             flags = 0;
 
             if (ctrl & TYPE6_LOAD) {
@@ -974,12 +1132,19 @@ bool riscv_cpu_debug_check_watchpoint(CPUState *cs, CPUWatchpoint *wp)
                 if (env->virt_enabled) {
                     /* check VU/VS bit against current privilege level */
                     if ((ctrl >> 23) & BIT(env->priv)) {
-                        return true;
+	                    /* check textra */
+                        if (riscv_cpu_debug_check_textra(env, textra)) {
+                            return true;
+                        }
                     }
                 } else {
                     /* check U/S/M bit against current privilege level */
                     if ((ctrl >> 3) & BIT(env->priv)) {
-                        return true;
+	                    /* check tcontrol and textra */
+                        if (riscv_cpu_debug_check_tcontrol(env) &&
+                            riscv_cpu_debug_check_textra(env, textra)) {
+                            return true;
+                        }
                     }
                 }
             }
