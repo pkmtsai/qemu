@@ -929,4 +929,5 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_WFE]            = { "wfe",               any,   read_csr, write_csr  },
     [CSR_SLEEPVALUE]     = { "sleepvalue",        any,   read_csr, write_csr  },
     [CSR_TXEVT]          = { "csr_txevt",         any,   read_csr, write_csr  },
+    [CSR_UMISC_CTL]      = { "umisc_ctl",         any,   read_csr, write_csr  },
 };
