@@ -101,7 +101,7 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
     switch (offset) {
     case ATCDMAC300_INT_STATUS:
         /* Write 1 to clear */
-        s->IntStatus = 0;
+        s->IntStatus &= ~value;
         break;
     case ATCDMAC300_DMAC_CTRL:
         atcdmac300_dma_reset(s);
