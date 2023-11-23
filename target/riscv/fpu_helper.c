@@ -655,7 +655,7 @@ target_ulong helper_feq_h(CPURISCVState *env, uint64_t rs1, uint64_t rs2)
 target_ulong helper_fclass_h(CPURISCVState *env, uint64_t rs1)
 {
     float16 frs1 = nds_check_nanbox_h(env, rs1);
-    if (check_fp_mode()) {
+    if (check_fp_mode(env)) {
         return fclass_h_bf16(frs1);
     }
     return fclass_h(frs1);
@@ -667,7 +667,7 @@ uint64_t helper_fround_h(CPURISCVState *env, uint64_t rs1)
     uint16_t nx_old = get_float_exception_flags(fs) & float_flag_inexact;
     float16 frs1 = nds_check_nanbox_h(env, rs1);
 
-    frs1 = nds_float16_round_to_int(frs1, fs);
+    frs1 = nds_float16_round_to_int(frs1, &env->fp_status);
 
     /* Restore the original NX flag. */
     uint16_t flags = get_float_exception_flags(fs);

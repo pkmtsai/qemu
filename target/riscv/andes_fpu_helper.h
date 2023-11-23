@@ -11,7 +11,7 @@
 #include "exec/exec-all.h"
 #include "fpu/softfloat.h"
 
-int check_fp_mode(void);
+bool check_fp_mode(CPURISCVState *env);
 float16 nds_check_nanbox_h(CPURISCVState *env, uint64_t f);
 
 float16 nds_float16_muladd(float16, float16, float16, int,

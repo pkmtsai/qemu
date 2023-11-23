@@ -3617,7 +3617,8 @@ static float16 frsqrt7_h(float16 f, float_status *s)
 
 static float16 nds_frsqrt7_h(float16 f, float_status *s)
 {
-    if (check_fp_mode()) {
+    CPURISCVState *env = container_of(s, CPURISCVState, fp_status);
+    if (check_fp_mode(env)) {
         return frsqrt7_h_bf16(f, s);
     }
     return frsqrt7_h(f, s);
@@ -3864,7 +3865,8 @@ static float16 frec7_h(float16 f, float_status *s)
 
 static float16 nds_frec7_h(float16 f, float_status *s)
 {
-    if (check_fp_mode()) {
+    CPURISCVState *env = container_of(s, CPURISCVState, fp_status);
+    if (check_fp_mode(env)) {
         return frec7_h_bf16(f, s);
     }
     return frec7_h(f, s);
@@ -4220,6 +4222,41 @@ GEN_VEXT_CMP_VF(vmfge_vf_w, uint32_t, H4, vmfge32)
 GEN_VEXT_CMP_VF(vmfge_vf_d, uint64_t, H8, vmfge64)
 
 /* Vector Floating-Point Classify Instruction */
+#define OPIVV1N(NAME, TD, T2, TX2, HD, HS2, OP)        \
+static void do_##NAME(void *vd, void *vs2, int i,      \
+                      CPURISCVState *env)              \
+{                                                      \
+    TX2 s2 = *((T2 *)vs2 + HS2(i));                    \
+    *((TD *)vd + HD(i)) = OP(s2, &env->fp_status);     \
+}
+
+#define GEN_VEXT_VN(NAME, ESZ)                         \
+void HELPER(NAME)(void *vd, void *v0, void *vs2,       \
+                  CPURISCVState *env, uint32_t desc)   \
+{                                                      \
+    uint32_t vm = vext_vm(desc);                       \
+    uint32_t vl = env->vl;                             \
+    uint32_t total_elems =                             \
+        vext_get_total_elems(env, desc, ESZ);          \
+    uint32_t vta = vext_vta(desc);                     \
+    uint32_t vma = vext_vma(desc);                     \
+    uint32_t i;                                        \
+                                                       \
+    for (i = env->vstart; i < vl; i++) {               \
+        if (!vm && !vext_elem_mask(v0, i)) {           \
+            /* set masked-off elements to 1s */        \
+            vext_set_elems_1s(vd, vma, i * ESZ,        \
+                              (i + 1) * ESZ);          \
+            continue;                                  \
+        }                                              \
+        do_##NAME(vd, vs2, i, env);                    \
+    }                                                  \
+    env->vstart = 0;                                   \
+    /* set tail elements to 1s */                      \
+    vext_set_elems_1s(vd, vta, vl * ESZ,               \
+                      total_elems * ESZ);              \
+}
+
 #define OPIVV1(NAME, TD, T2, TX2, HD, HS2, OP)         \
 static void do_##NAME(void *vd, void *vs2, int i)      \
 {                                                      \
@@ -4292,9 +4329,10 @@ target_ulong fclass_h(uint64_t frs1)
     }
 }
 
-static target_ulong nds_fclass_h(uint64_t frs1)
+static target_ulong nds_fclass_h(uint64_t frs1, float_status *fs)
 {
-    if (check_fp_mode()) {
+    CPURISCVState *env = container_of(fs, CPURISCVState, fp_status);
+    if (check_fp_mode(env)) {
         return fclass_h_bf16(frs1);
     }
     return fclass_h(frs1);
@@ -4338,10 +4376,10 @@ target_ulong fclass_d(uint64_t frs1)
     }
 }
 
-RVVCALL(OPIVV1, vfclass_v_h, OP_UU_H, H2, H2, nds_fclass_h)
+RVVCALL(OPIVV1N, vfclass_v_h, OP_UU_H, H2, H2, nds_fclass_h)
 RVVCALL(OPIVV1, vfclass_v_w, OP_UU_W, H4, H4, fclass_s)
 RVVCALL(OPIVV1, vfclass_v_d, OP_UU_D, H8, H8, fclass_d)
-GEN_VEXT_V(vfclass_v_h, 2)
+GEN_VEXT_VN(vfclass_v_h, 2)
 GEN_VEXT_V(vfclass_v_w, 4)
 GEN_VEXT_V(vfclass_v_d, 8)
 
