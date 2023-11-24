@@ -1,3 +1,9 @@
+/*
+ * Andes ACE helper header
+ *
+ * Copyright (c) 2023 Andes Technology Corp.
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 #ifndef __ANDES_ACE_HELPER__
 #define __ANDES_ACE_HELPER__ 1
 #include <stdint.h>
@@ -43,7 +49,8 @@ enum Register_Type {
 uint32_t qemu_get_ACES(CPURISCVState *env);
 void qemu_set_ACES(CPURISCVState *env, uint32_t value);
 
-/* for get the cause code of exception
+/*
+ * for get the cause code of exception
  * the definition of cause code is in SPA spec 5.1.8
  */
 uint64_t get_cause_code(void);

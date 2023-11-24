@@ -1,3 +1,9 @@
+/*
+ * Andes ACE common header
+ *
+ * Copyright (c) 2023 Andes Technology Corp.
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 #ifndef __ACE_HELPER_H__
 #define __ACE_HELPER_H__
 

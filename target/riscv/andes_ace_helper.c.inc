@@ -1,3 +1,9 @@
+/*
+ * Andes ACE helper functions
+ *
+ * Copyright (c) 2023 Andes Technology Corp.
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 #include "andes_ace_helper.h"
 #include <stdio.h>
 #include <string.h>
@@ -98,6 +104,7 @@ uint64_t qemu_get_XRF(CPURISCVState *env, uint32_t index)
     /* Not support RV128 */
     return env->gpr[index];
 }
+
 void qemu_set_XRF(CPURISCVState *env, uint32_t index, uint64_t value)
 {
     if (index == 0) {
@@ -105,11 +112,13 @@ void qemu_set_XRF(CPURISCVState *env, uint32_t index, uint64_t value)
     }
     env->gpr[index] = value;
 }
+
 uint64_t qemu_get_FRF(CPURISCVState *env, uint32_t index)
 {
     /* Should we check FP enable? */
     return env->fpr[index];
 }
+
 void qemu_set_FRF(CPURISCVState *env, uint32_t index, uint64_t value)
 {
     /* Should we check FP enable? */
@@ -122,6 +131,7 @@ void qemu_set_FRF(CPURISCVState *env, uint32_t index, uint64_t value)
 #endif
     env->fpr[index] = value;
 }
+
 unsigned char *qemu_get_VRF(CPURISCVState *env, uint32_t index)
 {
     /* Should we check Vector enable? */
@@ -131,6 +141,7 @@ unsigned char *qemu_get_VRF(CPURISCVState *env, uint32_t index)
     uint64_t *vreg = &env->vreg[index * vlenq];
     return (unsigned char *)vreg;
 }
+
 void qemu_set_VRF(CPURISCVState *env, uint32_t index, unsigned char *value)
 {
     /* Should we check Vector enable? */
@@ -146,6 +157,7 @@ void qemu_set_VRF(CPURISCVState *env, uint32_t index, unsigned char *value)
     /* vlenq is div 64, memcpy use byte size 8 */
     memcpy(&env->vreg[index * vlenq], value, vlenq * 8);
 }
+
 /*
  * get_MEM/set_MEM don't support non 1,2,4,8 length,
  * and return/set data always small than or equal to 8
@@ -187,6 +199,7 @@ uint64_t qemu_get_MEM(CPURISCVState *env, uint64_t vaddr, uint32_t size)
     }
     return data;
 }
+
 void qemu_set_MEM(CPURISCVState *env, uint64_t vaddr,
                   uint64_t value, uint32_t size)
 {
@@ -223,6 +236,15 @@ void qemu_set_MEM(CPURISCVState *env, uint64_t vaddr,
         break;
     }
 }
+
+inline int CTZLL(unsigned long long x)
+{
+    if (0 == x) {
+        return 0;
+    }
+    return __builtin_ctzll(x);
+}
+
 uint64_t qemu_get_CSR(CPURISCVState *env, uint32_t index, uint64_t mask)
 {
     target_ulong value;
@@ -234,6 +256,7 @@ uint64_t qemu_get_CSR(CPURISCVState *env, uint32_t index, uint64_t mask)
     }
     return 0;
 }
+
 void qemu_set_CSR(CPURISCVState *env, uint32_t index,
                   uint64_t mask, uint64_t value)
 {
@@ -242,10 +265,11 @@ void qemu_set_CSR(CPURISCVState *env, uint32_t index,
     if (ops.read != NULL && ops.write != NULL) {
         target_ulong old;
         ops.read(env, index, &old);
-        target_ulong new = (value & mask) | (old & ~mask);
+        target_ulong new = (value  << CTZLL(mask) & mask) | (old & ~mask);
         ops.write(env, index, new);
     }
 }
+
 void qemu_set_CSR_masked(CPURISCVState *env, uint32_t index, uint64_t value)
 {
     riscv_csr_operations ops;
@@ -264,6 +288,7 @@ ACM_Status qemu_get_ACM(CPURISCVState *env, uint64_t addr,
 #endif
     return ACM_OK;
 }
+
 ACM_Status qemu_set_ACM(CPURISCVState *env, uint64_t addr,
                         uint32_t size, char *data)
 {
@@ -278,21 +303,20 @@ bool is_big_endian(void)
 {
     return 0;
 }
+
 bool interruption_exist(void)
 {
     return 0;
 }
 
-#define V5_MMISC_CTL_ACES 0x30 /* bit [5:4] */
 uint32_t qemu_get_ACES(CPURISCVState *env)
 {
-    return env->andes_csr.csrno[CSR_MMISC_CTL] & V5_MMISC_CTL_ACES;
+    return qemu_get_CSR(env, CSR_MMISC_CTL, MASK_MMISC_CTL_ACES);
 }
+
 void qemu_set_ACES(CPURISCVState *env, uint32_t value)
 {
-    uint32_t old = env->andes_csr.csrno[CSR_MMISC_CTL] & V5_MMISC_CTL_ACES;
-    uint32_t new = (value & V5_MMISC_CTL_ACES) | (old & ~V5_MMISC_CTL_ACES);
-    env->andes_csr.csrno[CSR_MMISC_CTL] = new;
+    qemu_set_CSR(env, CSR_MMISC_CTL, MASK_MMISC_CTL_ACES, value);
 }
 
 uint64_t qemu_get_PC(CPURISCVState *env)
