@@ -16,6 +16,7 @@
 #include "qemu.h"
 #else
 #include "semihosting/uaccess.h"
+#include CONFIG_DEVICES
 #endif
 
 
@@ -752,6 +753,12 @@ void semihost_sys_read(CPUState *cs, gdb_syscall_complete_cb complete,
                        int fd, target_ulong buf, target_ulong len)
 {
     GuestFD *gf = get_guestfd(fd);
+#ifdef CONFIG_ARM_COMPATIBLE_SEMIHOSTING
+    /* Andes workaround for bug 29062, default to directly use stdin */
+    if (gf == NULL && fd == 0) {
+        gf = &console_in_gf;
+    }
+#endif
 
     if (gf) {
         semihost_sys_read_gf(cs, complete, gf, buf, len);
@@ -794,6 +801,14 @@ void semihost_sys_write(CPUState *cs, gdb_syscall_complete_cb complete,
                         int fd, target_ulong buf, target_ulong len)
 {
     GuestFD *gf = get_guestfd(fd);
+#ifdef CONFIG_ARM_COMPATIBLE_SEMIHOSTING
+    /* Andes workaround for bug 29062, default to directly use fd 1,2 */
+    if (gf == NULL) {
+        if (fd == 1 || fd == 2) {
+            gf = &console_out_gf;
+        }
+    }
+#endif
 
     if (gf) {
         semihost_sys_write_gf(cs, complete, gf, buf, len);
