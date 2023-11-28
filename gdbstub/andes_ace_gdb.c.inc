@@ -54,19 +54,19 @@ int32_t gdb_ace_load_lib(const char *so_name)
         (unsigned *) dlsym(handle, "ace_lib_for_gdb_len");
     LE("unable to load symbol ace_lib_for_gdb_len");
 
+    /*
+     * Below ACR relative symbols can be skip since some .ace file
+     * has no any ACR
+     */
     global_acr_reg_count_v5 = (unsigned *) dlsym(handle, "acr_reg_count");
-    LE("unable to load symbol acr_reg_count");
 
     global_acr_type_count_v5 = (unsigned *) dlsym(handle, "acr_type_count");
-    LE("unable to load symbol acr_type_count");
 
     gen_get_value_code = dlsym(handle, "gen_get_value_code");
-    LE("unable to load symbol gen_get_value_code");
 
     gen_set_value_code = dlsym(handle, "gen_set_value_code");
-    LE("unable to load symbol gen_set_value_code");
 
-    if (*global_acr_type_count_v5 != 0) {
+    if (global_acr_type_count_v5 && *global_acr_type_count_v5 != 0) {
         global_acr_info_list_v5 = (ACR_INFO_T_V5 *) dlsym(handle, "acr_list");
     }
 
