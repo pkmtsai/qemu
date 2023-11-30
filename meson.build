@@ -433,6 +433,9 @@ if get_option('fuzzing')
   endif
 endif
 
+#For Andes ACE support since uses dysyn/dlopen, older gcc needs this flag
+qemu_ldflags += ['-ldl']
+
 add_global_arguments(qemu_common_flags, native: false, language: all_languages)
 add_global_link_arguments(qemu_ldflags, native: false, language: all_languages)
 
