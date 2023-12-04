@@ -4,6 +4,10 @@
  * Copyright (c) 2023 Andes Technology Corp.
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
+#define REQUIRE_ACE do { \
+    REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_ACE) \
+} while (0)
+
 #define REQUIRE_ACES do { \
     REQUIRE_CFG(CSR_MMISC_CTL, MASK_MMISC_CTL_ACES) \
 } while (0)
@@ -15,6 +19,7 @@ static bool trans_andes_ace(DisasContext *ctx, arg_andes_ace *a)
         qemu_printf("XAndesAce not set\n");
         riscv_raise_exception(cpu_env(ctx->cs), RISCV_EXCP_ILLEGAL_INST, GETPC());
     }
+    REQUIRE_ACE;
     REQUIRE_ACES;
     TCGv opc = tcg_constant_tl(ctx->opcode);
     gen_helper_andes_v5_ace(opc, tcg_env, opc);
