@@ -237,7 +237,7 @@ void qemu_set_MEM(CPURISCVState *env, uint64_t vaddr,
     }
 }
 
-inline int CTZLL(unsigned long long x)
+static int CTZLL(unsigned long long x)
 {
     if (0 == x) {
         return 0;
