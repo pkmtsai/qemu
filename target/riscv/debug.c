@@ -484,19 +484,19 @@ static bool trigger_mode_match(CPURISCVState *env, trigger_type_t type,
             return false;
         }
         /* check U/S/M bit against current privilege level */
-        if ((ctrl >> 3) & BIT(env->priv)) {
+        if ((ctrl >> TYPE2_U_SHIFT) & BIT(env->priv)) {
             return true;
         }
         break;
     case TRIGGER_TYPE_AD_MATCH6:
         if (env->virt_enabled) {
             /* check VU/VS bit against current privilege level */
-            if ((ctrl >> 23) & BIT(env->priv)) {
+            if ((ctrl >> TYPE6_VU_SHIFT) & BIT(env->priv)) {
                 return true;
             }
         } else {
             /* check U/S/M bit against current privilege level */
-            if ((ctrl >> 3) & BIT(env->priv)) {
+            if ((ctrl >> TYPE6_U_SHIFT) & BIT(env->priv)) {
                 return true;
             }
         }
@@ -504,12 +504,12 @@ static bool trigger_mode_match(CPURISCVState *env, trigger_type_t type,
     case TRIGGER_TYPE_INST_CNT:
         if (env->virt_enabled) {
             /* check VU/VS bit against current privilege level */
-            if ((ctrl >> 25) & BIT(env->priv)) {
+            if ((ctrl >> ITRIGGER_VU_SHIFT) & BIT(env->priv)) {
                 return true;
             }
         } else {
             /* check U/S/M bit against current privilege level */
-            if ((ctrl >> 6) & BIT(env->priv)) {
+            if ((ctrl >> ITRIGGER_U_SHIFT) & BIT(env->priv)) {
                 return true;
             }
         }

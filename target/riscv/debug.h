@@ -85,6 +85,8 @@ typedef enum {
 #define TYPE2_HIT       BIT(20)
 #define TYPE2_SIZEHI    (0x3 << 21) /* RV64 only */
 
+#define TYPE2_U_SHIFT   3
+
 /* mcontrol6 field masks */
 
 #define TYPE6_LOAD      BIT(0)
@@ -102,6 +104,9 @@ typedef enum {
 #define TYPE6_HIT       BIT(22)
 #define TYPE6_VU        BIT(23)
 #define TYPE6_VS        BIT(24)
+
+#define TYPE6_U_SHIFT   3
+#define TYPE6_VU_SHIFT  23
 
 /* access size */
 enum {
@@ -128,6 +133,9 @@ enum {
 #define ITRIGGER_HIT          BIT(24)
 #define ITRIGGER_VU           BIT(25)
 #define ITRIGGER_VS           BIT(26)
+
+#define ITRIGGER_U_SHIFT      6
+#define ITRIGGER_VU_SHIFT     25
 
 bool tdata_available(CPURISCVState *env, int tdata_index);
 
