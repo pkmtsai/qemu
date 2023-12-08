@@ -21,8 +21,9 @@
 #define REQUIRE_BF16CVT do { \
     if (cpu_env(ctx->cs)->misa_mxl == MXL_RV32) { \
         REQUIRE_CFG(CSR_MMSC_CFG2, MASK_MMSC_CFG2_BF16CVT) \
+    } else { \
+        REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_BF16CVT) \
     } \
-    REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_BF16CVT) \
 } while (0)
 
 #define MASK_MVEC_CFG_MFSEW (0x3 << 16)
@@ -32,29 +33,33 @@
 #define REQUIRE_VPFH do { \
     if (cpu_env(ctx->cs)->misa_mxl == MXL_RV32) { \
         REQUIRE_CFG(CSR_MMSC_CFG2, MASK_MMSC_CFG2_VPFH) \
+    } else { \
+        REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VPFH) \
     } \
-    REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VPFH) \
 } while (0)
 
 #define REQUIRE_VL4 do { \
     if (cpu_env(ctx->cs)->misa_mxl == MXL_RV32) { \
         REQUIRE_CFG(CSR_MMSC_CFG2, MASK_MMSC_CFG2_VL4) \
+    } else { \
+        REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VL4) \
     } \
-    REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VL4) \
 } while (0)
 
 #define REQUIRE_VDOT do { \
     if (cpu_env(ctx->cs)->misa_mxl == MXL_RV32) { \
         REQUIRE_CFG(CSR_MMSC_CFG2, MASK_MMSC_CFG2_VDOT) \
+    } else { \
+        REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VDOT) \
     } \
-    REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VDOT) \
 } while (0)
 
 #define REQUIRE_VSIH do { \
     if (cpu_env(ctx->cs)->misa_mxl == MXL_RV32) { \
         REQUIRE_CFG(CSR_MMSC_CFG2, MASK_MMSC_CFG2_VSIH) \
+    } else { \
+        REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VSIH) \
     } \
-    REQUIRE_CFG(CSR_MMSC_CFG, MASK_MMSC_CFG_VSIH) \
 } while (0)
 
 enum andes_v5_inst_id {
