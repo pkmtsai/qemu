@@ -9,4 +9,12 @@
 %imm_ex10 8:1 12:1 3:1 9:1 5:2 2:1 10:2 4:1
 &codense imm_codense
 @ex10     ... .... . . ..... .. &codense imm_codense=%imm_ex10
-execit    100 .... . 0 ..... 00 @ex10
+
+%imm_nex10 8:1 7:1 3:1 9:1 5:2 2:1 10:2 4:1
+&codensev2 imm_codensev2
+@nex10    ... .... . . ..... .. &codensev2 imm_codensev2=%imm_nex10
+
+{
+  nexecit    100 1... . . ..... 00 @nex10
+  execit     100 .... . 0 ..... 00 @ex10
+}

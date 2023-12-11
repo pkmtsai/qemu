@@ -7,11 +7,14 @@
 #define GP 3
 
 #define REQUIRE_CFG(CSRNO, CSRFIELD) do {\
-    CPUState *cpu = ctx->cs; \
-    CPURISCVState *env = cpu_env(cpu); \
     RISCVException ret; \
     target_ulong value; \
-    ret = riscv_csrrw(env, CSRNO, &value, 0, 0); \
+    riscv_csr_operations ops; \
+    riscv_get_csr_ops(CSRNO, &ops); \
+    if (ops.read == NULL) { \
+        return false; \
+    } \
+    ret = ops.read(cpu_env(ctx->cs), CSRNO, &value); \
     if (ret != RISCV_EXCP_NONE) \
         return false; \
     if (!(value & CSRFIELD)) \

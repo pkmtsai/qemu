@@ -1111,11 +1111,7 @@ static uint32_t opcode_at(DisasContextBase *dcbase, target_ulong pc)
 
 /* Include AndeStar V5 extensions */
 #include "decode-XAndesV5Ops.c.inc"
-#ifndef CONFIG_CODENSE_NEXECIT
 #include "decode-XAndesCodenseOps.c.inc"
-#else
-#include "decode-XAndesCodenseV2Ops.c.inc"
-#endif
 #include "decode-XAndesAce.c.inc"
 #include "insn_trans/trans_xandesv5ops.c.inc"
 #include "insn_trans/trans_xandescodenseops.c.inc"
@@ -1151,6 +1147,15 @@ static void decode_opc(CPURISCVState *env, DisasContext *ctx, uint16_t opcode)
         bool (*decode_func)(DisasContext *, uint16_t);
     } decoders_16[] = {
         { always_true_p,  decode_insn16 },
+        /*
+         * Codense V2 should decode before legacy Codense,
+         * Since legacy codense opcode conflics with zcb extension,
+         * But codense v2 can be compatiable with zcb, so user can
+         * turn on zcb and Andes codense(V2) together, or turn off
+         * zcb but turn on Andes codense(Legacy).
+         * translatation function will extension configuration whether
+         * is turn on by checking ext_zb and/or Andes relative CSRs bits
+         */
         { has_XAndesCodenseOps_p, decode_XAndesCodenseOps },
     };
 

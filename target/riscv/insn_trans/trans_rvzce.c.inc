@@ -303,7 +303,7 @@ static bool trans_cm_jalt(DisasContext *ctx, arg_cm_jalt *a)
     /* c.jt vs c.jalt depends on the index. */
     if (a->index >= 32) {
         TCGv succ_pc = dest_gpr(ctx, xRA);
-        gen_pc_plus_diff(succ_pc, ctx, ctx->cur_insn_len);
+        tcg_gen_movi_tl(succ_pc, ctx->base.pc_next + ctx->cur_insn_len);
         gen_set_gpr(ctx, xRA, succ_pc);
     }
 
