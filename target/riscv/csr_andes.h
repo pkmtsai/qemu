@@ -18,6 +18,7 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 
 /* mmsc_cfg */
 #define V5_MMSC_CFG_ECD                     3
+#define V5_MMSC_CFG_HSP                     5
 #define V5_MMSC_CFG_LMSLVP                  14
 #define V5_MMSC_CFG_CCTLCSR                 16
 #define V5_MMSC_CFG_PPMA                    30
@@ -221,6 +222,19 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MRVARCH_CFG2_ZVQMAC            (0x1 << 3)
 #define MASK_MRVARCH_CFG2_ZVLSSEQ           (0x1 << 4)
 
+/* mhsp_ctl */
+#define MASK_MHSP_CTL_OVF_EN                (0x1)
+#define MASK_MHSP_CTL_UDF_EN                (0x1 << 1)
+#define MASK_MHSP_CTL_SCHM                  (0x1 << 2)
+#define MASK_MHSP_CTL_U                     (0x1 << 3)
+#define MASK_MHSP_CTL_S                     (0x1 << 4)
+#define MASK_MHSP_CTL_M                     (0x1 << 5)
+
+/* umisc_ctl */
+#define MASK_UMISC_CTL_FP_MODE              (0x1)
+#define MASK_UMISC_CTL_CMR_CTL              (0x1 << 2)
+
+/* write masks */
 #define WRITE_MASK_CSR_MECC_CODE_32         0x7F
 #define WRITE_MASK_CSR_MECC_CODE_64         0xFF
 #define WRITE_MASK_CSR_UITB_32              0xFFFFFFFC
@@ -242,10 +256,6 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define WRITE_MASK_CSR_MMISC_CTL            0x3F7F
 #define WRITE_MASK_CSR_SMISC_CTL            0x30
 #define WRITE_MASK_CSR_MCACHE_CTL           0x7FFFFF
-
-/* umisc_ctl */
-#define MASK_UMISC_CTL_FP_MODE              (0x1)
-#define MASK_UMISC_CTL_CMR_CTL              (0x1 << 2)
 
 void andes_csr_init(AndesCsr *);
 void andes_vec_init(AndesVec *);

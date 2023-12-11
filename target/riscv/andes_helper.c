@@ -149,6 +149,61 @@ uint64_t helper_andes_nfcvt_s_bf16(CPURISCVState *env, uint64_t rs2)
     return nanbox_s(env, bfloat16_to_float32(frs, &env->fp_status));
 }
 
+void helper_andes_v5_hsp_check(CPURISCVState *env, target_ulong val)
+{
+    if (csr_ops[CSR_MHSP_CTL].predicate(env, CSR_MHSP_CTL) == RISCV_EXCP_NONE) {
+        target_ulong mhsp_ctl;
+        csr_ops[CSR_MHSP_CTL].read(env, CSR_MHSP_CTL, &mhsp_ctl);
+
+#ifdef CONFIG_USER_ONLY
+        if ((mhsp_ctl & MASK_MHSP_CTL_U) == 0) {
+            return;
+        }
+#else
+        if ((env->priv == PRV_M && (mhsp_ctl & MASK_MHSP_CTL_M) == 0)
+                || (env->priv == PRV_S && (mhsp_ctl & MASK_MHSP_CTL_S) == 0)
+                || (env->priv == PRV_U && (mhsp_ctl & MASK_MHSP_CTL_U) == 0)) {
+            return;
+        }
+#endif
+
+        target_ulong msp_base;
+        target_ulong msp_bound;
+        csr_ops[CSR_MSP_BASE].read(env, CSR_MSP_BASE, &msp_base);
+        csr_ops[CSR_MSP_BOUND].read(env, CSR_MSP_BOUND, &msp_bound);
+
+        if ((mhsp_ctl & MASK_MHSP_CTL_SCHM) != 0) {
+            if ((mhsp_ctl & MASK_MHSP_CTL_OVF_EN) != 0) {
+                /* recording mode */
+                if (val < msp_bound) {
+                    csr_ops[CSR_MSP_BOUND].write(env, CSR_MSP_BOUND, val);
+                }
+                return;
+            }
+        } else {
+            if ((mhsp_ctl & MASK_MHSP_CTL_OVF_EN) != 0) {
+                /* overflow mode */
+                if (val < msp_bound) {
+                    mhsp_ctl = set_field(mhsp_ctl, MASK_MHSP_CTL_OVF_EN, 0);
+                    csr_ops[CSR_MHSP_CTL].write(env, CSR_MHSP_CTL, mhsp_ctl);
+                    riscv_raise_exception(env, RISCV_EXCP_ANDES_STACK_OVERFLOW,
+                                          GETPC());
+                }
+            }
+            if ((mhsp_ctl & MASK_MHSP_CTL_UDF_EN) != 0) {
+                /* underflow mode */
+                if (val > msp_base) {
+                    mhsp_ctl = set_field(mhsp_ctl, MASK_MHSP_CTL_UDF_EN, 0);
+                    csr_ops[CSR_MHSP_CTL].write(env, CSR_MHSP_CTL, mhsp_ctl);
+                    riscv_raise_exception(env, RISCV_EXCP_ANDES_STACK_UNDERFLOW,
+                                          GETPC());
+                }
+            }
+        }
+    }
+    return;
+}
+
 #include "andes_ace_helper.h"
 target_ulong helper_andes_v5_ace(CPURISCVState *env, target_ulong opcode)
 {
