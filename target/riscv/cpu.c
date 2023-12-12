@@ -1090,6 +1090,15 @@ static void rv32_andes_n25_cpu_init(Object *obj)
     /* Debug sdtrig extension optional CSR */
     cfg->ext_sdtrig_tcontrol = true;
     cfg->ext_sdtrig_mcontext = true;
+
+    /* Disable unsupported extensions which are enabled by default */
+    cfg->ext_zihintpause = false;
+    cfg->ext_zawrs = false;
+    cfg->ext_zfa = false;
+    cfg->ext_sstc = false;
+    cfg->ext_svadu = false;
+    cfg->ext_icbom = false;
+    cfg->ext_icboz = false;
 }
 
 static void rv32_andes_n45_cpu_init(Object *obj)
