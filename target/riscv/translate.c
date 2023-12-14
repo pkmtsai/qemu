@@ -381,7 +381,7 @@ static void gen_set_gpr(DisasContext *ctx, int reg_num, TCGv t)
 {
     if (ctx->cfg_ptr->ext_XAndesV5Ops == true) {
         if (reg_num == xSP) {
-            gen_helper_andes_v5_hsp_check(cpu_env, t);
+            gen_helper_andes_v5_hsp_check(tcg_env, t);
         }
     }
 
@@ -408,7 +408,7 @@ static void gen_set_gpri(DisasContext *ctx, int reg_num, target_long imm)
 {
     if (ctx->cfg_ptr->ext_XAndesV5Ops == true) {
         if (reg_num == xSP) {
-            gen_helper_andes_v5_hsp_check(cpu_env, tcg_constant_tl(imm));
+            gen_helper_andes_v5_hsp_check(tcg_env, tcg_constant_tl(imm));
         }
     }
 

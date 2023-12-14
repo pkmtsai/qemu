@@ -1097,8 +1097,8 @@ static void rv32_andes_n25_cpu_init(Object *obj)
     cfg->ext_zfa = false;
     cfg->ext_sstc = false;
     cfg->ext_svadu = false;
-    cfg->ext_icbom = false;
-    cfg->ext_icboz = false;
+    cfg->ext_zicbom = false;
+    cfg->ext_zicboz = false;
 }
 
 static void rv32_andes_n45_cpu_init(Object *obj)
