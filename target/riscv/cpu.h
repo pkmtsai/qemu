@@ -817,6 +817,8 @@ bool riscv_cpu_accelerator_compatible(RISCVCPU *cpu);
 extern riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE];
 extern riscv_csr_operations csr_ops[CSR_TABLE_SIZE];
 
+bool is_andes_riscv_cpu_type(Object *obj);
+
 extern const bool valid_vm_1_10_32[], valid_vm_1_10_64[];
 
 void riscv_get_csr_ops(int csrno, riscv_csr_operations *ops);
