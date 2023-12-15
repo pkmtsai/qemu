@@ -717,16 +717,20 @@ static void rv64_andes_common_cpu_init(Object *obj,
 
     env->do_interrupt_post = andes_cpu_do_interrupt_post;
 
+    /* Enable ISA extensions */
+    cfg->ext_zifencei = true;
+    cfg->ext_zicsr = true;
+    cfg->ext_zba = true;
+    cfg->ext_zbb = true;
+    cfg->ext_zbc = true;
+    cfg->ext_zbs = true;
+
     /* Enable Andes Custom extension */
     cfg->ext_XAndesV5Ops = true;
     cfg->ext_XAndesCodenseOps = true;
 
     /* Set vendor ID */
     cfg->mvendorid = 0x0000031e;
-
-    /* inherited from parent obj via riscv_cpu_init() */
-    cfg->ext_zifencei = true;
-    cfg->ext_zicsr = true;
 }
 
 static void rv64_andes_ax25_cpu_init(Object *obj)
@@ -1025,16 +1029,20 @@ static void rv32_andes_common_cpu_init(Object *obj,
 
     env->do_interrupt_post = andes_cpu_do_interrupt_post;
 
+    /* Enable ISA extensions */
+    cfg->ext_zifencei = true;
+    cfg->ext_zicsr = true;
+    cfg->ext_zba = true;
+    cfg->ext_zbb = true;
+    cfg->ext_zbc = true;
+    cfg->ext_zbs = true;
+
     /* Enable Andes Custom extension */
     cfg->ext_XAndesV5Ops = true;
     cfg->ext_XAndesCodenseOps = true;
 
     /* Set vendor ID */
     cfg->mvendorid = 0x0000031e;
-
-    /* inherited from parent obj via riscv_cpu_init() */
-    cfg->ext_zifencei = true;
-    cfg->ext_zicsr = true;
 }
 
 static void rv32_andes_a25_cpu_init(Object *obj)
