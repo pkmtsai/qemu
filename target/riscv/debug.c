@@ -1194,8 +1194,6 @@ void riscv_trigger_reset_hold(CPURISCVState *env)
         env->cpu_breakpoint[i] = NULL;
         env->cpu_watchpoint[i] = NULL;
         timer_del(env->itrigger_timer[i]);
-        env->itrigger_timer[i] = timer_new_ns(QEMU_CLOCK_VIRTUAL,
-                                              riscv_itrigger_timer_cb, env);
         env->tcontrol = 0;
         env->scontext = 0;
         env->mcontext = 0;
