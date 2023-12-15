@@ -1757,8 +1757,6 @@ static void riscv_cpu_realize(DeviceState *dev, Error **errp)
     }
 #endif
 
-    riscv_cpu_register_gdb_regs_for_features(cs);
-
 #ifndef CONFIG_USER_ONLY
     if (cpu->cfg.debug) {
         riscv_trigger_realize(&cpu->env);
@@ -1767,6 +1765,16 @@ static void riscv_cpu_realize(DeviceState *dev, Error **errp)
 
     qemu_init_vcpu(cs);
     cpu_reset(cs);
+
+    /*
+     * Move below function from above to here, because some Andes CSRs
+     * will check another relative CSR bit for confirm it whether should
+     * exist, like mmsc_cfg.MSC_EXT indicates mmsc_cfg2 is present or not.
+     * If we reset CPU first, andes CPU reset relative code will set some
+     * CSRs to default value or readconfig from file to set CSR value,
+     * and then gdb can generate dynamic CSRs xml for debugger
+     */
+    riscv_cpu_register_gdb_regs_for_features(cs);
 
     mcc->parent_realize(dev, errp);
 }
