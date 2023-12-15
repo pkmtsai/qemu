@@ -2768,6 +2768,7 @@ void qemu_init(int argc, char **argv)
     qemu_add_opts(&qemu_semihosting_config_opts);
     qemu_add_opts(&qemu_fw_cfg_opts);
     qemu_add_opts(&qemu_action_opts);
+    qemu_add_opts(&qemu_andes_config_opts);
     qemu_add_run_with_opts();
     module_call_init(MODULE_INIT_OPTS);
 

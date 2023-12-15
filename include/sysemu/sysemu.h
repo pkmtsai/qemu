@@ -114,5 +114,6 @@ extern QemuOptsList qemu_nic_opts;
 extern QemuOptsList qemu_net_opts;
 extern QemuOptsList qemu_global_opts;
 extern QemuOptsList qemu_semihosting_config_opts;
+extern QemuOptsList qemu_andes_config_opts;
 
 #endif

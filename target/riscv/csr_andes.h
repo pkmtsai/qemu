@@ -231,8 +231,12 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MHSP_CTL_M                     (0x1 << 5)
 
 /* umisc_ctl */
-#define MASK_UMISC_CTL_FP_MODE              (0x1)
-#define MASK_UMISC_CTL_CMR_CTL              (0x1 << 2)
+#define MASK_UMISC_CTL_FP_MODE              (0x3)
+#define MASK_UMISC_CTL_CMR_CTL              (0x3 << 2)
+
+/* mvec_cfg */
+#define MASK_MVEC_CFG_MISEW                 (0x3 << 14)
+#define MASK_MVEC_CFG_MFSEW                 (0x3 << 16)
 
 /* write masks */
 #define WRITE_MASK_CSR_MECC_CODE_32         0x7F
@@ -257,6 +261,7 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define WRITE_MASK_CSR_SMISC_CTL            0x30
 #define WRITE_MASK_CSR_MCACHE_CTL           0x7FFFFF
 
+void andes_csr_configs(CPURISCVState *env);
 void andes_csr_init(AndesCsr *);
 void andes_vec_init(AndesVec *);
 void andes_cpu_do_interrupt_post(CPUState *cpu);

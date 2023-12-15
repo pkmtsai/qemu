@@ -1381,6 +1381,10 @@ static void andes_csr_reset_common(CPURISCVState *env)
     if (env->andes_spec_csr_init != NULL) {
         env->andes_spec_csr_init(&env->andes_csr);
     }
+#ifndef CONFIG_USER_ONLY
+    /* Read CSR from config file */
+    andes_csr_configs(env);
+#endif
 }
 
 static void andes_csr_sync_cpu_ext(CPURISCVState *env, RISCVCPU *cpu)

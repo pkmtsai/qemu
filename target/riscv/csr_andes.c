@@ -13,6 +13,7 @@
 #include "andes_cpu_bits.h"
 #include "csr_andes.h"
 #include "exec/address-spaces.h"
+#include "qemu/andes-config.h"
 
 static RISCVException any(CPURISCVState *env,
                           int csrno)
@@ -727,6 +728,118 @@ static RISCVException write_lmb(CPURISCVState *env,
         qemu_mutex_unlock_iothread();
     }
     return RISCV_EXCP_NONE;
+}
+#endif
+
+#ifndef CONFIG_USER_ONLY
+typedef struct AndesCsrConfigInfo {
+    AndesConfigType type;
+    target_ulong mask;
+    const char *key;
+} AndesCsrConfigInfo;
+
+AndesCsrConfigInfo csr_mmsc_cfg_map[] = {
+    {CONFIG_BOOL,   MASK_MMSC_CFG_ECD, "isa-codense"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_PFT, "powerbrake"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_HSP, "stack-protection"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_ACE, "isa-ace"}, /* spike uses aces? */
+    {CONFIG_BOOL,   MASK_MMSC_CFG_VPLIC, "vectored-plic"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_EV5PE, NULL}, /* always set */
+    {CONFIG_BOOL,   MASK_MMSC_CFG_LMSLVP, "slave-port"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_PMNDS, "pfm-nds"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_CCTLCSR, "cctl"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_EFHW, "isa-efhw"},
+    {CONFIG_NUMBER, MASK_MMSC_CFG_VCCTL, "cctl-version"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_PPI, "ppi"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_EDSP, "isa-dsp"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_PPMA, NULL},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_MSC_EXT, "msc-ext"},
+#ifdef TARGET_RISCV64
+    /* bits:[32] */
+    {CONFIG_BOOL,   MASK_MMSC_CFG_BF16CVT, "isa-bf16cvt"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_ZFH, "isa-zfh"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_VL4, "isa-vl4"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_CRASHSAVE, "crash-save"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_VECCFG, "veccfg"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_PP16, "isa-pp16"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_VSIH, "isa-vsih"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_CCACHEMP_CFG, "mmsc-cfg-ccachemp-cfg"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_CCACHE, "mmsc-cfg-ccache"},
+    {CONFIG_NUMBER, MASK_MMSC_CFG_ECDV, "codense-ver"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_VDOT, "isa-vdot"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_VPFH, "isa-vpfh"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_HSPO, "stack-protection-only"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_RVARCH, "mmsc-cfg-rvarch"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_ALT_FP_FMT, "alt-fp-fmt"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_MSC_EXT3, "msc-ext3"},
+#endif
+};
+AndesCsrConfigInfo csr_mmsc_cfg2_map[]  = {
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_BF16CVT, "isa-bf16cvt"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_ZFH, "isa-zfh"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_VL4, "isa-vl4"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_CRASHSAVE, "crash-save"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_VECCFG, "veccfg"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_PP16, "isa-pp16"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_VSIH, "isa-vsih"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_CCACHEMP_CFG, "mmsc-cfg-ccachemp-cfg"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_CCACHE, "mmsc-cfg-ccache"},
+    {CONFIG_NUMBER, MASK_MMSC_CFG2_ECDV, "codense-ver"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_VDOT, "isa-vdot"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_VPFH, "isa-vpfh"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_HSPO, "stack-protection-only"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_RVARCH, "mmsc-cfg-rvarch"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_ALT_FP_FMT, "alt-fp-fmt"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_MSC_EXT3, "msc-ext3"},
+};
+
+AndesCsrConfigInfo csr_mvec_cfg_map[]  = {
+    {CONFIG_NUMBER, MASK_MVEC_CFG_MISEW, "mvec-cfg-misew"},
+    {CONFIG_NUMBER, MASK_MVEC_CFG_MFSEW, "mvec-cfg-mfsew"},
+};
+
+static andes_config_func *const andes_config_fns[2] = {
+    andes_config_bool,
+    andes_config_number
+};
+
+
+static void andes_csr_from_config(AndesCsrConfigInfo *map, uint32_t size,
+    target_ulong *csr_val)
+{
+    target_ulong init_val = *csr_val;
+    int i;
+    for (i = 0; i < size; i++) {
+        uint64_t val;
+        if (andes_config_fns[map[i].type] != NULL
+            && andes_config_fns[map[i].type](ANDES_CONFIG_ID_CPU,
+            map[i].key, &val)) {
+            init_val = set_field(init_val, map[i].mask, val);
+        }
+    }
+    *csr_val = init_val;
+}
+
+void andes_csr_configs(CPURISCVState *env)
+{
+    /* Update mmsc_cfg */
+    target_ulong mmsc_init_val = env->andes_csr.csrno[CSR_MMSC_CFG];
+    andes_csr_from_config(csr_mmsc_cfg_map,
+        sizeof(csr_mmsc_cfg_map) / sizeof(AndesCsrConfigInfo), &mmsc_init_val);
+    env->andes_csr.csrno[CSR_MMSC_CFG] = mmsc_init_val;
+    /* Update mmsc_cfg2 for RV32 */
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        target_ulong mmsc2_init_val = env->andes_csr.csrno[CSR_MMSC_CFG2];
+        andes_csr_from_config(csr_mmsc_cfg2_map,
+            sizeof(csr_mmsc_cfg2_map) / sizeof(AndesCsrConfigInfo),
+            &mmsc2_init_val);
+        env->andes_csr.csrno[CSR_MMSC_CFG2] = mmsc2_init_val;
+    }
+    /* Update mvev_cfg */
+    target_ulong mvec_init_val = env->andes_csr.csrno[CSR_MVEC_CFG];
+    andes_csr_from_config(csr_mvec_cfg_map,
+        sizeof(csr_mvec_cfg_map) / sizeof(AndesCsrConfigInfo), &mvec_init_val);
+    env->andes_csr.csrno[CSR_MVEC_CFG] = mvec_init_val;
 }
 #endif
 
