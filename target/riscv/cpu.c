@@ -2103,8 +2103,8 @@ const RISCVCPUMultiExtConfig riscv_cpu_vendor_exts[] = {
     MULTI_EXT_CFG_BOOL("xtheadmempair", ext_xtheadmempair, false),
     MULTI_EXT_CFG_BOOL("xtheadsync", ext_xtheadsync, false),
     MULTI_EXT_CFG_BOOL("xventanacondops", ext_XVentanaCondOps, false),
-    MULTI_EXT_CFG_BOOL("xandesv5ops", ext_XAndesV5Ops, true),
-    MULTI_EXT_CFG_BOOL("xandescodenseops", ext_XAndesCodenseOps, true),
+    MULTI_EXT_CFG_BOOL("xandesv5ops", ext_XAndesV5Ops, false),
+    MULTI_EXT_CFG_BOOL("xandescodenseops", ext_XAndesCodenseOps, false),
     MULTI_EXT_CFG_BOOL("xandesace", ext_XAndesAce, false),
     MULTI_EXT_CFG_BOOL("xandesacemulti", ext_XAndesAceMulti, false),
 
