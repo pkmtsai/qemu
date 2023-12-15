@@ -947,7 +947,7 @@ static void cpu_add_multi_ext_prop(Object *cpu_obj,
                         cpu_set_multi_ext_cfg,
                         NULL, (void *)multi_cfg);
 
-    if (!generic_cpu || deprecated_ext) {
+    if ((!generic_cpu && !is_andes_riscv_cpu_type(cpu_obj)) || deprecated_ext) {
         return;
     }
 
