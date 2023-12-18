@@ -1405,6 +1405,8 @@ static void andes_csr_sync_cpu_ext(CPURISCVState *env, RISCVCPU *cpu)
     mrvarch_cfg = set_field(mrvarch_cfg,
                             MASK_MRVARCH_CFG_ZBS, cpu->cfg.ext_zbs);
     mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_SMEPMP, cpu->cfg.ext_smepmp);
+    mrvarch_cfg = set_field(mrvarch_cfg,
                             MASK_MRVARCH_CFG_SVINVAL, cpu->cfg.ext_svinval);
     mrvarch_cfg = set_field(mrvarch_cfg,
                             MASK_MRVARCH_CFG_SMSTATEEN, cpu->cfg.ext_smstateen);
@@ -1412,6 +1414,14 @@ static void andes_csr_sync_cpu_ext(CPURISCVState *env, RISCVCPU *cpu)
                             MASK_MRVARCH_CFG_SSCOFPMF, cpu->cfg.ext_sscofpmf);
     mrvarch_cfg = set_field(mrvarch_cfg,
                             MASK_MRVARCH_CFG_SSTC, cpu->cfg.ext_sstc);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZICBOM, cpu->cfg.ext_zicbom);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZICBOZ, cpu->cfg.ext_zicboz);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZBK,
+                            cpu->cfg.ext_zbkb || cpu->cfg.ext_zbkc ||
+                            cpu->cfg.ext_zbkx);
     mrvarch_cfg = set_field(mrvarch_cfg,
                             MASK_MRVARCH_CFG_ZKN, cpu->cfg.ext_zkn);
     mrvarch_cfg = set_field(mrvarch_cfg,
@@ -1435,6 +1445,8 @@ static void andes_csr_sync_cpu_ext(CPURISCVState *env, RISCVCPU *cpu)
                             MASK_MRVARCH_CFG_ZCD, cpu->cfg.ext_zcd);
     mrvarch_cfg = set_field(mrvarch_cfg,
                             MASK_MRVARCH_CFG_ZCF, cpu->cfg.ext_zcf);
+    mrvarch_cfg = set_field(mrvarch_cfg,
+                            MASK_MRVARCH_CFG_ZCMP, cpu->cfg.ext_zcmp);
     mrvarch_cfg = set_field(mrvarch_cfg,
                             MASK_MRVARCH_CFG_ZCMT, cpu->cfg.ext_zcmt);
     env->andes_csr.csrno[CSR_MRVARCH_CFG] = mrvarch_cfg;
