@@ -908,11 +908,13 @@ static void riscv_itrigger_update_count(CPURISCVState *env)
 
 static void riscv_itrigger_timer_cb(void *opaque)
 {
+    g_assert(icount_enabled());
     riscv_itrigger_update_count((CPURISCVState *)opaque);
 }
 
 void riscv_itrigger_update_priv(CPURISCVState *env)
 {
+    g_assert(icount_enabled());
     riscv_itrigger_update_count(env);
 }
 
@@ -976,6 +978,8 @@ static void itrigger_reg_write(CPURISCVState *env, target_ulong index,
 
 static int itrigger_get_adjust_count(CPURISCVState *env)
 {
+    g_assert(icount_enabled());
+
     int count = itrigger_get_count(env, env->trigger_cur), executed;
     if ((count != 0) &&
         trigger_common_match(env, TRIGGER_TYPE_INST_CNT, env->trigger_cur)) {
@@ -1171,11 +1175,13 @@ bool riscv_cpu_debug_check_watchpoint(CPUState *cs, CPUWatchpoint *wp)
 
 void riscv_trigger_realize(CPURISCVState *env)
 {
-    int i;
+    if (icount_enabled()) {
+        int i;
 
-    for (i = 0; i < RV_MAX_TRIGGERS; i++) {
-        env->itrigger_timer[i] = timer_new_ns(QEMU_CLOCK_VIRTUAL,
-                                              riscv_itrigger_timer_cb, env);
+        for (i = 0; i < RV_MAX_TRIGGERS; i++) {
+            env->itrigger_timer[i] = timer_new_ns(QEMU_CLOCK_VIRTUAL,
+                                                  riscv_itrigger_timer_cb, env);
+        }
     }
 }
 
@@ -1204,9 +1210,12 @@ void riscv_trigger_reset_hold(CPURISCVState *env)
         env->tdata3[i] = 0;
         env->cpu_breakpoint[i] = NULL;
         env->cpu_watchpoint[i] = NULL;
-        timer_del(env->itrigger_timer[i]);
-        env->tcontrol = 0;
-        env->scontext = 0;
-        env->mcontext = 0;
+        if (icount_enabled()) {
+            timer_del(env->itrigger_timer[i]);
+        }
     }
+
+    env->tcontrol = 0;
+    env->scontext = 0;
+    env->mcontext = 0;
 }
