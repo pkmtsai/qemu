@@ -1264,6 +1264,11 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     CPURISCVState *env = cpu_env(cpu);
     uint16_t opcode16 = translator_lduw(env, &ctx->base, ctx->base.pc_next);
 
+#ifndef CONFIG_USER_ONLY
+    /* Check if icount triggers can fire before any further instructions */
+    gen_helper_itrigger_fire(tcg_env);
+#endif
+
     ctx->ol = ctx->xl;
     decode_opc(env, ctx, opcode16);
     ctx->base.pc_next += ctx->cur_insn_len;

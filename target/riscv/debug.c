@@ -821,6 +821,35 @@ static inline void itrigger_set_pending(CPURISCVState *env, int index,
                                    ITRIGGER_PENDING, pending);
 }
 
+static inline bool itrigger_get_pending(CPURISCVState *env, int index)
+{
+    return get_field(env->tdata1[index], ITRIGGER_PENDING);
+}
+
+static inline void itrigger_set_hit(CPURISCVState *env, int index, bool hit)
+{
+    env->tdata1[index] = set_field(env->tdata1[index],
+                                   ITRIGGER_HIT, hit);
+}
+
+void helper_itrigger_fire(CPURISCVState *env)
+{
+    for (int i = 0; i < RV_MAX_TRIGGERS; i++) {
+        if (get_trigger_type(env, i) != TRIGGER_TYPE_INST_CNT) {
+            continue;
+        }
+        if (!trigger_common_match(env, TRIGGER_TYPE_INST_CNT, i)) {
+            continue;
+        }
+        if (itrigger_get_pending(env, i)) {
+            /* This icount trigger can fire */
+            itrigger_set_pending(env, i, false);    /* clear icount.PENDING */
+            itrigger_set_hit(env, i, true);         /* set icount.HIT       */
+            do_trigger_action(env, i);
+        }
+    }
+}
+
 bool riscv_itrigger_enabled(CPURISCVState *env)
 {
     int count;
