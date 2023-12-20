@@ -283,6 +283,11 @@ target_ulong helper_sret(CPURISCVState *env)
         riscv_raise_exception(env, RISCV_EXCP_VIRT_INSTRUCTION_FAULT, GETPC());
     }
 
+    if (env->itrigger_enabled) {
+        /* Check icount trigger matches before sret changes privilege mode */
+        helper_itrigger_match(env);
+    }
+
     mstatus = env->mstatus;
     prev_priv = get_field(mstatus, MSTATUS_SPP);
     mstatus = set_field(mstatus, MSTATUS_SIE,
@@ -322,14 +327,6 @@ target_ulong helper_mret(CPURISCVState *env)
         riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, GETPC());
     }
 
-    if (riscv_cpu_cfg(env)->ext_sdtrig_tcontrol) {
-        uint64_t tcontrol = env->tcontrol;
-
-        tcontrol = set_field(tcontrol, TCONTROL_MTE,
-                             get_field(tcontrol, TCONTROL_MPTE));
-        env->tcontrol = tcontrol;
-    }
-
     target_ulong retpc = env->mepc;
     if (!riscv_has_ext(env, RVC) && (retpc & 0x3)) {
         riscv_raise_exception(env, RISCV_EXCP_INST_ADDR_MIS, GETPC());
@@ -341,6 +338,19 @@ target_ulong helper_mret(CPURISCVState *env)
     if (riscv_cpu_cfg(env)->pmp &&
         !pmp_get_num_rules(env) && (prev_priv != PRV_M)) {
         riscv_raise_exception(env, RISCV_EXCP_INST_ACCESS_FAULT, GETPC());
+    }
+
+    if (env->itrigger_enabled) {
+        /* Check icount trigger matches before mret changes privilege mode */
+        helper_itrigger_match(env);
+    }
+
+    if (riscv_cpu_cfg(env)->ext_sdtrig_tcontrol) {
+        uint64_t tcontrol = env->tcontrol;
+
+        tcontrol = set_field(tcontrol, TCONTROL_MTE,
+                             get_field(tcontrol, TCONTROL_MPTE));
+        env->tcontrol = tcontrol;
     }
 
     target_ulong prev_virt = get_field(env->mstatus, MSTATUS_MPV) &&

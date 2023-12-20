@@ -79,7 +79,7 @@ static bool trans_sret(DisasContext *ctx, arg_sret *a)
         decode_save_opc(ctx);
         translator_io_start(&ctx->base);
         gen_helper_sret(cpu_pc, tcg_env);
-        exit_tb(ctx); /* no chaining */
+        tcg_gen_exit_tb(NULL, 0); /* no chaining */
         ctx->base.is_jmp = DISAS_NORETURN;
     } else {
         return false;
@@ -96,7 +96,7 @@ static bool trans_mret(DisasContext *ctx, arg_mret *a)
     decode_save_opc(ctx);
     translator_io_start(&ctx->base);
     gen_helper_mret(cpu_pc, tcg_env);
-    exit_tb(ctx); /* no chaining */
+    tcg_gen_exit_tb(NULL, 0); /* no chaining */
     ctx->base.is_jmp = DISAS_NORETURN;
     return true;
 #else
