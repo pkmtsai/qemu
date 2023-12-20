@@ -814,6 +814,13 @@ itrigger_set_count(CPURISCVState *env, int index, int value)
                                    ITRIGGER_COUNT, value);
 }
 
+static inline void itrigger_set_pending(CPURISCVState *env, int index,
+                                        bool pending)
+{
+    env->tdata1[index] = set_field(env->tdata1[index],
+                                   ITRIGGER_PENDING, pending);
+}
+
 bool riscv_itrigger_enabled(CPURISCVState *env)
 {
     int count;
@@ -852,10 +859,13 @@ void helper_itrigger_match(CPURISCVState *env)
         if (!count) {
             continue;
         }
+        if (count == 1) {
+            /* When count is 1 and the trigger matches, set pending. */
+            itrigger_set_pending(env, i, true);
+        }
         itrigger_set_count(env, i, --count);
         if (!count) {
             env->itrigger_enabled = riscv_itrigger_enabled(env);
-            do_trigger_action(env, i);
         }
     }
 }
