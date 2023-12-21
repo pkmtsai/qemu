@@ -727,6 +727,8 @@ typedef enum RISCVException {
 #define IRQ_S_GEXT                         12
 #define IRQ_PMU_OVF                        13
 #define IRQ_LOCAL_MAX                      16
+#define IRQ_ANDES_PMOVI_M                  18
+#define IRQ_ANDES_PMOVI_S                  (0x100 + IRQ_ANDES_PMOVI_M)
 #define IRQ_LOCAL_GUEST_MAX                (TARGET_LONG_BITS - 1)
 
 /* mip masks */
@@ -744,6 +746,7 @@ typedef enum RISCVException {
 #define MIP_MEIP                           (1 << IRQ_M_EXT)
 #define MIP_SGEIP                          (1 << IRQ_S_GEXT)
 #define MIP_LCOFIP                         (1 << IRQ_PMU_OVF)
+#define MIP_ANDES_PMOVI                    (1 << IRQ_ANDES_PMOVI_M)
 
 /* sip masks */
 #define SIP_SSIP                           MIP_SSIP
@@ -758,6 +761,7 @@ typedef enum RISCVException {
 #define MIE_UTIE                           (1 << IRQ_U_TIMER)
 #define MIE_SSIE                           (1 << IRQ_S_SOFT)
 #define MIE_USIE                           (1 << IRQ_U_SOFT)
+#define MIE_ANDES_PMOVI                    (1 << IRQ_ANDES_PMOVI_M)
 
 /* Machine constants */
 #define M_MODE_INTERRUPTS  ((uint64_t)(MIP_MSIP | MIP_MTIP | MIP_MEIP))

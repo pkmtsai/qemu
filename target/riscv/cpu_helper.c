@@ -425,6 +425,46 @@ int riscv_cpu_vsirq_pending(CPURISCVState *env)
                                     (irqs | irqs_f_vs), env->hviprio);
 }
 
+static int riscv_cpu_andes_m_mode_irq(CPURISCVState *env)
+{
+    if ((env->mie & MIE_ANDES_PMOVI) == 0) {
+        return 0;
+    }
+
+    target_ulong mmsc_cfg = env->andes_csr.csrno[CSR_MMSC_CFG];
+    if ((mmsc_cfg & MASK_MMSC_CFG_PMNDS) == 0) {
+        return 0;
+    }
+
+    if (env->mip & MIP_ANDES_PMOVI) {
+        env->mip &= ~MIP_ANDES_PMOVI;
+        return IRQ_ANDES_PMOVI_M;
+    }
+
+    return 0;
+}
+
+static int riscv_cpu_andes_s_mode_irq(CPURISCVState *env)
+{
+    target_ulong slie = env->andes_csr.csrno[CSR_SLIE];
+    if ((slie & MIE_ANDES_PMOVI) == 0) {
+        return 0;
+    }
+
+    target_ulong mmsc_cfg = env->andes_csr.csrno[CSR_MMSC_CFG];
+    if ((mmsc_cfg & MASK_MMSC_CFG_PMNDS) == 0) {
+        return 0;
+    }
+
+    target_ulong slip = env->andes_csr.csrno[CSR_SLIP];
+    if (slip & MIP_ANDES_PMOVI) {
+        env->andes_csr.csrno[CSR_SLIP] &= ~MIP_ANDES_PMOVI;
+        return IRQ_ANDES_PMOVI_S;
+    }
+
+    return 0;
+}
+
 static int riscv_cpu_local_irq_pending(CPURISCVState *env)
 {
     uint64_t irqs, pending, mie, hsie, vsie, irqs_f, irqs_f_vs;
@@ -445,6 +485,18 @@ static int riscv_cpu_local_irq_pending(CPURISCVState *env)
         vsie = 0;
     }
 
+    /*
+     * Check Andes M-mode interrupts, priority higher than MEI
+     * We don't use default_iprio here because we want to seperate
+     * pmnds support from sscofpmf as much as possible.
+     */
+    if (mie && env_archcpu(env)->cfg.ext_XAndesV5Ops) {
+        int airq = riscv_cpu_andes_m_mode_irq(env);
+        if (airq) {
+            return airq;
+        }
+    }
+
     /* Determine all pending interrupts */
     pending = riscv_cpu_all_pending(env);
 
@@ -453,6 +505,18 @@ static int riscv_cpu_local_irq_pending(CPURISCVState *env)
     if (irqs) {
         return riscv_cpu_pending_to_irq(env, IRQ_M_EXT, IPRIO_DEFAULT_M,
                                         irqs, env->miprio);
+    }
+
+    /*
+     * Check Andes S-mode interrupts, priority higher than SEI
+     * We don't use default_iprio here because we want to seperate
+     * pmnds support from sscofpmf as much as possible.
+     */
+    if (hsie && env_archcpu(env)->cfg.ext_XAndesV5Ops) {
+        int airq = riscv_cpu_andes_s_mode_irq(env);
+        if (airq) {
+            return airq;
+        }
     }
 
     /* Check for virtual S-mode interrupts. */
@@ -1287,18 +1351,32 @@ static void pmu_tlb_fill_incr_ctr(RISCVCPU *cpu, MMUAccessType access_type)
 {
     enum riscv_pmu_event_idx pmu_event_type;
 
-    switch (access_type) {
-    case MMU_INST_FETCH:
-        pmu_event_type = RISCV_PMU_EVENT_CACHE_ITLB_PREFETCH_MISS;
-        break;
-    case MMU_DATA_LOAD:
-        pmu_event_type = RISCV_PMU_EVENT_CACHE_DTLB_READ_MISS;
-        break;
-    case MMU_DATA_STORE:
-        pmu_event_type = RISCV_PMU_EVENT_CACHE_DTLB_WRITE_MISS;
-        break;
-    default:
-        return;
+    if (cpu->cfg.ext_XAndesV5Ops && !cpu->cfg.ext_sscofpmf) {
+        switch (access_type) {
+        case MMU_INST_FETCH:
+            pmu_event_type = RISCV_PMU_EVENT_ANDES_ITLB_MISS;
+            break;
+        case MMU_DATA_LOAD:
+        case MMU_DATA_STORE:
+            pmu_event_type = RISCV_PMU_EVENT_ANDES_DTLB_MISS;
+            break;
+        default:
+            return;
+        }
+    } else {
+        switch (access_type) {
+        case MMU_INST_FETCH:
+            pmu_event_type = RISCV_PMU_EVENT_CACHE_ITLB_PREFETCH_MISS;
+            break;
+        case MMU_DATA_LOAD:
+            pmu_event_type = RISCV_PMU_EVENT_CACHE_DTLB_READ_MISS;
+            break;
+        case MMU_DATA_STORE:
+            pmu_event_type = RISCV_PMU_EVENT_CACHE_DTLB_WRITE_MISS;
+            break;
+        default:
+            return;
+        }
     }
 
     riscv_pmu_incr_ctr(cpu, pmu_event_type);
@@ -1637,6 +1715,21 @@ static target_ulong riscv_transformed_insn(CPURISCVState *env,
 
     return xinsn;
 }
+
+static bool riscv_cpu_andes_check_lideleg(RISCVCPU *cpu)
+{
+    CPURISCVState *env = &cpu->env;
+
+    target_ulong slip = env->andes_csr.csrno[CSR_SLIP];
+    if (slip & MIP_ANDES_PMOVI) {
+        target_ulong mslideleg = env->andes_csr.csrno[CSR_MSLIDELEG];
+        if (mslideleg & MIP_ANDES_PMOVI) {
+            return true;
+        }
+    }
+
+    return false;
+}
 #endif /* !CONFIG_USER_ONLY */
 
 /*
@@ -1665,6 +1758,7 @@ void riscv_cpu_do_interrupt(CPUState *cs)
         !(env->mip & (1 << cause));
     bool vs_injected = env->hvip & (1 << cause) & env->hvien &&
         !(env->mip & (1 << cause));
+    bool andes_lideleg = riscv_cpu_andes_check_lideleg(cpu);
     target_ulong tval = 0;
     target_ulong tinst = 0;
     target_ulong htval = 0;
@@ -1754,7 +1848,7 @@ void riscv_cpu_do_interrupt(CPUState *cs)
                   riscv_cpu_get_trap_name(cause, async));
 
     if (env->priv <= PRV_S && cause < 64 &&
-        (((deleg >> cause) & 1) || s_injected || vs_injected)) {
+        (((deleg >> cause) & 1) || s_injected || vs_injected || andes_lideleg)) {
         /* handle the trap in S-mode */
         if (riscv_has_ext(env, RVH)) {
             uint64_t hdeleg = async ? env->hideleg : env->hedeleg;

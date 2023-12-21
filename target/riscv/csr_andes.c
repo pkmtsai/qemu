@@ -685,6 +685,67 @@ static RISCVException write_slip(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException write_pmnds(CPURISCVState *env, int csrno,
+                                  target_ulong val)
+{
+    if (csr_ops[CSR_MCOUNTERWEN].predicate(env, csrno) != RISCV_EXCP_NONE) {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+
+    target_ulong wen = env->andes_csr.csrno[CSR_MCOUNTERWEN];
+    if (wen == 0) {
+        return RISCV_EXCP_ILLEGAL_INST;
+    }
+
+    switch (csrno) {
+    case CSR_CYCLE:
+    case CSR_CYCLEH:
+        if (wen & MASK_COUNTER_CY) {
+            csr_ops[csrno].write(env, csrno, val);
+            return RISCV_EXCP_NONE;
+        }
+        break;
+    case CSR_INSTRET:
+    case CSR_INSTRETH:
+        if (wen & MASK_COUNTER_IR) {
+            csr_ops[csrno].write(env, csrno, val);
+            return RISCV_EXCP_NONE;
+        }
+        break;
+    case CSR_HPMCOUNTER3:
+    case CSR_HPMCOUNTER3H:
+        if (wen & MASK_COUNTER_HPM3) {
+            csr_ops[csrno].write(env, csrno, val);
+            return RISCV_EXCP_NONE;
+        }
+        break;
+    case CSR_HPMCOUNTER4:
+    case CSR_HPMCOUNTER4H:
+        if (wen & MASK_COUNTER_HPM4) {
+            csr_ops[csrno].write(env, csrno, val);
+            return RISCV_EXCP_NONE;
+        }
+        break;
+    case CSR_HPMCOUNTER5:
+    case CSR_HPMCOUNTER5H:
+        if (wen & MASK_COUNTER_HPM5) {
+            csr_ops[csrno].write(env, csrno, val);
+            return RISCV_EXCP_NONE;
+        }
+        break;
+    case CSR_HPMCOUNTER6:
+    case CSR_HPMCOUNTER6H:
+        if (wen & MASK_COUNTER_HPM6) {
+            csr_ops[csrno].write(env, csrno, val);
+            return RISCV_EXCP_NONE;
+        }
+        break;
+    default:
+        break;
+    }
+    return RISCV_EXCP_ILLEGAL_INST;
+}
+
 static RISCVException write_all_ignore(CPURISCVState *env, int csrno,
                                        target_ulong val)
 {
@@ -856,6 +917,22 @@ void andes_csr_init(AndesCsr *andes_csr)
         if (andes_csr_ops[i].name != NULL) {
             riscv_set_csr_ops(i, &andes_csr_ops[i]);
         }
+    }
+
+    /* PMNDS write enable */
+    if (get_field(andes_csr->csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_PMNDS) == 1) {
+        csr_ops[CSR_CYCLE].write = write_pmnds;
+        csr_ops[CSR_CYCLEH].write = write_pmnds;
+        csr_ops[CSR_INSTRET].write = write_pmnds;
+        csr_ops[CSR_INSTRETH].write = write_pmnds;
+        csr_ops[CSR_HPMCOUNTER3].write = write_pmnds;
+        csr_ops[CSR_HPMCOUNTER3H].write = write_pmnds;
+        csr_ops[CSR_HPMCOUNTER4].write = write_pmnds;
+        csr_ops[CSR_HPMCOUNTER4H].write = write_pmnds;
+        csr_ops[CSR_HPMCOUNTER5].write = write_pmnds;
+        csr_ops[CSR_HPMCOUNTER5H].write = write_pmnds;
+        csr_ops[CSR_HPMCOUNTER6].write = write_pmnds;
+        csr_ops[CSR_HPMCOUNTER6H].write = write_pmnds;
     }
 }
 

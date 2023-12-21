@@ -240,6 +240,22 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MVEC_CFG_MISEW                 (0x3 << 14)
 #define MASK_MVEC_CFG_MFSEW                 (0x3 << 16)
 
+/* counters */
+#define MASK_COUNTER_CY                     (0x1)
+#define MASK_COUNTER_TM                     (0x1 << 1)
+#define MASK_COUNTER_IR                     (0x1 << 2)
+#define MASK_COUNTER_HPM3                   (0x1 << 3)
+#define MASK_COUNTER_HPM4                   (0x1 << 4)
+#define MASK_COUNTER_HPM5                   (0x1 << 5)
+#define MASK_COUNTER_HPM6                   (0x1 << 6)
+
+/* local irqs */
+#define MASK_LOCAL_IRQ_IMECCI               (0x1 << 16)
+#define MASK_LOCAL_IRQ_BWEI                 (0x1 << 17)
+#define MASK_LOCAL_IRQ_PMOVI                (0x1 << 18)
+#define MASK_LOCAL_IRQ_IMECCDMR             (0x1 << 19)
+#define MASK_LOCAL_IRQ_ACCERR               (0x1 << 24)
+
 /* write masks */
 #define WRITE_MASK_CSR_MECC_CODE_32         0x7F
 #define WRITE_MASK_CSR_MECC_CODE_64         0xFF
