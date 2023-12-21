@@ -127,7 +127,8 @@ void cpu_get_tb_cpu_state(CPURISCVState *env, vaddr *pc,
     }
 
     if (cpu->cfg.debug && !icount_enabled()) {
-        flags = FIELD_DP32(flags, TB_FLAGS, ITRIGGER, env->itrigger_enabled);
+        flags = FIELD_DP32(flags, TB_FLAGS, ITRIGGER,
+                           env->itrigger_enabled || env->itrigger_pending);
     }
 #endif
 

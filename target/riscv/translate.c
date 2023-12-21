@@ -1265,8 +1265,10 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     uint16_t opcode16 = translator_lduw(env, &ctx->base, ctx->base.pc_next);
 
 #ifndef CONFIG_USER_ONLY
-    /* Check if icount triggers can fire before any further instructions */
-    gen_helper_itrigger_fire(tcg_env);
+    if (ctx->itrigger) {
+        /* Check if icount triggers can fire before any further instructions */
+        gen_helper_itrigger_fire(tcg_env);
+    }
 #endif
 
     ctx->ol = ctx->xl;

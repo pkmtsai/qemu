@@ -355,6 +355,7 @@ struct CPUArchState {
     QEMUTimer *itrigger_timer[RV_MAX_TRIGGERS];
     int64_t last_icount;
     bool itrigger_enabled;
+    bool itrigger_pending;
     target_ulong tcontrol;
     target_ulong scontext;
     target_ulong mcontext;

@@ -834,6 +834,9 @@ static inline void itrigger_set_hit(CPURISCVState *env, int index, bool hit)
 
 void helper_itrigger_fire(CPURISCVState *env)
 {
+    bool hit = false;
+    int hit_index = -1;
+
     for (int i = 0; i < RV_MAX_TRIGGERS; i++) {
         if (get_trigger_type(env, i) != TRIGGER_TYPE_INST_CNT) {
             continue;
@@ -845,8 +848,26 @@ void helper_itrigger_fire(CPURISCVState *env)
             /* This icount trigger can fire */
             itrigger_set_pending(env, i, false);    /* clear icount.PENDING */
             itrigger_set_hit(env, i, true);         /* set icount.HIT       */
-            do_trigger_action(env, i);
+            hit = true;
+            hit_index = i;
+            break;
         }
+    }
+
+    /* Re-determine if any icount trigger is pending */
+    env->itrigger_pending = false;
+    for (int i = 0; i < RV_MAX_TRIGGERS; i++) {
+        if (get_trigger_type(env, i) != TRIGGER_TYPE_INST_CNT) {
+            continue;
+        }
+        if (itrigger_get_pending(env, i)) {
+            env->itrigger_pending = true;
+            break;
+        }
+    }
+
+    if (hit) {
+        do_trigger_action(env, hit_index);
     }
 }
 
@@ -891,6 +912,7 @@ void helper_itrigger_match(CPURISCVState *env)
         if (count == 1) {
             /* When count is 1 and the trigger matches, set pending. */
             itrigger_set_pending(env, i, true);
+            env->itrigger_pending = true;
         }
         itrigger_set_count(env, i, --count);
         if (!count) {
