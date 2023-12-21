@@ -1604,6 +1604,10 @@ static RISCVException rmw_mie64(CPURISCVState *env, int csrno,
         *ret_val = env->mie;
     }
 
+    if (!env_archcpu(env)->cfg.ext_sscofpmf) {
+        *ret_val &= ~((uint64_t)MIE_LCOFIE);
+    }
+
     env->mie = (env->mie & ~mask) | (new_val & mask);
 
     if (!riscv_has_ext(env, RVH)) {
@@ -2462,6 +2466,10 @@ static RISCVException rmw_mip64(CPURISCVState *env, int csrno,
         *ret_val = old_mip;
     }
 
+    if (!env_archcpu(env)->cfg.ext_sscofpmf) {
+        *ret_val &= ~((uint64_t)MIP_LCOFIP);
+    }
+
     return RISCV_EXCP_NONE;
 }
 
@@ -2780,6 +2788,10 @@ static RISCVException rmw_sie64(CPURISCVState *env, int csrno,
         env->sie = (env->sie & ~sie_mask) | (new_val & sie_mask);
     }
 
+    if (!env_archcpu(env)->cfg.ext_sscofpmf) {
+        *ret_val &= ~((uint64_t)SIE_LCOFIE);
+    }
+
     return ret;
 }
 
@@ -3004,6 +3016,10 @@ static RISCVException rmw_sip64(CPURISCVState *env, int csrno,
     if (ret_val) {
         *ret_val &= (env->mideleg | env->mvien) &
             (S_MODE_INTERRUPTS | LOCAL_INTERRUPTS);
+    }
+
+    if (!env_archcpu(env)->cfg.ext_sscofpmf) {
+        *ret_val &= ~((uint64_t)SIP_LCOFIP);
     }
 
     return ret;
