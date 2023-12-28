@@ -117,6 +117,7 @@ int32_t gdb_ace_get_file_name_for_gdb(unsigned char *platform, char *soname)
 #define NDS_QUERY_ENDIAN_CMD    "nds query endian"
 #define NDS_QUERY_CPUID_CMD     "nds query cpuid"
 #define NDS_ACE_CMD             "nds ace "
+#define NDS_OTHER_CMD           "nds "
 
 int gdb_handle_query_rcmd_nds_query(GArray *params, void *user_ctx)
 {
@@ -162,6 +163,11 @@ int gdb_handle_query_rcmd_nds_query(GArray *params, void *user_ctx)
         gdb_memtohex(gdbserver_state.str_buf,
                      (guint8 *)filename, strlen(filename));
         gdb_put_strbuf();
+        return 0;
+    }
+    if (!strncmp((const char *)gdbserver_state.mem_buf->data,
+        NDS_OTHER_CMD, strlen(NDS_OTHER_CMD))) {
+         gdb_put_packet("OK");
         return 0;
     }
     return -1;
