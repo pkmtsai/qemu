@@ -827,6 +827,10 @@ void andes_csr_configs(CPURISCVState *env)
     andes_csr_from_config(csr_mmsc_cfg_map,
         sizeof(csr_mmsc_cfg_map) / sizeof(AndesCsrConfigInfo), &mmsc_init_val);
     env->andes_csr.csrno[CSR_MMSC_CFG] = mmsc_init_val;
+    if (env_archcpu(env)->cfg.ext_XAndesAce) {
+        env->andes_csr.csrno[CSR_MMSC_CFG] = set_field(
+            env->andes_csr.csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_ACE, true);
+    }
     /* Update mmsc_cfg2 for RV32 */
     if (riscv_cpu_mxl(env) == MXL_RV32) {
         target_ulong mmsc2_init_val = env->andes_csr.csrno[CSR_MMSC_CFG2];
