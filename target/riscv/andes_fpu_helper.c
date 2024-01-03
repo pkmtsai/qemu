@@ -22,7 +22,7 @@ bool check_fp_mode(CPURISCVState *env)
     if (ret != RISCV_EXCP_NONE) {
         return false;
     }
-    return (umisc_ctl_val & MASK_UMISC_CTL_FP_MODE);
+    return ((umisc_ctl_val & MASK_UMISC_CTL_FP_MODE) == MASK_UMISC_CTL_FP_MODE_BF16);
 }
 
 float16 nds_check_nanbox_h(CPURISCVState *env, uint64_t f)

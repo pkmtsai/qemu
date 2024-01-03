@@ -233,6 +233,8 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 /* umisc_ctl */
 #define MASK_UMISC_CTL_FP_MODE              (0x3)
 #define MASK_UMISC_CTL_CMR_CTL              (0x3 << 2)
+#define MASK_UMISC_CTL_FP_MODE_FP16         0
+#define MASK_UMISC_CTL_FP_MODE_BF16         1
 
 /* mvec_cfg */
 #define MASK_MVEC_CFG_MISEW                 (0x3 << 14)
