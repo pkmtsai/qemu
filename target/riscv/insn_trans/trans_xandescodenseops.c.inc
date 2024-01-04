@@ -112,7 +112,7 @@ static void decode_opc_andes(CPURISCVState *env,
     gen_exception_illegal(ctx);
 }
 
-static int andes_v5_gen_codense_exec_it(DisasContext *ctx,
+static bool andes_v5_gen_codense_exec_it(DisasContext *ctx,
                                         arg_execit *a)
 {
     uint32_t insn;
@@ -158,14 +158,12 @@ static int andes_v5_gen_codense_exec_it(DisasContext *ctx,
 static bool trans_execit(DisasContext *ctx, arg_execit *a)
 {
     REQUIRE_EXECIT;
-    andes_v5_gen_codense_exec_it(ctx, a);
-    return true;
+    return andes_v5_gen_codense_exec_it(ctx, a);
 }
 
 static bool trans_nexecit(DisasContext *ctx, arg_nexecit *a)
 {
     REQUIRE_NEXECIT;
     /* type casting arg_nexecit to arg_execit since they will be the same */
-    andes_v5_gen_codense_exec_it(ctx, (arg_execit *)a);
-    return true;
+    return andes_v5_gen_codense_exec_it(ctx, (arg_execit *)a);
 }
