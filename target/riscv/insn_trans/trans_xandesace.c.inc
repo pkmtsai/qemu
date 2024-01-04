@@ -18,6 +18,7 @@ static bool trans_andes_ace(DisasContext *ctx, arg_andes_ace *a)
     if (!ctx->cfg_ptr->ext_XAndesAce) {
         qemu_printf("XAndesAce not set\n");
         riscv_raise_exception(cpu_env(ctx->cs), RISCV_EXCP_ILLEGAL_INST, GETPC());
+        return false;
     }
     REQUIRE_ACE;
     REQUIRE_ACES;

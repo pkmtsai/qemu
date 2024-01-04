@@ -57,7 +57,7 @@
     } \
 } while (0)
 
-static void decode_opc_andes(CPURISCVState *env,
+static bool decode_opc_andes(CPURISCVState *env,
                              DisasContext *ctx,
                              uint32_t opcode)
 {
@@ -89,13 +89,13 @@ static void decode_opc_andes(CPURISCVState *env,
     if (extract16(opcode16, 0, 2) != 3) {
         if (!has_ext(ctx, RVC)) {
             gen_exception_illegal(ctx);
+            return false;
         } else {
             ctx->opcode = opcode16;
-
             for (size_t i = 0; i < ARRAY_SIZE(decoders_16); ++i) {
                 if (decoders_16[i].guard_func(ctx->cfg_ptr) &&
                     decoders_16[i].decode_func(ctx, opcode16)) {
-                    return;
+                    return true;
                 }
             }
         }
@@ -104,12 +104,13 @@ static void decode_opc_andes(CPURISCVState *env,
         for (size_t i = 0; i < ARRAY_SIZE(decoders); ++i) {
             if (decoders[i].guard_func(ctx->cfg_ptr) &&
                 decoders[i].decode_func(ctx, opcode)) {
-                return;
+                return true;
             }
         }
     }
 
     gen_exception_illegal(ctx);
+    return false;
 }
 
 static bool andes_v5_gen_codense_exec_it(DisasContext *ctx,
@@ -150,7 +151,7 @@ static bool andes_v5_gen_codense_exec_it(DisasContext *ctx,
     } else {
         /* JARL done as SPEC already */
         /* presume ctx->pc_succ_insn not changed in any ISA extension */
-        decode_opc_andes(env, ctx, insn);
+        return decode_opc_andes(env, ctx, insn);
     }
     return true;
 }
