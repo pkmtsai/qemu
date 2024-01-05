@@ -92,7 +92,7 @@ typedef int32_t (*fp_ace_agent_register_t)(void *, cb_table_t, uint32_t,
     const char*, uint64_t, int32_t);
 typedef int32_t (*fp_ace_agent_run_insn_t)(void *, uint32_t, uint64_t);
 typedef int32_t (*fp_ace_agent_version_t)(void *, uint64_t);
-typedef char* (*fp_ace_agent_copilot_version_t)(void *);
+typedef char* (*fp_ace_agent_copilot_version_t)(void *, uint64_t);
 EXPORT_C int32_t ace_agent_register(void *, cb_table_t cb_table,
     uint32_t cb_table_num, const char *, uint64_t, int32_t);
 EXPORT_C int32_t ace_agent_run_insn(void *, uint32_t opcode, uint64_t);
