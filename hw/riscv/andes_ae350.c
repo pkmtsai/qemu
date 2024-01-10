@@ -324,6 +324,17 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     char *plic_hart_config, *plicsw_hart_config;
     NICInfo *nd = &nd_table[0];
 
+    if (s->ilm_size < 0x1000 || s->ilm_size > 0x1000000) {
+        error_report("Cannot set instruction local memory size beyond the range"
+                     "of 0x1000 to 0x1000000");
+        exit(1);
+    }
+    if (s->dlm_size < 0x1000 || s->dlm_size > 0x1000000) {
+        error_report("Cannot set data local memory size beyond the range of"
+                     "0x1000 to 0x1000000");
+        exit(1);
+    }
+
     /* round down local memory size to valid value */
     s->ilm_size = 1 << (31 - __builtin_clz(s->ilm_size));
     s->dlm_size = 1 << (31 - __builtin_clz(s->dlm_size));
