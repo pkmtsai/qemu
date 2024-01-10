@@ -342,6 +342,7 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     s->ilm_base &= ~(s->ilm_size - 1);
     s->dlm_base &= ~(s->dlm_size - 1);
 
+    /* Set riscv_harts properties for Local Memory */
     qdev_prop_set_bit(DEVICE(&s->cpus), "ilm_default_enable",
                         s->ilm_default_enable);
     qdev_prop_set_bit(DEVICE(&s->cpus), "dlm_default_enable",

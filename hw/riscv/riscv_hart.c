@@ -58,14 +58,12 @@ static void riscv_harts_cpu_reset(void *opaque)
 
 static void andes_hart_prop_set(RISCVHartArrayState *s, int idx)
 {
-    qdev_prop_set_uint64(DEVICE(&s->harts[idx]), "ilm_base", s->ilm_base);
-    qdev_prop_set_uint64(DEVICE(&s->harts[idx]), "dlm_base", s->dlm_base);
-    qdev_prop_set_uint64(DEVICE(&s->harts[idx]), "ilm_size", s->ilm_size);
-    qdev_prop_set_uint64(DEVICE(&s->harts[idx]), "dlm_size", s->dlm_size);
-    qdev_prop_set_bit(DEVICE(&s->harts[idx]), "ilm_default_enable",
-                      s->ilm_default_enable);
-    qdev_prop_set_bit(DEVICE(&s->harts[idx]), "dlm_default_enable",
-                      s->dlm_default_enable);
+    s->harts[idx].env.ilm_base = s->ilm_base;
+    s->harts[idx].env.dlm_base = s->dlm_base;
+    s->harts[idx].env.ilm_size = s->ilm_size;
+    s->harts[idx].env.dlm_size = s->dlm_size;
+    s->harts[idx].env.ilm_default_enable = s->ilm_default_enable;
+    s->harts[idx].env.dlm_default_enable = s->dlm_default_enable;
 }
 
 
