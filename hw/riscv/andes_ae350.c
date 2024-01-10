@@ -413,10 +413,6 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     create_unimplemented_device("riscv.andes.ae350.spi",
         memmap[ANDES_AE350_SPI].base, memmap[ANDES_AE350_SPI].size);
 
-    /* WDT */
-    create_unimplemented_device("riscv.andes.ae350.wdt",
-        memmap[ANDES_AE350_WDT].base, memmap[ANDES_AE350_WDT].size);
-
     /* RTC */
     atcrtc100_create(memmap[ANDES_AE350_RTC].base,
                      qdev_get_gpio_in(DEVICE(s->plic),
