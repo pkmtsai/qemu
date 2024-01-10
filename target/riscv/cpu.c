@@ -1381,12 +1381,10 @@ static void andes_csr_reset_common(CPURISCVState *env)
     int ilmsz = 31 - __builtin_clz(env->ilm_size) - 9;
     int dlmsz = 31 - __builtin_clz(env->dlm_size) - 9;
 
-    env->andes_csr.csrno[CSR_MICM_CFG] = (3 << V5_MICM_CFG_ISZ) |
-                                         (1UL << V5_MICM_CFG_ILMB) |
-                                         (ilmsz << V5_MICM_CFG_ILMSZ);
-    env->andes_csr.csrno[CSR_MDCM_CFG] = (3 << V5_MDCM_CFG_DSZ) |
-                                         (1UL << V5_MDCM_CFG_DLMB) |
-                                         (dlmsz << V5_MDCM_CFG_DLMSZ);
+    env->andes_csr.csrno[CSR_MICM_CFG] |= (1UL << V5_MICM_CFG_ILMB) |
+                                          (ilmsz << V5_MICM_CFG_ILMSZ);
+    env->andes_csr.csrno[CSR_MDCM_CFG] |= (1UL << V5_MDCM_CFG_DLMB) |
+                                          (dlmsz << V5_MDCM_CFG_DLMSZ);
 
     env->andes_csr.csrno[CSR_MILMB] = env->ilm_base | env->ilm_default_enable;
     env->andes_csr.csrno[CSR_MDLMB] = env->dlm_base | env->dlm_default_enable;
