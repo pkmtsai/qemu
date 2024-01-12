@@ -228,7 +228,7 @@ create_fdt(AndesAe350BoardState *bs, const struct MemmapEntry *memmap,
     qemu_fdt_setprop(fdt, plicsw_name, "interrupts-extended",
         plicsw_irq_ext, s->cpus.num_harts * sizeof(uint32_t) * 2);
     qemu_fdt_setprop_cells(fdt, plicsw_name, "reg",
-        0x0, plicsw_addr, 0x0, memmap[ANDES_AE350_PLIC].size);
+        0x0, plicsw_addr, 0x0, memmap[ANDES_AE350_PLICSW].size);
     qemu_fdt_setprop_cell(fdt, plicsw_name, "riscv,ndev", 0x1);
     g_free(plicsw_name);
     g_free(plicsw_irq_ext);
@@ -365,7 +365,7 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     s->plic_sw = andes_plic_create(
         memmap[ANDES_AE350_PLICSW].base,
         ANDES_PLICSW_NAME,
-        plicsw_hart_config,
+        plicsw_hart_config, machine->smp.cpus,
         ANDES_PLICSW_NUM_SOURCES,
         ANDES_PLICSW_NUM_PRIORITIES,
         ANDES_PLICSW_PRIORITY_BASE,
@@ -392,7 +392,7 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     s->plic = andes_plic_create(
         memmap[ANDES_AE350_PLIC].base,
         ANDES_PLIC_NAME,
-        plic_hart_config,
+        plic_hart_config, machine->smp.cpus,
         ANDES_PLIC_NUM_SOURCES,
         ANDES_PLIC_NUM_PRIORITIES,
         ANDES_PLIC_PRIORITY_BASE,

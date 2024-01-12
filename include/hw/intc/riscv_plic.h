@@ -79,6 +79,9 @@ struct RISCVPLICState {
     uint32_t context_stride;
     uint32_t aperture_size;
 
+    qemu_irq *m_external_irqs;
+    qemu_irq *s_external_irqs;
+
     /* interface */
     uint64_t (*riscv_plic_read_priority)(void *opaque,
         hwaddr addr, unsigned size);

@@ -24,6 +24,7 @@
 #include "target/riscv/cpu.h"
 #include "hw/sysbus.h"
 #include "hw/intc/andes_plic.h"
+#include "hw/irq.h"
 
 /* #define DEBUG_ANDES_PLIC */
 #define LOGGE(x...) qemu_log_mask(LOG_GUEST_ERROR, x)
@@ -55,9 +56,9 @@ void andes_plichw_update(void *plic)
 
     /* raise irq on harts where this irq is enabled */
     for (target_id = 0; target_id < riscv_plic->num_addrs; target_id++) {
-        uint32_t hart_id = riscv_plic->addr_config[target_id].hartid;
+        uint32_t hartid = riscv_plic->addr_config[target_id].hartid;
         PLICMode mode = riscv_plic->addr_config[target_id].mode;
-        CPUState *cpu = qemu_get_cpu(hart_id);
+        CPUState *cpu = qemu_get_cpu(hartid);
         CPURISCVState *env = cpu_env(cpu);
         if (!env) {
             continue;
@@ -75,7 +76,8 @@ void andes_plichw_update(void *plic)
                         riscv_plic->riscv_plic_claim(riscv_plic, target_id);
                     assert(vec->vectored_irq_m);
             }
-            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_MEIP, BOOL_TO_MASK(level));
+            qemu_set_irq(riscv_plic->m_external_irqs[hartid -
+                         riscv_plic->hartid_base], level);
             break;
         case PlicMode_S:
             if (!vec->vectored_irq_s &&
@@ -85,7 +87,8 @@ void andes_plichw_update(void *plic)
                         riscv_plic->riscv_plic_claim(riscv_plic, target_id);
                     assert(vec->vectored_irq_s);
             }
-            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_SEIP, BOOL_TO_MASK(level));
+            qemu_set_irq(riscv_plic->s_external_irqs[hartid -
+                         riscv_plic->hartid_base], level);
             break;
         default:
             break;
@@ -101,9 +104,9 @@ void andes_plicsw_update(void *plic)
 
     /* raise irq on harts where this irq is enabled */
     for (target_id = 0; target_id < riscv_plic->num_addrs; target_id++) {
-        uint32_t hart_id = riscv_plic->addr_config[target_id].hartid;
+        uint32_t hartid = riscv_plic->addr_config[target_id].hartid;
         PLICMode mode = riscv_plic->addr_config[target_id].mode;
-        CPUState *cpu = qemu_get_cpu(hart_id);
+        CPUState *cpu = qemu_get_cpu(hartid);
         CPURISCVState *env = cpu_env(cpu);
         if (!env) {
             continue;
@@ -112,10 +115,12 @@ void andes_plicsw_update(void *plic)
 
         switch (mode) {
         case PlicMode_M:
-            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_MSIP, BOOL_TO_MASK(level));
+            qemu_set_irq(riscv_plic->m_external_irqs[hartid -
+                         riscv_plic->hartid_base], level);
             break;
         case PlicMode_S:
-            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_SSIP, BOOL_TO_MASK(level));
+            qemu_set_irq(riscv_plic->s_external_irqs[hartid -
+                         riscv_plic->hartid_base], level);
             break;
         default:
             break;
@@ -208,9 +213,10 @@ andes_plic_realize(DeviceState *dev, Error **errp)
     } else {
         riscv_plic->riscv_plic_update = andes_plichw_update;
     }
-    /* Let Andes PLIC and SWPLIC to disable IO re-entrant checking,
+    /*
+     * Let Andes PLIC and SWPLIC to disable IO re-entrant checking,
      * since both PLIC and SWPLIC are using riscv.plic type
-     * see softmmu/memory.c:access_with_adjusted_size() 
+     * see softmmu/memory.c:access_with_adjusted_size()
      */
     riscv_plic->mmio.disable_reentrancy_guard = true;
     riscv_plic->riscv_plic_write_pending = andes_plic_write_pending;
@@ -257,7 +263,7 @@ type_init(andes_plic_register_types)
  * Create PLIC device.
  */
 DeviceState *andes_plic_create(hwaddr plic_base,
-    const char *plic_name, char *hart_config,
+    const char *plic_name, char *hart_config, uint32_t num_harts,
     uint32_t num_sources, uint32_t num_priorities,
     uint32_t priority_base, uint32_t pending_base,
     uint32_t enable_base, uint32_t enable_stride,
@@ -265,11 +271,14 @@ DeviceState *andes_plic_create(hwaddr plic_base,
     uint32_t aperture_size)
 {
     DeviceState *dev = qdev_new(TYPE_ANDES_PLIC);
+    /* Directly set hartid_base to 0 if we are only one cluster */
+    uint32_t hartid_base = 0;
+    uint32_t sw = 0;
 
     assert(enable_stride == (enable_stride & -enable_stride));
     assert(threshold_stride == (threshold_stride & -threshold_stride));
     qdev_prop_set_string(dev, "plic-name", plic_name);
-    qdev_prop_set_uint32(dev, "hartid-base", 0);
+    qdev_prop_set_uint32(dev, "hartid-base", hartid_base);
     qdev_prop_set_string(dev, "hart-config", hart_config);
     qdev_prop_set_uint32(dev, "num-sources", num_sources);
     qdev_prop_set_uint32(dev, "num-priorities", num_priorities);
@@ -283,5 +292,21 @@ DeviceState *andes_plic_create(hwaddr plic_base,
 
     sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, plic_base);
+
+    if (strstr(plic_name, "SW") != NULL) {
+        sw = 1;
+    }
+
+    for (int i = 0; i < num_harts; i++) {
+        CPUState *cpu = qemu_get_cpu(hartid_base + i);
+
+        qdev_connect_gpio_out(dev, i,
+                              qdev_get_gpio_in(DEVICE(cpu),
+                              sw ? IRQ_S_SOFT : IRQ_S_EXT));
+        qdev_connect_gpio_out(dev, num_harts + i,
+                              qdev_get_gpio_in(DEVICE(cpu),
+                              sw ? IRQ_M_SOFT : IRQ_M_EXT));
+    }
+
     return dev;
 }

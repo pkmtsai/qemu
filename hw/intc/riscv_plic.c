@@ -31,6 +31,7 @@
 #include "target/riscv/cpu.h"
 #include "sysemu/sysemu.h"
 #include "migration/vmstate.h"
+#include "hw/irq.h"
 
 #define RISCV_DEBUG_PLIC 0
 
@@ -151,10 +152,12 @@ static void riscv_plic_update(void *opaque)
         int level = riscv_plic_irqs_pending(plic, addrid);
         switch (mode) {
         case PLICMode_M:
-            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_MEIP, BOOL_TO_MASK(level));
+            qemu_set_irq(plic->m_external_irqs[hartid -
+                         plic->hartid_base], level);
             break;
         case PLICMode_S:
-            riscv_cpu_update_mip(&RISCV_CPU(cpu)->env, MIP_SEIP, BOOL_TO_MASK(level));
+            qemu_set_irq(plic->s_external_irqs[hartid -
+                         plic->hartid_base], level);
             break;
         default:
             break;
@@ -574,6 +577,12 @@ static void riscv_plic_realize(DeviceState *dev, Error **errp)
     /* set default update function */
     plic->riscv_plic_update = riscv_plic_update;
 
+    plic->s_external_irqs = g_malloc(sizeof(qemu_irq) * plic->num_harts);
+    qdev_init_gpio_out(dev, plic->s_external_irqs, plic->num_harts);
+
+    plic->m_external_irqs = g_malloc(sizeof(qemu_irq) * plic->num_harts);
+    qdev_init_gpio_out(dev, plic->m_external_irqs, plic->num_harts);
+
     /*
      * We can't allow the supervisor to control SEIP as this would allow the
      * supervisor to clear a pending external interrupt which will result in
@@ -622,6 +631,11 @@ static void riscv_plic_reset(DeviceState *dev)
     memset(plic->pending, 0, sizeof(uint32_t) * plic->bitfield_words);
     memset(plic->claimed, 0, sizeof(uint32_t) * plic->bitfield_words);
     memset(plic->enable, 0, sizeof(uint32_t) * plic->num_enables);
+
+    for (int i = 0; i < plic->num_harts; i++) {
+        qemu_set_irq(plic->m_external_irqs[i], 0);
+        qemu_set_irq(plic->s_external_irqs[i], 0);
+    }
 }
 
 static void riscv_plic_class_init(ObjectClass *klass, void *data)

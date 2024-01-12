@@ -105,7 +105,7 @@ static inline bool addr_between(uint32_t addr, uint32_t base, uint32_t offset)
 
 DeviceState *
 andes_plic_create(hwaddr addr,
-    const char *plic_name, char *hart_config,
+    const char *plic_name, char *hart_config, uint32_t num_harts,
     uint32_t num_sources, uint32_t num_priorities,
     uint32_t priority_base, uint32_t pending_base,
     uint32_t enable_base, uint32_t enable_stride,
