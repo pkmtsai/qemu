@@ -29,6 +29,7 @@ static RISCVException read_mmsc_cfg_nx45v(CPURISCVState *env, int csrno,
                          | MASK_MMSC_CFG_EDSP    | MASK_MMSC_CFG_PPMA
                          | MASK_MMSC_CFG_BF16CVT | MASK_MMSC_CFG_ZFH
                          | MASK_MMSC_CFG_VL4     | MASK_MMSC_CFG_VECCFG
+                         | MASK_MMSC_CFG_FINV
                          | MASK_MMSC_CFG_VSIH    | MASK_MMSC_CFG_VDOT
                          | MASK_MMSC_CFG_VPFH    | MASK_MMSC_CFG_L2CMP_CFG
                          | MASK_MMSC_CFG_L2C     | MASK_MMSC_CFG_IOCP
@@ -100,14 +101,7 @@ static RISCVException write_smdcause_nx45v(CPURISCVState *env, int csrno,
 
 void andes_spec_csr_init_nx45v(AndesCsr *andes_csr)
 {
-    uint64_t mmsc_init_val = MASK_MMSC_CFG_ECD   | MASK_MMSC_CFG_PFT
-                           | MASK_MMSC_CFG_HSP   | MASK_MMSC_CFG_ACE
-                           | MASK_MMSC_CFG_VPLIC | MASK_MMSC_CFG_EV5PE
-                           | MASK_MMSC_CFG_PMNDS
-                           | MASK_MMSC_CFG_CCTLCSR
-                           | MASK_MMSC_CFG_PPMA  | MASK_MMSC_CFG_ZFH
-                           | MASK_MMSC_CFG_VL4
-                           | MASK_MMSC_CFG_VECCFG;
+    uint64_t mmsc_init_val = 0x60364005b038;
     andes_csr->csrno[CSR_MMSC_CFG] = (target_ulong)mmsc_init_val;
     andes_csr->csrno[CSR_MCLK_CTL] = 0;
     andes_csr->csrno[CSR_MXSTATUS] = 0;
