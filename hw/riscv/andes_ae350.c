@@ -48,7 +48,7 @@
 #include "hw/timer/andes_plmt.h"
 #include "hw/timer/atcpit100.h"
 #include "hw/riscv/andes_ae350.h"
-#include "hw/riscv/andes_atcsmu.h"
+#include "hw/misc/andes_atcsmu.h"
 #include "hw/sd/atfsdc010.h"
 #include "hw/rtc/atcrtc100.h"
 #include "hw/watchdog/atcwdt200.h"

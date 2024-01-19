@@ -36,7 +36,7 @@
 #include "sysemu/runstate.h"
 #include "qapi/qapi-commands-run-state.h"
 #include "hw/watchdog/atcwdt200.h"
-#include "hw/riscv/andes_atcsmu.h"
+#include "hw/misc/andes_atcsmu.h"
 
 
 #define xLOG(x...)

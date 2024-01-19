@@ -27,7 +27,7 @@
 #include "hw/dma/atcdmac300.h"
 #include "hw/net/atfmac100.h"
 #include "hw/sd/atfsdc010.h"
-#include "hw/riscv/andes_atcsmu.h"
+#include "hw/misc/andes_atcsmu.h"
 
 #define ANDES_CPUS_MAX 8
 

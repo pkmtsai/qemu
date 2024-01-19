@@ -22,7 +22,7 @@
 #include "hw/sysbus.h"
 #include "sysemu/runstate.h"
 #include "hw/qdev-properties.h"
-#include "hw/riscv/andes_atcsmu.h"
+#include "hw/misc/andes_atcsmu.h"
 #include "target/riscv/cpu.h"
 
 /* #define DEBUG_ATCSMU */

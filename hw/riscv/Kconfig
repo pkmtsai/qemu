@@ -5,9 +5,6 @@ config IBEX
     bool
 
 # RISC-V machines in alphabetical order
-config ATCSMU
-    bool
-
 config ANDES_AE350
     bool
     select ANDES_PLIC

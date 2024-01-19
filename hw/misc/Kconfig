@@ -20,6 +20,9 @@ config ISA_TESTDEV
     default y if TEST_DEVICES
     depends on ISA_BUS
 
+config ATCSMU
+    bool
+
 config PCI_TESTDEV
     bool
     default y if TEST_DEVICES
