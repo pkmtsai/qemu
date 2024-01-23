@@ -39,7 +39,7 @@ typedef struct AndesATCSMUState {
     uint32_t smu_base_addr;
     uint32_t smu_base_size;
     uint32_t scratch;
-    pcs_registers pcs_regs[4];
+    pcs_registers pcs_regs[8];
 } AndesATCSMUState;
 
 #define ATCSMU_WRSR         0x10
@@ -60,8 +60,8 @@ typedef struct AndesATCSMUState {
 #define ATCSMU_PCS6_SCRATCH          0xE4
 #define ATCSMU_PCS7_SCRATCH          0x104
 #define ATCSMU_PCS8_SCRATCH          0x124
-#define ATCSMU_PCS9_SCRATCH          0x164
-#define ATCSMU_PCS10_SCRATCH         0x184
+#define ATCSMU_PCS9_SCRATCH          0x144
+#define ATCSMU_PCS10_SCRATCH         0x164
 
 #define ATCSMU_HART4_RESET_VECTOR_LO 0x200
 #define ATCSMU_HART5_RESET_VECTOR_LO 0x204
