@@ -1050,6 +1050,22 @@ static int itrigger_get_adjust_count(CPURISCVState *env)
     return count;
 }
 
+static void riscv_disable_trigger(CPURISCVState *env,
+                                  target_ulong trigger_index)
+{
+    int trigger_type;
+
+    trigger_type = extract_trigger_type(env, env->tdata1[trigger_index]);
+    switch (trigger_type) {
+    case TRIGGER_TYPE_AD_MATCH:
+        type2_breakpoint_remove(env, trigger_index);
+        break;
+    case TRIGGER_TYPE_AD_MATCH6:
+        type6_breakpoint_remove(env, trigger_index);
+        break;
+    }
+}
+
 target_ulong tdata_csr_read(CPURISCVState *env, int tdata_index)
 {
     int trigger_type;
@@ -1098,6 +1114,11 @@ void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
                       trigger_type);
         break;
     case TRIGGER_TYPE_NO_EXIST:
+        riscv_disable_trigger(env, env->trigger_cur);
+        env->tdata1[env->trigger_cur] =
+            (riscv_cpu_mxl(env) == MXL_RV32) ? RV32_TYPE(TRIGGER_TYPE_DISABLED)
+                                             : RV64_TYPE(TRIGGER_TYPE_DISABLED);
+        break;
     case TRIGGER_TYPE_DISABLED:
         qemu_log_mask(LOG_GUEST_ERROR, "trigger type: %d does not exit\n",
                       trigger_type);
