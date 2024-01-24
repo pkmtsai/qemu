@@ -1120,8 +1120,21 @@ void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
                                              : RV64_TYPE(TRIGGER_TYPE_DISABLED);
         break;
     case TRIGGER_TYPE_DISABLED:
-        qemu_log_mask(LOG_GUEST_ERROR, "trigger type: %d does not exit\n",
-                      trigger_type);
+        switch (tdata_index) {
+        case TDATA2:
+            if (val != env->tdata2[env->trigger_cur]) {
+                env->tdata2[env->trigger_cur] = val;
+            }
+            break;
+        case TDATA3:
+            val = textra_validate(env, val);
+            if (val != env->tdata3[env->trigger_cur]) {
+                env->tdata3[env->trigger_cur] = val;
+            }
+            break;
+        default:
+            g_assert_not_reached();
+        }
         break;
     default:
         g_assert_not_reached();
