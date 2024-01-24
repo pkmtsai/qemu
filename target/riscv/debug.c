@@ -60,7 +60,7 @@ static tdata_avail tdata_mapping[TRIGGER_TYPE_NUM] = {
     [TRIGGER_TYPE_EXCP] = { true, true, true },
     [TRIGGER_TYPE_AD_MATCH6] = { true, true, true },
     [TRIGGER_TYPE_EXT_SRC] = { true, false, false },
-    [TRIGGER_TYPE_UNAVAIL] = { true, true, true }
+    [TRIGGER_TYPE_DISABLED] = { true, true, true }
 };
 
 /* only breakpoint size 1/2/4/8 supported */
@@ -118,7 +118,7 @@ static trigger_action_t get_trigger_action(CPURISCVState *env,
                       trigger_type);
         break;
     case TRIGGER_TYPE_NO_EXIST:
-    case TRIGGER_TYPE_UNAVAIL:
+    case TRIGGER_TYPE_DISABLED:
         qemu_log_mask(LOG_GUEST_ERROR, "trigger type: %d does not exit\n",
                       trigger_type);
         break;
@@ -520,7 +520,7 @@ static bool trigger_mode_match(CPURISCVState *env, trigger_type_t type,
         qemu_log_mask(LOG_UNIMP, "trigger type: %d is not supported\n", type);
         break;
     case TRIGGER_TYPE_NO_EXIST:
-    case TRIGGER_TYPE_UNAVAIL:
+    case TRIGGER_TYPE_DISABLED:
         qemu_log_mask(LOG_GUEST_ERROR, "trigger type: %d does not exit\n",
                       type);
         break;
@@ -1098,7 +1098,7 @@ void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
                       trigger_type);
         break;
     case TRIGGER_TYPE_NO_EXIST:
-    case TRIGGER_TYPE_UNAVAIL:
+    case TRIGGER_TYPE_DISABLED:
         qemu_log_mask(LOG_GUEST_ERROR, "trigger type: %d does not exit\n",
                       trigger_type);
         break;
