@@ -88,6 +88,19 @@ static inline target_ulong extract_trigger_type(CPURISCVState *env,
     }
 }
 
+static inline bool extract_tdata1_dmode(CPURISCVState *env, target_ulong tdata1)
+{
+    switch (riscv_cpu_mxl(env)) {
+    case MXL_RV32:
+        return extract32(tdata1, 27, 1);
+    case MXL_RV64:
+    case MXL_RV128:
+        return extract64(tdata1, 59, 1);
+    default:
+        g_assert_not_reached();
+    }
+}
+
 static inline target_ulong get_trigger_type(CPURISCVState *env,
                                             target_ulong trigger_index)
 {
@@ -1090,6 +1103,7 @@ target_ulong tdata_csr_read(CPURISCVState *env, int tdata_index)
 void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
 {
     int trigger_type;
+    bool dmode;
 
     if (tdata_index == TDATA1 && val == 0) {
         /* Write 0 to tdata1 disables the trigger. */
@@ -1127,6 +1141,13 @@ void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
         break;
     case TRIGGER_TYPE_DISABLED:
         switch (tdata_index) {
+        case TDATA1:
+            /* Bits are ignored except for dmode field. */
+            dmode = extract_tdata1_dmode(env, val);
+            env->tdata1[env->trigger_cur] = build_tdata1(env,
+                                                         TRIGGER_TYPE_DISABLED,
+                                                         dmode, 0);
+            break;
         case TDATA2:
             if (val != env->tdata2[env->trigger_cur]) {
                 env->tdata2[env->trigger_cur] = val;
