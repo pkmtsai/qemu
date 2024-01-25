@@ -1094,9 +1094,8 @@ void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
     if (tdata_index == TDATA1 && val == 0) {
         /* Write 0 to tdata1 disables the trigger. */
         riscv_disable_trigger(env, env->trigger_cur);
-        env->tdata1[env->trigger_cur] =
-            (riscv_cpu_mxl(env) == MXL_RV32) ? RV32_TYPE(TRIGGER_TYPE_DISABLED)
-                                             : RV64_TYPE(TRIGGER_TYPE_DISABLED);
+        env->tdata1[env->trigger_cur] = build_tdata1(env, TRIGGER_TYPE_DISABLED,
+                                                     0, 0);
         return;
     }
 
