@@ -1091,6 +1091,15 @@ void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
 {
     int trigger_type;
 
+    if (tdata_index == TDATA1 && val == 0) {
+        /* Write 0 to tdata1 disables the trigger. */
+        riscv_disable_trigger(env, env->trigger_cur);
+        env->tdata1[env->trigger_cur] =
+            (riscv_cpu_mxl(env) == MXL_RV32) ? RV32_TYPE(TRIGGER_TYPE_DISABLED)
+                                             : RV64_TYPE(TRIGGER_TYPE_DISABLED);
+        return;
+    }
+
     if (tdata_index == TDATA1) {
         trigger_type = extract_trigger_type(env, val);
     } else {
@@ -1114,10 +1123,8 @@ void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
                       trigger_type);
         break;
     case TRIGGER_TYPE_NO_EXIST:
-        riscv_disable_trigger(env, env->trigger_cur);
-        env->tdata1[env->trigger_cur] =
-            (riscv_cpu_mxl(env) == MXL_RV32) ? RV32_TYPE(TRIGGER_TYPE_DISABLED)
-                                             : RV64_TYPE(TRIGGER_TYPE_DISABLED);
+        qemu_log_mask(LOG_GUEST_ERROR, "trigger type: %d does not exist\n",
+                      trigger_type);
         break;
     case TRIGGER_TYPE_DISABLED:
         switch (tdata_index) {
