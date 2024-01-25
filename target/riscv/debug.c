@@ -131,9 +131,10 @@ static trigger_action_t get_trigger_action(CPURISCVState *env,
                       trigger_type);
         break;
     case TRIGGER_TYPE_NO_EXIST:
-    case TRIGGER_TYPE_DISABLED:
-        qemu_log_mask(LOG_GUEST_ERROR, "trigger type: %d does not exit\n",
+        qemu_log_mask(LOG_GUEST_ERROR, "trigger type: %d does not exist\n",
                       trigger_type);
+        break;
+    case TRIGGER_TYPE_DISABLED:
         break;
     default:
         g_assert_not_reached();
@@ -533,9 +534,10 @@ static bool trigger_mode_match(CPURISCVState *env, trigger_type_t type,
         qemu_log_mask(LOG_UNIMP, "trigger type: %d is not supported\n", type);
         break;
     case TRIGGER_TYPE_NO_EXIST:
-    case TRIGGER_TYPE_DISABLED:
-        qemu_log_mask(LOG_GUEST_ERROR, "trigger type: %d does not exit\n",
+        qemu_log_mask(LOG_GUEST_ERROR, "trigger type: %d does not exist\n",
                       type);
+        break;
+    case TRIGGER_TYPE_DISABLED:
         break;
     default:
         g_assert_not_reached();
