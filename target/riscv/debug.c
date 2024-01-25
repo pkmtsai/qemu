@@ -1171,9 +1171,14 @@ void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
 target_ulong tinfo_csr_read(CPURISCVState *env)
 {
     /* assume all triggers support the same types of triggers */
-    return BIT(TRIGGER_TYPE_AD_MATCH) |
-           BIT(TRIGGER_TYPE_INST_CNT) |
-           BIT(TRIGGER_TYPE_AD_MATCH6);
+    target_ulong tinfo;
+
+    tinfo = BIT(TRIGGER_TYPE_AD_MATCH) |
+            BIT(TRIGGER_TYPE_INST_CNT) |
+            BIT(TRIGGER_TYPE_AD_MATCH6);
+    tinfo = set_field(tinfo, TINFO_VERSION, RV_SDTRIG_VERSION);
+
+    return tinfo;
 }
 
 void riscv_cpu_debug_excp_handler(CPUState *cs)

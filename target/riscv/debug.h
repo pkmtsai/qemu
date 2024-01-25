@@ -23,6 +23,7 @@
 #define RISCV_DEBUG_H
 
 #define RV_MAX_TRIGGERS         2
+#define RV_SDTRIG_VERSION       1
 
 /* register index of tdata CSRs */
 enum {
@@ -136,6 +137,9 @@ enum {
 
 #define ITRIGGER_U_SHIFT      6
 #define ITRIGGER_VU_SHIFT     25
+
+/* tinfo field masks */
+#define TINFO_VERSION         (0xff << 24)
 
 bool tdata_available(CPURISCVState *env, int tdata_index);
 
