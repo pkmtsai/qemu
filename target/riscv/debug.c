@@ -1144,6 +1144,8 @@ void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
     case TRIGGER_TYPE_DISABLED:
         switch (tdata_index) {
         case TDATA1:
+            /* Disable trigger. */
+            riscv_disable_trigger(env, env->trigger_cur);
             /* Bits are ignored except for dmode field. */
             dmode = extract_tdata1_dmode(env, val);
             env->tdata1[env->trigger_cur] = build_tdata1(env,
