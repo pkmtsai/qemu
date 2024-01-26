@@ -19,19 +19,9 @@ ACR_INFO_T_V5 *global_acr_info_list_v5;
 INSN_CODE_T_V5* (*gen_get_value_code) (char *name, unsigned index);
 INSN_CODE_T_V5* (*gen_set_value_code) (char *name, unsigned index);
 
-#define LE(msg) do {        \
-    err_str = dlerror();    \
-    if (err_str != NULL) {  \
-        qemu_printf("%s\n", msg);  \
-        return -1;          \
-    }                       \
-} while (0)
-
 int32_t gdb_ace_load_lib(const char *so_name)
 {
-    char *err_str = NULL;
     void *handle;
-
     /*
      * Check whether already load ACE debugger library,
      * we don't support multi-ace and/or multi-ace-dbg
@@ -42,17 +32,23 @@ int32_t gdb_ace_load_lib(const char *so_name)
 
     /* dlopen a shared object named 'so_name' */
     handle = dlopen(so_name, RTLD_NOW | RTLD_LOCAL);
-    LE("unable to dlopen the acelibdbg library");
-
-    assert(handle != NULL);
+    if (handle == NULL) {
+        return -1;
+    }
 
     global_ace_lib_for_gdb_v5 =
         (const char *) dlsym(handle, "ace_lib_for_gdb");
-    LE("unable to load symbol ace_lib_for_gdb");
+    if (global_ace_lib_for_gdb_v5 == NULL) {
+        qemu_printf("Unable to load symbol ace_lib_for_gdb\n");
+        return -1;
+    }
 
     global_ace_lib_for_gdb_len_v5 =
         (unsigned *) dlsym(handle, "ace_lib_for_gdb_len");
-    LE("unable to load symbol ace_lib_for_gdb_len");
+    if (global_ace_lib_for_gdb_len_v5 == NULL) {
+        qemu_printf("Unable to load symbol ace_lib_for_gdb_len\n");
+        return -1;
+    }
 
     /*
      * Below ACR relative symbols can be skip since some .ace file
@@ -167,7 +163,7 @@ int gdb_handle_query_rcmd_nds_query(GArray *params, void *user_ctx)
     }
     if (!strncmp((const char *)gdbserver_state.mem_buf->data,
         NDS_OTHER_CMD, strlen(NDS_OTHER_CMD))) {
-         gdb_put_packet("OK");
+        gdb_put_packet("OK");
         return 0;
     }
     return -1;

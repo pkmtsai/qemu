@@ -276,6 +276,10 @@ static int nds_ace_get_reg(CPURISCVState *env, int reg_n)
     uint32_t curr_reg_no = 0;
     ACR_INFO_T_V5 *acr_info_list_v5 = global_acr_info_list_v5;
 
+    if (global_acr_info_list_v5 == NULL) {
+        return 0;
+    }
+
     /* Check ACR get function whether exist */
     if (gen_get_value_code == NULL) {
         return -1;
@@ -393,6 +397,10 @@ static int nds_ace_set_reg(CPURISCVState *env, unsigned char *val, int reg_n)
     char *type_name = NULL;
     uint32_t curr_reg_no = 0;
     ACR_INFO_T_V5 *acr_info_list_v5 = global_acr_info_list_v5;
+
+    if (global_acr_info_list_v5 == NULL) {
+        return 0;
+    }
 
     /* Check ACR get function whether exist */
     if (gen_set_value_code == NULL) {

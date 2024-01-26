@@ -36,7 +36,7 @@ int32_t qemu_ace_load_wrapper(const char *filename, target_ulong hartid)
         return 0;
     }
     aceapis[hartid].qemu_ace_wrapper_handle = dlopen(filename,
-                                                     RTLD_NOW | RTLD_DEEPBIND);
+                                                     RTLD_NOW | RTLD_LOCAL);
     if (!aceapis[hartid].qemu_ace_wrapper_handle) {
         return -1;
     }
