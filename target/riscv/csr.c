@@ -4958,14 +4958,14 @@ riscv_csr_operations csr_ops[CSR_TABLE_SIZE] = {
     [CSR_PMPADDR15] =  { "pmpaddr15", pmp, read_pmpaddr, write_pmpaddr },
 
     /* Debug CSRs */
-	[CSR_TSELECT]   =  { "tselect",  debug, read_tselect,  write_tselect },
+    [CSR_TSELECT]   =  { "tselect",  debug, read_tselect,  write_tselect },
     [CSR_TDATA1]    =  { "tdata1",   debug, read_tdata,    write_tdata   },
     [CSR_TDATA2]    =  { "tdata2",   debug, read_tdata,    write_tdata   },
     [CSR_TDATA3]    =  { "tdata3",   debug, read_tdata,    write_tdata   },
     [CSR_TINFO]     =  { "tinfo",    debug, read_tinfo,    write_ignore  },
     [CSR_TCONTROL]  =  { "tcontrol", sdtrig_tcontrol,      read_tcontrol,
                          write_tcontrol                                  },
-	[CSR_SCONTEXT]  =  { "scontext", sdtrig_scontext,      read_scontext,
+    [CSR_SCONTEXT]  =  { "scontext", sdtrig_scontext,      read_scontext,
                          write_scontext                                  },
     [CSR_HCONTEXT]  =  { "hcontext", sdtrig_hcontext,      read_hcontext,
                          write_hcontext                                  },

@@ -460,7 +460,7 @@ static const MemoryRegionOps atcpit100_ops = {
 static void
 atcpit100_reset(DeviceState *dev)
 {
-    int i,j;
+    int i, j;
     Atcpit100State *s = ATCPIT100(dev);
     for (i = 0; i < ATCPIT100_CHANNEL_NUM; ++i) {
         Atcpit100Channel *ch = &s->channels[i];

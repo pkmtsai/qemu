@@ -882,7 +882,7 @@ bool riscv_itrigger_enabled(CPURISCVState *env)
             (env->tdata1[i] & ITRIGGER_VU) == 0 &&
             (env->tdata1[i] & ITRIGGER_U)  == 0 &&
             (env->tdata1[i] & ITRIGGER_S)  == 0 &&
-            (env->tdata1[i] & ITRIGGER_M)  == 0 ) {
+            (env->tdata1[i] & ITRIGGER_M)  == 0) {
             continue;
         }
         count = itrigger_get_count(env, i);
