@@ -316,23 +316,39 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
     char *plic_hart_config, *plicsw_hart_config;
     NICInfo *nd = &nd_table[0];
 
-    if (s->ilm_size < 0x1000 || s->ilm_size > 0x1000000) {
-        error_report("Cannot set instruction local memory size beyond the range"
-                     "of 0x1000 to 0x1000000");
-        exit(1);
+    if (s->ilm_size) {
+        if (s->ilm_size < ANDES_LM_SIZE_MIN || s->ilm_size > ANDES_LM_SIZE_MAX
+            || s->ilm_size != 1 << (31 - __builtin_clz(s->ilm_size))) {
+            error_report("Cannot set instruction local memory size to 0x%x. "
+                         "Valid value are 0(unconnected ILM) or power "
+                         "of 2 values between 0x%x and 0x%x.",
+                         s->ilm_size, ANDES_LM_SIZE_MIN, ANDES_LM_SIZE_MAX);
+            exit(1);
+        }
+        if (s->ilm_base & (s->ilm_size - 1)) {
+            error_report("Cannot set instruction local memory base to 0x%lx. "
+                         "It must be aligned to instruction local memory size "
+                         "0x%x.",
+                         s->ilm_base, s->ilm_size);
+            exit(1);
+        }
     }
-    if (s->dlm_size < 0x1000 || s->dlm_size > 0x1000000) {
-        error_report("Cannot set data local memory size beyond the range of"
-                     "0x1000 to 0x1000000");
-        exit(1);
+    if (s->dlm_size) {
+        if (s->dlm_size < ANDES_LM_SIZE_MIN || s->dlm_size > ANDES_LM_SIZE_MAX
+            || s->dlm_size != 1 << (31 - __builtin_clz(s->dlm_size))) {
+            error_report("Cannot set data local memory size to 0x%x. "
+                         "Valid value are 0(unconnected DLM) or "
+                         "power of 2 values between 0x%x and 0x%x.",
+                         s->dlm_size, ANDES_LM_SIZE_MIN, ANDES_LM_SIZE_MAX);
+            exit(1);
+        }
+        if (s->dlm_base & (s->dlm_size - 1)) {
+            error_report("Cannot set data local memory base to 0x%lx. "
+                         "It must be aligned to data local memory size 0x%x.",
+                          s->dlm_base, s->dlm_size);
+            exit(1);
+        }
     }
-
-    /* round down local memory size to valid value */
-    s->ilm_size = 1 << (31 - __builtin_clz(s->ilm_size));
-    s->dlm_size = 1 << (31 - __builtin_clz(s->dlm_size));
-    /* align local memory base to local memory size */
-    s->ilm_base &= ~(s->ilm_size - 1);
-    s->dlm_base &= ~(s->dlm_size - 1);
 
     /* Set riscv_harts properties for Local Memory */
     qdev_prop_set_bit(DEVICE(&s->cpus), "ilm_default_enable",

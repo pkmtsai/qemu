@@ -525,28 +525,34 @@ static void andes_cpu_lm_realize(DeviceState *dev)
 {
     CPURISCVState *env = &RISCV_CPU(dev)->env;
     int lm_num = env->mhartid;
-    g_autofree char *ilm_name =
-        g_strdup_printf("%s%d", "riscv.andes.ae350.ilm", lm_num);
-    g_autofree char *dlm_name =
-        g_strdup_printf("%s%d", "riscv.andes.ae350.dlm", lm_num);
 
-    memory_region_init_ram(env->mask_ilm, OBJECT(dev), ilm_name,
-                            env->ilm_size, &error_fatal);
-    memory_region_init_ram(env->mask_dlm, OBJECT(dev), dlm_name,
-                            env->dlm_size, &error_fatal);
-    /* local memory operation */
-    env->mask_ilm->ops = &local_mem_ops;
-    env->mask_ilm->opaque = env->mask_ilm;
-    env->mask_dlm->ops = &local_mem_ops;
-    env->mask_dlm->opaque = env->mask_dlm;
+    if (env->ilm_size) {
+        g_autofree char *ilm_name =
+            g_strdup_printf("%s%d", "riscv.andes.ae350.ilm", lm_num);
+        memory_region_init_ram(env->mask_ilm, OBJECT(dev), ilm_name,
+                               env->ilm_size, &error_fatal);
+        /* local memory operation */
+        env->mask_ilm->ops = &local_mem_ops;
+        env->mask_ilm->opaque = env->mask_ilm;
 
-    if (env->ilm_default_enable) {
-        memory_region_add_subregion_overlap(env->cpu_as_root, env->ilm_base,
-                                    env->mask_ilm, 1);
+        if (env->ilm_default_enable) {
+            memory_region_add_subregion_overlap(env->cpu_as_root, env->ilm_base,
+                                        env->mask_ilm, 1);
+        }
     }
-    if (env->dlm_default_enable) {
-        memory_region_add_subregion_overlap(env->cpu_as_root, env->dlm_base,
-                                    env->mask_dlm, 1);
+    if (env->dlm_size) {
+        g_autofree char *dlm_name =
+            g_strdup_printf("%s%d", "riscv.andes.ae350.dlm", lm_num);
+        memory_region_init_ram(env->mask_dlm, OBJECT(dev), dlm_name,
+                               env->dlm_size, &error_fatal);
+        /* local memory operation */
+        env->mask_dlm->ops = &local_mem_ops;
+        env->mask_dlm->opaque = env->mask_dlm;
+
+        if (env->dlm_default_enable) {
+            memory_region_add_subregion_overlap(env->cpu_as_root, env->dlm_base,
+                                        env->mask_dlm, 1);
+        }
     }
 }
 #endif
@@ -1380,17 +1386,27 @@ static void andes_csr_reset_common(CPURISCVState *env)
     env->andes_csr.csrno[CSR_MDCM_CFG] = (3 << V5_MDCM_CFG_DSZ);
 
 #ifndef CONFIG_USER_ONLY
-    /* initial local memory csr */
-    int ilmsz = 31 - __builtin_clz(env->ilm_size) - 9;
-    int dlmsz = 31 - __builtin_clz(env->dlm_size) - 9;
-
-    env->andes_csr.csrno[CSR_MICM_CFG] |= (1UL << V5_MICM_CFG_ILMB) |
-                                          (ilmsz << V5_MICM_CFG_ILMSZ);
-    env->andes_csr.csrno[CSR_MDCM_CFG] |= (1UL << V5_MDCM_CFG_DLMB) |
-                                          (dlmsz << V5_MDCM_CFG_DLMSZ);
-
-    env->andes_csr.csrno[CSR_MILMB] = env->ilm_base | env->ilm_default_enable;
-    env->andes_csr.csrno[CSR_MDLMB] = env->dlm_base | env->dlm_default_enable;
+    int ilmsz = 0, dlmsz = 0;
+    /*
+     * Initialize local memory csr for LM size > 0. LMB csr is not exist if
+     * LM size is equal to 0.
+     */
+    if (env->ilm_size) {
+        /* Compute field MICM_CFG.ILMSZ */
+        ilmsz = 31 - __builtin_clz(env->ilm_size) - 9;
+        env->andes_csr.csrno[CSR_MICM_CFG] |= (1UL << V5_MICM_CFG_ILMB) |
+                                              (ilmsz << V5_MICM_CFG_ILMSZ);
+        env->andes_csr.csrno[CSR_MILMB] = env->ilm_base |
+                                          env->ilm_default_enable;
+    }
+    if (env->dlm_size) {
+        /* Compute field MDCM_CFG.DLMSZ */
+        dlmsz = 31 - __builtin_clz(env->dlm_size) - 9;
+        env->andes_csr.csrno[CSR_MDCM_CFG] |= (1UL << V5_MDCM_CFG_DLMB) |
+                                              (dlmsz << V5_MDCM_CFG_DLMSZ);
+        env->andes_csr.csrno[CSR_MDLMB] = env->dlm_base |
+                                          env->dlm_default_enable;
+    }
 #endif
 
     /* all-one reset value */

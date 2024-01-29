@@ -124,6 +124,10 @@ enum {
 /* Hart 4~7 do not have slaveports */
 #define ANDES_LM_SLAVEPORTS_MAX 4
 
+/* LM size range in AndeStar_V5_SPA v1.6. Size 0 for unconnected LM */
+#define ANDES_LM_SIZE_MIN 0x400
+#define ANDES_LM_SIZE_MAX 0x20000000
+
 #if defined(TARGET_RISCV32)
 #define VIRT_CPU TYPE_RISCV_CPU_BASE32
 #elif defined(TARGET_RISCV64)
