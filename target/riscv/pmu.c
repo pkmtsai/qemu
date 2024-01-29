@@ -553,6 +553,8 @@ void riscv_pmu_init(RISCVCPU *cpu, Error **errp)
 
     uint64_t val;
     if (andes_config_number(ANDES_CONFIG_ID_CPU, "freq", &val)) {
-        riscv_timebase_freq = val;
+        if (riscv_timebase_freq) {
+            riscv_timebase_freq = val;
+        }
     }
 }
