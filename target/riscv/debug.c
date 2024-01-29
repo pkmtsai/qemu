@@ -1081,6 +1081,33 @@ static void riscv_disable_trigger(CPURISCVState *env,
     }
 }
 
+static void type15_reg_write(CPURISCVState *env, target_ulong index,
+                             int tdata_index, target_ulong val)
+{
+    switch (tdata_index) {
+    case TDATA1:
+        /* Disable trigger. */
+        riscv_disable_trigger(env, index);
+        /* Bits are ignored except for dmode field. */
+        env->tdata1[index] = build_tdata1(env, TRIGGER_TYPE_DISABLED,
+                                          extract_tdata1_dmode(env, val), 0);
+        break;
+    case TDATA2:
+        if (val != env->tdata2[index]) {
+            env->tdata2[index] = val;
+        }
+        break;
+    case TDATA3:
+        val = textra_validate(env, val);
+        if (val != env->tdata3[index]) {
+            env->tdata3[index] = val;
+        }
+        break;
+    default:
+        g_assert_not_reached();
+    }
+}
+
 target_ulong tdata_csr_read(CPURISCVState *env, int tdata_index)
 {
     int trigger_type;
@@ -1105,7 +1132,6 @@ target_ulong tdata_csr_read(CPURISCVState *env, int tdata_index)
 void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
 {
     int trigger_type;
-    bool dmode;
 
     if (tdata_index == TDATA1 && val == 0) {
         /* Write 0 to tdata1 disables the trigger. */
@@ -1142,30 +1168,7 @@ void tdata_csr_write(CPURISCVState *env, int tdata_index, target_ulong val)
                       trigger_type);
         break;
     case TRIGGER_TYPE_DISABLED:
-        switch (tdata_index) {
-        case TDATA1:
-            /* Disable trigger. */
-            riscv_disable_trigger(env, env->trigger_cur);
-            /* Bits are ignored except for dmode field. */
-            dmode = extract_tdata1_dmode(env, val);
-            env->tdata1[env->trigger_cur] = build_tdata1(env,
-                                                         TRIGGER_TYPE_DISABLED,
-                                                         dmode, 0);
-            break;
-        case TDATA2:
-            if (val != env->tdata2[env->trigger_cur]) {
-                env->tdata2[env->trigger_cur] = val;
-            }
-            break;
-        case TDATA3:
-            val = textra_validate(env, val);
-            if (val != env->tdata3[env->trigger_cur]) {
-                env->tdata3[env->trigger_cur] = val;
-            }
-            break;
-        default:
-            g_assert_not_reached();
-        }
+        type15_reg_write(env, env->trigger_cur, tdata_index, val);
         break;
     default:
         g_assert_not_reached();
