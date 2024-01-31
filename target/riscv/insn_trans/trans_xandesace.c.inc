@@ -24,7 +24,7 @@ static bool trans_andes_ace(DisasContext *ctx, arg_andes_ace *a)
     REQUIRE_ACE;
     REQUIRE_ACES;
     TCGv opc = tcg_constant_tl(ctx->opcode);
-    gen_helper_andes_v5_ace(opc, tcg_env, opc);
+    gen_helper_andes_ace(opc, tcg_env, opc);
     gen_update_pc(ctx, ctx->cur_insn_len);
     lookup_and_goto_ptr(ctx);
 

@@ -9,70 +9,71 @@
 #include <string.h>
 #include <dlfcn.h>
 
-generic_fp cb_tables[] = {
-    (generic_fp)qemu_get_XRF, (generic_fp)qemu_set_XRF,
-    (generic_fp)qemu_get_FRF, (generic_fp)qemu_set_FRF,
-    (generic_fp)qemu_get_VRF, (generic_fp)qemu_set_VRF,
-    (generic_fp)qemu_get_MEM, (generic_fp)qemu_set_MEM,
-    (generic_fp)qemu_get_CSR, (generic_fp)qemu_set_CSR,
-    (generic_fp)qemu_set_CSR_masked,
-    (generic_fp)qemu_get_ACM, (generic_fp)qemu_set_ACM,
-    (generic_fp)qemu_get_PC,
-    (generic_fp)qemu_get_hart_id,
-    (generic_fp)qemu_get_cpu_priv,
-    (generic_fp)qemu_get_ACES, (generic_fp)qemu_set_ACES,
+AceAgentFuncPtr ace_agent_cb_func_table[] = {
+    (AceAgentFuncPtr)qemu_get_XRF, (AceAgentFuncPtr)qemu_set_XRF,
+    (AceAgentFuncPtr)qemu_get_FRF, (AceAgentFuncPtr)qemu_set_FRF,
+    (AceAgentFuncPtr)qemu_get_VRF, (AceAgentFuncPtr)qemu_set_VRF,
+    (AceAgentFuncPtr)qemu_get_MEM, (AceAgentFuncPtr)qemu_set_MEM,
+    (AceAgentFuncPtr)qemu_get_CSR, (AceAgentFuncPtr)qemu_set_CSR,
+    (AceAgentFuncPtr)qemu_set_CSR_masked,
+    (AceAgentFuncPtr)qemu_get_ACM, (AceAgentFuncPtr)qemu_set_ACM,
+    (AceAgentFuncPtr)qemu_get_PC,
+    (AceAgentFuncPtr)qemu_get_hart_id,
+    (AceAgentFuncPtr)qemu_get_cpu_priv,
+    (AceAgentFuncPtr)qemu_get_ACES, (AceAgentFuncPtr)qemu_set_ACES,
     };
 
-/*
- * Below variable may move to cpu environment for
- * multi-core support different ACE
- */
-ACEApis aceapis[ACE_HART_MAX];
+/* QEMU ACE agent handler */
+void *qemu_ace_agent_handle;
 
-int32_t qemu_ace_load_wrapper(const char *filename, target_ulong hartid)
+int32_t qemu_ace_agent_load(const char *filename)
 {
     /* Check whether handler already loaded? */
-    if (aceapis[hartid].qemu_ace_wrapper_handle != NULL) {
+    if (qemu_ace_agent_handle != NULL) {
         return 0;
     }
-    aceapis[hartid].qemu_ace_wrapper_handle = dlopen(filename,
-                                                     RTLD_NOW | RTLD_LOCAL);
-    if (!aceapis[hartid].qemu_ace_wrapper_handle) {
+    qemu_ace_agent_handle = dlopen(filename, RTLD_NOW | RTLD_LOCAL);
+    if (!qemu_ace_agent_handle) {
         return -1;
     }
     return 0;
 }
 
-int32_t qemu_ace_load_wrapper_symbol(const char *symbol_name,
-                                     void **func_ptr, target_ulong hartid)
+int32_t qemu_ace_agent_load_symbol(const char *symbol_name, void **func_ptr)
 {
-    if (aceapis[hartid].qemu_ace_wrapper_handle == NULL) {
+    if (qemu_ace_agent_handle == NULL) {
             return -1;
     }
     /* Clear any existing error */
     dlerror();
-    *(void **)(func_ptr) = dlsym(aceapis[hartid].qemu_ace_wrapper_handle,
-                                 symbol_name);
+    *(void **)(func_ptr) = dlsym(qemu_ace_agent_handle, symbol_name);
     if (*func_ptr == NULL) {
         return -1;
     }
     return 0;
 }
 
-int32_t qemu_ace_agent_register(CPURISCVState *env,
-                                const char *extlibpath, target_ulong hartid,
+int32_t qemu_ace_agent_register(CPURISCVState *env, const char *extlibpath,
                                 int32_t multi)
 {
-    if (qemu_ace_load_wrapper_symbol("ace_agent_version",
-        (void **)&aceapis[hartid].fp_ace_agent_version, hartid) != 0) {
+    AceAgentVersion ace_agent_version;
+    target_ulong hartid;
+#ifndef CONFIG_USER_ONLY
+    hartid = env->mhartid;
+#else
+    hartid = 0;
+#endif
+    if (qemu_ace_agent_load_symbol("ace_agent_version",
+        (void **)&ace_agent_version) != 0) {
         return -1;
     }
-    if (aceapis[hartid].fp_ace_agent_version(env) != ACE_AGENT_VERSION) {
+    if (ace_agent_version(env) != ACE_AGENT_VERSION) {
+        qemu_printf("QEMU and ACE agent version don't match\n");
         return -1;
     }
-    if (aceapis[hartid].fp_ace_agent_register == NULL) {
-        if (qemu_ace_load_wrapper_symbol("ace_agent_register",
-            (void **)&aceapis[hartid].fp_ace_agent_register, hartid) != 0) {
+    if (env->ace_agent_register == NULL) {
+        if (qemu_ace_agent_load_symbol("ace_agent_register",
+            (void **)&env->ace_agent_register) != 0) {
             return -1;
         }
     }
@@ -80,20 +81,25 @@ int32_t qemu_ace_agent_register(CPURISCVState *env,
      * register with direct function tables and also pass number of
      * total callback functions
      */
-    return aceapis[hartid].fp_ace_agent_register(env, cb_tables, CB_NAME_MAX,
-                                                extlibpath, hartid, multi);
+    return env->ace_agent_register(env, ace_agent_cb_func_table,
+                                   ACE_CB_NAME_MAX, extlibpath, hartid, multi);
 }
 
-int32_t qemu_ace_agent_run_insn(CPURISCVState *env, uint32_t opcode,
-                                target_ulong hartid)
+int32_t qemu_ace_agent_run_insn(CPURISCVState *env, uint32_t opcode)
 {
-    if (aceapis[hartid].fp_ace_agent_run_insn == NULL) {
-        if (qemu_ace_load_wrapper_symbol("ace_agent_run_insn",
-            (void **)&aceapis[hartid].fp_ace_agent_run_insn, hartid) != 0) {
+    target_ulong hartid;
+    if (env->ace_agent_run_insn == NULL) {
+        if (qemu_ace_agent_load_symbol("ace_agent_run_insn",
+            (void **)&env->ace_agent_run_insn) != 0) {
             return -1;
         }
     }
-    return aceapis[hartid].fp_ace_agent_run_insn(env, opcode, hartid);
+#ifndef CONFIG_USER_ONLY
+    hartid = env->mhartid;
+#else
+    hartid = 0;
+#endif
+    return env->ace_agent_run_insn(env, opcode, hartid);
 }
 
 uint64_t qemu_get_XRF(CPURISCVState *env, uint32_t index)
@@ -280,7 +286,7 @@ void qemu_set_CSR_masked(CPURISCVState *env, uint32_t index, uint64_t value)
 }
 
 /* get memory without via mmu */
-ACM_Status qemu_get_ACM(CPURISCVState *env, uint64_t addr,
+AcmStatus qemu_get_ACM(CPURISCVState *env, uint64_t addr,
                         uint32_t size, char *data)
 {
 #ifndef CONFIG_USER_ONLY
@@ -289,24 +295,13 @@ ACM_Status qemu_get_ACM(CPURISCVState *env, uint64_t addr,
     return ACM_OK;
 }
 
-ACM_Status qemu_set_ACM(CPURISCVState *env, uint64_t addr,
+AcmStatus qemu_set_ACM(CPURISCVState *env, uint64_t addr,
                         uint32_t size, char *data)
 {
 #ifndef CONFIG_USER_ONLY
     cpu_physical_memory_write(addr, data, size);
 #endif
     return ACM_OK;
-}
-
-/* information access */
-bool is_big_endian(void)
-{
-    return 0;
-}
-
-bool interruption_exist(void)
-{
-    return 0;
 }
 
 uint32_t qemu_get_ACES(CPURISCVState *env)

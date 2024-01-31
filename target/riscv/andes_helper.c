@@ -205,15 +205,9 @@ void helper_andes_v5_hsp_check(CPURISCVState *env, target_ulong val)
 }
 
 #include "andes_ace_helper.h"
-target_ulong helper_andes_v5_ace(CPURISCVState *env, target_ulong opcode)
+target_ulong helper_andes_ace(CPURISCVState *env, target_ulong opcode)
 {
-    target_ulong hartid;
-#ifndef CONFIG_USER_ONLY
-    hartid = env->mhartid;
-#else
-    hartid = 0;
-#endif
-    int ret = qemu_ace_agent_run_insn(env, opcode, hartid);
+    int ret = qemu_ace_agent_run_insn(env, opcode);
     if (ret != 0) {
         /* wrong ACE instruction seems return RESERVED_INSN(=1), not ILL Insn */
         qemu_printf("Run ace instruction result = %d\n", ret);

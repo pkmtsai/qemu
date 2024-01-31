@@ -638,20 +638,14 @@ static void riscv_cpu_validate_andes_ace(RISCVCPU *cpu, Error **errp)
      * be NULL since above check already
      */
     if (cpu->cfg.ext_XAndesAce) {
-        target_ulong hartid;
-#ifndef CONFIG_USER_ONLY
-        hartid = env->mhartid;
-#else
-        hartid = 0;
-#endif
-        if (qemu_ace_load_wrapper(cpu->cfg.XAndesAceLib, hartid)) {
+        if (qemu_ace_agent_load(cpu->cfg.XAndesAceLib)) {
             error_setg(errp, "xandesacelib '%s' cannot be loaded",
                        cpu->cfg.XAndesAceLib);
             return;
         } else {
             /* Loaded ACE wrapper library, register callback function */
             if (qemu_ace_agent_register(env, cpu->cfg.XAndesAceExtLibPath,
-                                    hartid, cpu->cfg.ext_XAndesAceMulti)) {
+                                    cpu->cfg.ext_XAndesAceMulti)) {
                 error_setg(errp, "xandesacelib '%s' register failed",
                            cpu->cfg.XAndesAceLib);
                 return;

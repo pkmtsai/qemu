@@ -11,13 +11,13 @@
 #include "gdbstub/andes_ace_gdb.h"
 #include "qemu/qemu-print.h"
 
-unsigned *global_acr_reg_count_v5;
-unsigned *global_acr_type_count_v5;
-unsigned *global_ace_lib_for_gdb_len_v5;
-const char *global_ace_lib_for_gdb_v5;
-ACR_INFO_T_V5 *global_acr_info_list_v5;
-INSN_CODE_T_V5* (*gen_get_value_code) (char *name, unsigned index);
-INSN_CODE_T_V5* (*gen_set_value_code) (char *name, unsigned index);
+unsigned *ace_acr_reg_count;
+unsigned *ace_acr_type_count;
+unsigned *ace_lib_for_gdb_len;
+const char *ace_lib_for_gdb;
+AceAcrInfo *ace_acr_info_list;
+AceInsnCode* (*ace_gen_get_value_code) (char *name, unsigned index);
+AceInsnCode* (*ace_gen_set_value_code) (char *name, unsigned index);
 
 int32_t gdb_ace_load_lib(const char *so_name)
 {
@@ -26,7 +26,7 @@ int32_t gdb_ace_load_lib(const char *so_name)
      * Check whether already load ACE debugger library,
      * we don't support multi-ace and/or multi-ace-dbg
      */
-    if (global_ace_lib_for_gdb_v5 != NULL) {
+    if (ace_lib_for_gdb != NULL) {
         return 0;
     }
 
@@ -36,16 +36,16 @@ int32_t gdb_ace_load_lib(const char *so_name)
         return -1;
     }
 
-    global_ace_lib_for_gdb_v5 =
+    ace_lib_for_gdb =
         (const char *) dlsym(handle, "ace_lib_for_gdb");
-    if (global_ace_lib_for_gdb_v5 == NULL) {
+    if (ace_lib_for_gdb == NULL) {
         qemu_printf("Unable to load symbol ace_lib_for_gdb\n");
         return -1;
     }
 
-    global_ace_lib_for_gdb_len_v5 =
+    ace_lib_for_gdb_len =
         (unsigned *) dlsym(handle, "ace_lib_for_gdb_len");
-    if (global_ace_lib_for_gdb_len_v5 == NULL) {
+    if (ace_lib_for_gdb_len == NULL) {
         qemu_printf("Unable to load symbol ace_lib_for_gdb_len\n");
         return -1;
     }
@@ -54,16 +54,16 @@ int32_t gdb_ace_load_lib(const char *so_name)
      * Below ACR relative symbols can be skip since some .ace file
      * has no any ACR
      */
-    global_acr_reg_count_v5 = (unsigned *) dlsym(handle, "acr_reg_count");
+    ace_acr_reg_count = (unsigned *) dlsym(handle, "acr_reg_count");
 
-    global_acr_type_count_v5 = (unsigned *) dlsym(handle, "acr_type_count");
+    ace_acr_type_count = (unsigned *) dlsym(handle, "acr_type_count");
 
-    gen_get_value_code = dlsym(handle, "gen_get_value_code");
+    ace_gen_get_value_code = dlsym(handle, "gen_get_value_code");
 
-    gen_set_value_code = dlsym(handle, "gen_set_value_code");
+    ace_gen_set_value_code = dlsym(handle, "gen_set_value_code");
 
-    if (global_acr_type_count_v5 && *global_acr_type_count_v5 != 0) {
-        global_acr_info_list_v5 = (ACR_INFO_T_V5 *) dlsym(handle, "acr_list");
+    if (ace_acr_type_count && *ace_acr_type_count != 0) {
+        ace_acr_info_list = (AceAcrInfo *) dlsym(handle, "acr_list");
     }
 
     return 0;
@@ -73,27 +73,27 @@ int32_t gdb_ace_get_file_name_for_gdb(unsigned char *platform, char *soname)
 {
     int32_t ret = 0;
 
-    if (global_ace_lib_for_gdb_v5) {
+    if (ace_lib_for_gdb) {
         struct utsname os;
         if (uname(&os) == 0) {
             const char *str;
 
             if (g_strcmp0((const char *)platform, os.sysname) == 0) {
                 /* Return binary share library.  */
-                str = global_ace_lib_for_gdb_v5;
+                str = ace_lib_for_gdb;
             } else
                 return -1;
 
             /* use size as filename to do fopen */
-            sprintf(soname, "%u", *global_ace_lib_for_gdb_len_v5);
+            sprintf(soname, "%u", *ace_lib_for_gdb_len);
 
             FILE *fd = fopen(soname, "w");
             if (fd == NULL) {
                 ret = -2;
             } else {
                 if (fwrite(str, sizeof(char),
-                    *global_ace_lib_for_gdb_len_v5, fd) !=
-                    *global_ace_lib_for_gdb_len_v5) {
+                    *ace_lib_for_gdb_len, fd) !=
+                    *ace_lib_for_gdb_len) {
                     ret = -3;
                 }
                 fclose(fd);
@@ -108,7 +108,6 @@ int32_t gdb_ace_get_file_name_for_gdb(unsigned char *platform, char *soname)
 
 #define NDS_QUERY_TARGET    "SID"
 #define NDS_QUERY_ENDIAN    "LE"
-#define NDS_QUERY_CPUID     "0"
 #define NDS_QUERY_TARGET_CMD    "nds query target"
 #define NDS_QUERY_ENDIAN_CMD    "nds query endian"
 #define NDS_QUERY_CPUID_CMD     "nds query cpuid"
@@ -116,7 +115,7 @@ int32_t gdb_ace_get_file_name_for_gdb(unsigned char *platform, char *soname)
 #define NDS_VA_CMD              "nds va "
 #define NDS_OTHER_CMD           "nds "
 
-int gdb_handle_query_rcmd_nds_query(GArray *params, void *user_ctx)
+int gdb_handle_query_rcmd_andes_query(GArray *params, void *user_ctx)
 {
     char reply[16];
     /* nds query target only can be 'SID' or 'OCD' */
@@ -136,11 +135,11 @@ int gdb_handle_query_rcmd_nds_query(GArray *params, void *user_ctx)
         gdb_put_strbuf();
         return 0;
     }
-    /* Should return 0 or hartid */
+    /* return hartid as string */
     if (!g_strcmp0((const char *)gdbserver_state.mem_buf->data,
         NDS_QUERY_CPUID_CMD)) {
-        gdb_memtohex(gdbserver_state.str_buf,
-                     (guint8 *)NDS_QUERY_CPUID, strlen(NDS_QUERY_CPUID));
+        snprintf(reply, sizeof(reply), "%d", gdbserver_state.g_cpu->cpu_index);
+        gdb_memtohex(gdbserver_state.str_buf, (guint8 *)reply, strlen(reply));
         gdb_put_strbuf();
         return 0;
     }

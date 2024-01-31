@@ -2,7 +2,6 @@
  * Andes ACE common header
  *
  * Copyright (c) 2023 Andes Technology Corp.
- * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef __ACE_HELPER_H__
 #define __ACE_HELPER_H__
@@ -18,41 +17,34 @@
 /* define ACE agent version, just use int value */
 #define ACE_AGENT_VERSION   100
 
-enum CB_NAME {
-    GET_XRF = 0,
-    SET_XRF,
-    GET_FRF,
-    SET_FRF,
-    GET_VRF,
-    SET_VRF,
-    GET_MEM,
-    SET_MEM,
-    GET_CSR,
-    SET_CSR,
-    SET_CSR_MASKED,
-    GET_ACM,
-    SET_ACM,
-    GET_PC,
-    GET_HARD_ID,
-    GET_CPU_PRIV,
-    GET_ACES,
-    SET_ACES,
-    CB_NAME_MAX
+enum ACE_CB_NAME {
+    ACE_GET_XRF = 0,
+    ACE_SET_XRF,
+    ACE_GET_FRF,
+    ACE_SET_FRF,
+    ACE_GET_VRF,
+    ACE_SET_VRF,
+    ACE_GET_MEM,
+    ACE_SET_MEM,
+    ACE_GET_CSR,
+    ACE_SET_CSR,
+    ACE_SET_CSR_MASKED,
+    ACE_GET_ACM,
+    ACE_SET_ACM,
+    ACE_GET_PC,
+    ACE_GET_HARD_ID,
+    ACE_GET_CPU_PRIV,
+    ACE_GET_ACES,
+    ACE_SET_ACES,
+    ACE_CB_NAME_MAX
 };
 
-typedef int (*generic_fp)(void);
-typedef generic_fp *cb_table_t;
-/*
- * generic_fp table[CB_NAME_MAX];
- * table[GET_XRF] = &qemu_get_xrf;
- * table[SET_XRF] = &qemu_set_xrf;
- *
- */
+typedef int (*AceAgentFuncPtr)(void);
 
 typedef enum {
     ACM_OK,
     ACM_ERROR,
-} ACM_Status;
+} AcmStatus;
 
 /* For Get PC/HART_ID/PRIV */
 typedef uint64_t (*func0)(void *);
@@ -85,18 +77,17 @@ typedef void (*func3m)(void *, uint64_t x, uint64_t y, uint32_t z);
 #define FUNC_3M(f, p0, p1, p2, p3) ((func3m)(f))(p0, p1, p2, p3)
 
 /* For Get/Set ACM */
-typedef ACM_Status (*func3a)(void *, uint64_t x, uint32_t y, char *z);
+typedef AcmStatus (*func3a)(void *, uint64_t x, uint32_t y, char *z);
 #define FUNC_3A(f, p0, p1, p2, p3) ((func3a)(f))(p0, p1, p2, p3)
 
-typedef int32_t (*fp_ace_agent_register_t)(void *, cb_table_t, uint32_t,
-    const char*, uint64_t, int32_t);
-typedef int32_t (*fp_ace_agent_run_insn_t)(void *, uint32_t, uint64_t);
-typedef int32_t (*fp_ace_agent_version_t)(void *, uint64_t);
-typedef char* (*fp_ace_agent_copilot_version_t)(void *, uint64_t);
-EXPORT_C int32_t ace_agent_register(void *, cb_table_t cb_table,
-    uint32_t cb_table_num, const char *, uint64_t, int32_t);
-EXPORT_C int32_t ace_agent_run_insn(void *, uint32_t opcode, uint64_t);
+typedef int32_t (*AceAgentReg)(void *, void *, uint32_t,
+                               const char*, uint64_t, int32_t);
+typedef int32_t (*AceAgentRunInsn)(void *, uint32_t, uint64_t);
+typedef int32_t (*AceAgentVersion)(void *);
+typedef char* (*AceAgentCopilotVersion)(void *, uint64_t);
+EXPORT_C int32_t ace_agent_register(void *, AceAgentFuncPtr *,
+                                    uint32_t, const char *, uint64_t, int32_t);
+EXPORT_C int32_t ace_agent_run_insn(void *, uint32_t, uint64_t);
 EXPORT_C int32_t ace_agent_version(void *);
 EXPORT_C const char *ace_agent_copilot_version(void *, uint64_t);
-
 #endif
