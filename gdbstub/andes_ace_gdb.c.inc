@@ -113,6 +113,7 @@ int32_t gdb_ace_get_file_name_for_gdb(unsigned char *platform, char *soname)
 #define NDS_QUERY_ENDIAN_CMD    "nds query endian"
 #define NDS_QUERY_CPUID_CMD     "nds query cpuid"
 #define NDS_ACE_CMD             "nds ace "
+#define NDS_VA_CMD              "nds va "
 #define NDS_OTHER_CMD           "nds "
 
 int gdb_handle_query_rcmd_nds_query(GArray *params, void *user_ctx)
@@ -162,10 +163,23 @@ int gdb_handle_query_rcmd_nds_query(GArray *params, void *user_ctx)
         return 0;
     }
     if (!strncmp((const char *)gdbserver_state.mem_buf->data,
+        NDS_VA_CMD, strlen(NDS_VA_CMD))) {
+        /*
+         * This command is implemented as a hmp command so we will let
+         * qemu monitor handle the command.
+         */
+        return -1;
+    }
+    if (!strncmp((const char *)gdbserver_state.mem_buf->data,
         NDS_OTHER_CMD, strlen(NDS_OTHER_CMD))) {
         gdb_put_packet("OK");
         return 0;
     }
+    /*
+     * Returning -1 will let the caller(gdb_handle_query_rcmd) knows
+     * the command was not handled here and will write this command
+     * to the chardev of qemu monitor.
+     */
     return -1;
 }
 #endif
