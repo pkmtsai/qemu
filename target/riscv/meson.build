@@ -29,7 +29,6 @@ riscv_ss.add(files(
   'zce_helper.c',
   'andes_helper.c',
   'csr_andes.c',
-  'csr_andes_nx45v.c',
   'andes_fpu_helper.c',
 ))
 

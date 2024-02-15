@@ -905,7 +905,7 @@ static void rv64_andes_nx45v_cpu_init(Object *obj)
 
     riscv_cpu_set_misa(env, MXL_RV64,
              RVA | RVC | RVD | RVF | RVI | RVM | RVN | RVU | RVV | RVX);
-    rv64_andes_common_cpu_init(obj, VM_1_10_MBARE, andes_spec_csr_init_nx45v);
+    rv64_andes_common_cpu_init(obj, VM_1_10_MBARE, andes_set_mmsc_cfg_l2c);
     cfg->mmu = false;
 
     /* Set CPU extensions */
