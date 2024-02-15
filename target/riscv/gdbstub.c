@@ -434,7 +434,8 @@ static int andes_ace_set_reg(CPURISCVState *env, unsigned char *val, int reg_n)
     /* Allocate buffer which is the multiple of register size */
     unsigned int rounds = (ByteSize % reg_bytes) ?
                            ByteSize / reg_bytes + 1 : ByteSize / reg_bytes;
-    char *buffer = g_alloca0(rounds * reg_bytes);
+    char *buffer = g_alloca(rounds * reg_bytes);
+    memset(buffer, 0, rounds * reg_bytes);
     memcpy(buffer, val, ByteSize);
     /* this pointer will be increased when extracting value partially */
     char *value = buffer;
