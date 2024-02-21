@@ -240,6 +240,13 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MVEC_CFG_MISEW                 (0x3 << 14)
 #define MASK_MVEC_CFG_MFSEW                 (0x3 << 16)
 
+/* mslideleg */
+#define MASK_MSLIDELEG_IMECCI               (0x1 << 16)
+#define MASK_MSLIDELEG_BWEI                 (0x1 << 17)
+#define MASK_MSLIDELEG_PMOVI                (0x1 << 18)
+#define MASK_MSLIDELEG_IMECCDMR             (0x1 << 19)
+#define MASK_MSLIDELEG_ACEERR               (0x1 << 24)
+
 /* counters */
 #define MASK_COUNTER_CY                     (0x1)
 #define MASK_COUNTER_TM                     (0x1 << 1)

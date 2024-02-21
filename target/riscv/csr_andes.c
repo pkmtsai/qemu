@@ -671,17 +671,56 @@ static RISCVException write_shpmevent(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
-static RISCVException write_slie(CPURISCVState *env, int csrno,
-                                 target_ulong val)
+static RISCVException write_mslideleg(CPURISCVState *env, int csrno,
+                                      target_ulong val)
 {
     env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_SLIE;
     return RISCV_EXCP_NONE;
 }
 
-static RISCVException write_slip(CPURISCVState *env, int csrno,
+static RISCVException read_slix(CPURISCVState *env, int csrno,
+                                target_ulong *val)
+{
+#ifndef CONFIG_USER_ONLY
+    target_ulong deleg = env->andes_csr.csrno[CSR_MSLIDELEG];
+    target_ulong slix = env->andes_csr.csrno[csrno];
+
+    if (env->priv == PRV_M) {
+        *val = slix;
+    } else {
+        *val = deleg & slix;
+    }
+#else
+    *val = env->andes_csr.csrno[csrno];
+#endif
+    return RISCV_EXCP_NONE;
+}
+
+static RISCVException write_slix(CPURISCVState *env, int csrno,
                                  target_ulong val)
 {
-    env->andes_csr.csrno[csrno] = val & WRITE_MASK_CSR_SLIP;
+    target_ulong mask;
+
+    if (csrno == CSR_SLIP) {
+        mask = WRITE_MASK_CSR_SLIP;
+    } else {
+        mask = WRITE_MASK_CSR_SLIE;
+    }
+
+#ifndef CONFIG_USER_ONLY
+    target_ulong deleg = env->andes_csr.csrno[CSR_MSLIDELEG];
+    target_ulong slix = env->andes_csr.csrno[csrno];
+
+    if (env->priv == PRV_M) {
+        env->andes_csr.csrno[csrno] = val & mask;
+    } else {
+        deleg &= mask;
+        slix = (slix & ~deleg) | (val & deleg);
+        env->andes_csr.csrno[csrno] = slix;
+    }
+#else
+    env->andes_csr.csrno[csrno] = val & mask;
+#endif
     return RISCV_EXCP_NONE;
 }
 
@@ -1047,7 +1086,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
                                                        write_mxstatus         },
     [CSR_MDCAUSE]      = { "mdcause",             any, read_csr,
                                                        write_smdcause         },
-    [CSR_MSLIDELEG]    = { "mslideleg",           any, read_csr, write_csr    },
+    [CSR_MSLIDELEG]    = { "mslideleg",           any, read_csr,
+                                                       write_mslideleg        },
     [CSR_MSAVESTATUS]  = { "msavestatus",         any, read_csr, write_csr    },
     [CSR_MSAVEEPC1]    = { "msaveepc1",           any, read_csr, write_csr    },
     [CSR_MSAVECAUSE1]  = { "msavecause1",         any, read_csr, write_csr    },
@@ -1108,8 +1148,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
 
     /* ================ AndeStar V5 supervisor mode CSRs ================ */
     /* Supervisor trap registers */
-    [CSR_SLIE]    = { "slie",                     smode, read_csr, write_slie},
-    [CSR_SLIP]    = { "slip",                     smode, read_csr, write_slip},
+    [CSR_SLIE]    = { "slie",                     smode, read_slix, write_slix},
+    [CSR_SLIP]    = { "slip",                     smode, read_slix, write_slix},
     [CSR_SDCAUSE] = { "sdcause",                  smode, read_csr,
                                                          write_smdcause       },
 
