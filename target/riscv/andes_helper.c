@@ -101,7 +101,7 @@ target_ulong helper_andes_v5_fb_x(target_ulong rs1, target_ulong rs2,
 {
     target_ulong rd;
     uint8_t *pa, *pb;
-    uint size;
+    unsigned int size;
 
     size = sizeof(target_ulong);
     pa = (uint8_t *)&rs1;

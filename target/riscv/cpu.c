@@ -432,7 +432,7 @@ static void andes_set_mmsc_cfg_l2c(AndesCsr *andes_csr)
 #if defined(TARGET_RISCV32)
     andes_csr->csrno[CSR_MMSC_CFG2] |= (1UL << V5_MMSC_CFG2_L2C);
 #elif defined(TARGET_RISCV64)
-    andes_csr->csrno[CSR_MMSC_CFG] |= (1UL << V5_MMSC_CFG_L2C);
+    andes_csr->csrno[CSR_MMSC_CFG] |= (1ULL << V5_MMSC_CFG_L2C);
 #endif
 }
 

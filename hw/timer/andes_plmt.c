@@ -138,7 +138,7 @@ andes_plmt_write(void *opaque, hwaddr addr, uint64_t value, unsigned size)
         if (!env) {
             error_report("plmt: invalid timecmp hartid: %zu", hartid);
         } else if ((addr & 0x7) == 0) {
-            uint64_t timecmp_hi = (unsigned long)plmt->timecmp[hartid] >> 32;
+            uint64_t timecmp_hi = plmt->timecmp[hartid] >> 32;
             andes_plmt_write_timecmp(plmt, RISCV_CPU(cpu),
                                      (timecmp_hi << 32) |
                                      (value & (unsigned long)0xFFFFFFFF),

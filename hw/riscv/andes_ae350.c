@@ -190,7 +190,7 @@ create_fdt(AndesAe350BoardState *bs, const struct MemmapEntry *memmap,
     /* create plic */
     plic_phandle = phandle++;
     plic_addr = memmap[ANDES_AE350_PLIC].base;
-    plic_name = g_strdup_printf("/soc/interrupt-controller@%lx", plic_addr);
+    plic_name = g_strdup_printf("/soc/interrupt-controller@%lx", (long)plic_addr);
     qemu_fdt_add_subnode(fdt, plic_name);
     qemu_fdt_setprop_cell(fdt, plic_name,
         "#address-cells", 0x2);
@@ -209,7 +209,7 @@ create_fdt(AndesAe350BoardState *bs, const struct MemmapEntry *memmap,
 
     /* create plicsw */
     plicsw_addr = memmap[ANDES_AE350_PLICSW].base;
-    plicsw_name = g_strdup_printf("/soc/interrupt-controller@%lx", plicsw_addr);
+    plicsw_name = g_strdup_printf("/soc/interrupt-controller@%lx", (long)plicsw_addr);
     qemu_fdt_add_subnode(fdt, plicsw_name);
     qemu_fdt_setprop_cell(fdt, plicsw_name,
         "#address-cells", 0x2);
@@ -227,7 +227,7 @@ create_fdt(AndesAe350BoardState *bs, const struct MemmapEntry *memmap,
 
     /* create plmt */
     plmt_addr = memmap[ANDES_AE350_PLMT].base;
-    plmt_name = g_strdup_printf("/soc/plmt0@%lx", plmt_addr);
+    plmt_name = g_strdup_printf("/soc/plmt0@%lx", (long)plmt_addr);
     qemu_fdt_add_subnode(fdt, plmt_name);
     qemu_fdt_setprop_string(fdt, plmt_name, "compatible", "riscv,plmt0");
     qemu_fdt_setprop(fdt, plmt_name, "interrupts-extended",
@@ -237,7 +237,7 @@ create_fdt(AndesAe350BoardState *bs, const struct MemmapEntry *memmap,
     g_free(plmt_name);
     g_free(plmt_irq_ext);
 
-    uart_name = g_strdup_printf("/serial@%lx", memmap[ANDES_AE350_UART1].base);
+    uart_name = g_strdup_printf("/serial@%lx", (long)memmap[ANDES_AE350_UART1].base);
     qemu_fdt_add_subnode(fdt, uart_name);
     qemu_fdt_setprop_string(fdt, uart_name, "compatible", "ns16550a");
     qemu_fdt_setprop_cells(fdt, uart_name, "reg",
@@ -250,7 +250,7 @@ create_fdt(AndesAe350BoardState *bs, const struct MemmapEntry *memmap,
     qemu_fdt_setprop_cells(fdt, uart_name, "interrupts",
                             ANDES_AE350_UART1_IRQ, 0x4);
 
-    uart_name = g_strdup_printf("/serial@%lx", memmap[ANDES_AE350_UART2].base);
+    uart_name = g_strdup_printf("/serial@%lx", (long)memmap[ANDES_AE350_UART2].base);
     qemu_fdt_add_subnode(fdt, uart_name);
     qemu_fdt_setprop_string(fdt, uart_name, "compatible", "ns16550a");
     qemu_fdt_setprop_cells(fdt, uart_name, "reg",
@@ -271,7 +271,7 @@ create_fdt(AndesAe350BoardState *bs, const struct MemmapEntry *memmap,
 
     for (i = 0; i < ANDES_AE350_VIRTIO_COUNT; i++) {
         virtio_name = g_strdup_printf("/virtio_mmio@%lx",
-            (memmap[ANDES_AE350_VIRTIO].base +
+            (long)(memmap[ANDES_AE350_VIRTIO].base +
                 (i * memmap[ANDES_AE350_VIRTIO].size)));
         qemu_fdt_add_subnode(fdt, virtio_name);
         qemu_fdt_setprop_string(fdt, virtio_name, "compatible", "virtio,mmio");
@@ -329,7 +329,7 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
             error_report("Cannot set instruction local memory base to 0x%lx. "
                          "It must be aligned to instruction local memory size "
                          "0x%x.",
-                         s->ilm_base, s->ilm_size);
+                         (long)s->ilm_base, s->ilm_size);
             exit(1);
         }
     }
@@ -345,7 +345,7 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
         if (s->dlm_base & (s->dlm_size - 1)) {
             error_report("Cannot set data local memory base to 0x%lx. "
                          "It must be aligned to data local memory size 0x%x.",
-                          s->dlm_base, s->dlm_size);
+                          (long)s->dlm_base, s->dlm_size);
             exit(1);
         }
     }
@@ -653,7 +653,7 @@ static void andes_ae350_machine_init(MachineState *machine)
     /* Check ram size is validate */
     if (machine->ram_size > memmap[ANDES_AE350_DRAM].size) {
         error_report("Cannot model more than %ldGB RAM",
-            memmap[ANDES_AE350_DRAM].size / (1024 * 1024 * 1024));
+            (long)memmap[ANDES_AE350_DRAM].size / (1024 * 1024 * 1024));
         exit(1);
     }
 

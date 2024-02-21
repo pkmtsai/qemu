@@ -104,7 +104,7 @@ enable_ptimer(ptimer_state *ptimer, uint64_t reload, uint32_t freq)
 static void
 atcpit100_update_irq(Atcpit100State *s)
 {
-    uint level = !!(s->int_en & s->int_st);
+    unsigned int level = !!(s->int_en & s->int_st);
 
     LOG("%s: level %d\n", __func__, level);
     qemu_set_irq(s->irq, level);
@@ -115,7 +115,7 @@ calculate_timer_count(Atcpit100Channel *ch)
 {
     uint32_t count;
     Atcpit100Timer *t = ch->timers;
-    uint mode = CHANNEL_MODE(ch->control);
+    unsigned int mode = CHANNEL_MODE(ch->control);
 
     switch (mode) {
     case 0: /* reserved */
@@ -154,7 +154,7 @@ static void
 update_single_channel_enable(Atcpit100Channel *ch, uint32_t toggles)
 {
     LOG("%s: CH %d, toggles 0x%1x\n", __func__, ch->id, toggles);
-    uint ch_no, tmr_no, mask, mode, enables;
+    unsigned int ch_no, tmr_no, mask, mode, enables;
     uint32_t freq, reload;
     Atcpit100State *s;
     Atcpit100Timer *t;
@@ -266,7 +266,7 @@ static inline void
 atcpit100_update_channel_enable(Atcpit100State *s, uint64_t value)
 {
     LOG("%s:\n", __func__);
-    uint ch_no;
+    unsigned int ch_no;
     uint32_t toggle = s->ch_en ^ value;
     Atcpit100Channel *ch = s->channels;
 

@@ -300,8 +300,8 @@ atcrtc100_timer_cb(void *opaque)
                        - s->ref_rtc_start_ns;
     struct tm curr_tm = ns2tm(curr_ns);
     timer_mod(s->rtc_timer, next_half_second_ns(curr_ns) + s->ref_rtc_start_ns);
-    uint period_level = 0;
-    uint alarm_level = 0;
+    unsigned int period_level = 0;
+    unsigned int alarm_level = 0;
     if (s->ctrl & (1 << CTRL_HSEC)) {
         period_level |= 1;
         s->st |= (1 << ST_HSEC);

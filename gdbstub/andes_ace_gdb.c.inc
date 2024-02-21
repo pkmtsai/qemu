@@ -7,7 +7,9 @@
 #ifndef _ANDES_ACE_GDB_
 #define _ANDES_ACE_GDB_
 #include <dlfcn.h>
+#ifndef WIN32
 #include <sys/utsname.h>
+#endif
 #include "gdbstub/andes_ace_gdb.h"
 #include "qemu/qemu-print.h"
 
@@ -74,6 +76,7 @@ int32_t gdb_ace_get_file_name_for_gdb(unsigned char *platform, char *soname)
     int32_t ret = 0;
 
     if (ace_lib_for_gdb) {
+#ifndef WIN32
         struct utsname os;
         if (uname(&os) == 0) {
             const char *str;
@@ -83,6 +86,11 @@ int32_t gdb_ace_get_file_name_for_gdb(unsigned char *platform, char *soname)
                 str = ace_lib_for_gdb;
             } else
                 return -1;
+#else
+	{
+            const char *str;
+            str = ace_lib_for_gdb;
+#endif
 
             /* use size as filename to do fopen */
             sprintf(soname, "%u", *ace_lib_for_gdb_len);
