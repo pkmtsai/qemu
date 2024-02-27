@@ -102,6 +102,9 @@ static void atcdmac300_write(void *opaque, hwaddr offset, uint64_t value,
     case ATCDMAC300_INT_STATUS:
         /* Write 1 to clear */
         s->IntStatus &= ~value;
+        if (!s->IntStatus) {
+            qemu_irq_lower(s->irq);
+        }
         break;
     case ATCDMAC300_DMAC_CTRL:
         atcdmac300_dma_reset(s);
