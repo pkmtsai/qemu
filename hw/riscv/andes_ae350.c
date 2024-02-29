@@ -374,6 +374,7 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
         memmap[ANDES_AE350_PLICSW].base,
         ANDES_PLICSW_NAME,
         plicsw_hart_config, machine->smp.cpus,
+        0, /* hartid_base */
         ANDES_PLICSW_NUM_SOURCES,
         ANDES_PLICSW_NUM_PRIORITIES,
         ANDES_PLICSW_PRIORITY_BASE,
@@ -401,6 +402,7 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
         memmap[ANDES_AE350_PLIC].base,
         ANDES_PLIC_NAME,
         plic_hart_config, machine->smp.cpus,
+        0, /* hartid_base */
         ANDES_PLIC_NUM_SOURCES,
         ANDES_PLIC_NUM_PRIORITIES,
         ANDES_PLIC_PRIORITY_BASE,

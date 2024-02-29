@@ -71,7 +71,7 @@ static void riscv_plic_print_state(RISCVPLICState *plic)
     }
     qemu_log("\n");
 
-    /* pending */
+    /* claim */
     qemu_log("claimed       : ");
     for (i = plic->bitfield_words - 1; i >= 0; i--) {
         qemu_log("%08x", plic->claimed[i]);
@@ -359,7 +359,7 @@ static uint64_t riscv_plic_read(void *opaque, hwaddr addr, unsigned size)
 {
     RISCVPLICState *plic = opaque;
 
-    /* writes must be 4 byte words */
+    /* read must be 4 byte words */
     if ((addr & 0x3) != 0) {
         goto err;
     }
@@ -438,7 +438,8 @@ static void riscv_plic_write(void *opaque, hwaddr addr, uint64_t value,
         uint32_t contextid = (addr & (plic->context_stride - 1));
         if (contextid == 0) {
             if (plic->riscv_plic_write_threshold) {
-                return plic->riscv_plic_write_threshold(plic, addr, value, size);
+                return plic->riscv_plic_write_threshold(plic,
+                                                        addr, value, size);
             }
         } else if (contextid == 4) {
             if (plic->riscv_plic_write_complete) {
@@ -537,6 +538,10 @@ static void riscv_plic_irq_request(void *opaque, int irq, int level)
 {
     RISCVPLICState *plic = opaque;
 
+    if (plic->riscv_plic_irq_request) {
+        plic->riscv_plic_irq_request(plic, irq, level);
+        return;
+    }
     riscv_plic_set_pending(plic, irq, level > 0);
     plic->riscv_plic_update(plic);
 }

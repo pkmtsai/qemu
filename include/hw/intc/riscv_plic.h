@@ -108,6 +108,7 @@ struct RISCVPLICState {
     void (*riscv_plic_update)(void *opaque);
     uint32_t (*riscv_plic_claim)(RISCVPLICState *plic,
         uint32_t addrid);
+    void (*riscv_plic_irq_request)(void *opaque, int irq, int level);
 };
 
 DeviceState *riscv_plic_create(hwaddr addr, char *hart_config,

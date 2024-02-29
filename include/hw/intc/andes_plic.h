@@ -74,6 +74,24 @@ typedef enum AndesPLICMode {
     PlicMode_M
 } AndesPLICMode;
 
+typedef enum AndesPLICTriggerType {
+  ANDES_PLIC_TRIGGER_TYPE_LEVEL = 0,
+  ANDES_PLIC_TRIGGER_TYPE_EDGE
+} AndesPLICTriggerType;
+
+enum register_names {
+    REG_FEATURE_ENABLE = 0x0000,
+    REG_TRIGGER_TYPE_BASE = 0x1080,
+    REG_NUM_IRQ_TARGET = 0x1100,
+    REG_VER_MAX_PRIORITY = 0x1104,
+};
+
+enum feature_enable_register {
+    FER_PREEMPT = (1u << 0),
+    FER_VECTORED = (1u << 1),
+};
+
+
 typedef struct AndesPLICAddr {
     uint32_t target_id;
     uint32_t hart_id;
@@ -87,9 +105,12 @@ typedef struct AndesPLICState {
     /*< public >*/
     MemoryRegion parent_mmio;
     char *plic_name;
+    uint32_t *level;
+    uint32_t *gw_state;
 
     /* registers */
     uint32_t feature_enable;
+    uint32_t *trigger_type;
 
     /* interface */
     void (*andes_plic_update)(void *plic);
@@ -105,7 +126,8 @@ static inline bool addr_between(uint32_t addr, uint32_t base, uint32_t offset)
 
 DeviceState *
 andes_plic_create(hwaddr addr,
-    const char *plic_name, char *hart_config, uint32_t num_harts,
+    const char *plic_name, char *hart_config,
+    uint32_t num_harts, uint32_t hartid_base,
     uint32_t num_sources, uint32_t num_priorities,
     uint32_t priority_base, uint32_t pending_base,
     uint32_t enable_base, uint32_t enable_stride,
