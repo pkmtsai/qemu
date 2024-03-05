@@ -272,7 +272,7 @@ andes_plic_write(void *opaque, hwaddr addr, uint64_t value, unsigned size)
     /* write must be 4 byte words */
     if ((addr & 0x3) != 0) {
         qemu_log_mask(LOG_GUEST_ERROR,
-                      "%s: Invalid register read 0x%" HWADDR_PRIx "\n",
+                      "%s: Invalid register write 0x%" HWADDR_PRIx "\n",
                       __func__, addr);
         return;
     }
