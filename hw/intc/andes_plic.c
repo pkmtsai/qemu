@@ -250,6 +250,8 @@ andes_plic_read(void *opaque, hwaddr addr, unsigned size)
     if (addr == REG_FEATURE_ENABLE) {
         value = andes_plic->feature_enable;
         return value;
+    } else if (addr == REG_NUM_IRQ_TARGET) {
+        return andes_plic->num_irq_target;
     } else if (addr_between(addr, REG_TRIGGER_TYPE_BASE,
                 riscv_plic->num_sources >> 3)) { /* 1 bit per source */
         return andes_plic_read_trigger_type(andes_plic, addr, size);
@@ -277,6 +279,11 @@ andes_plic_write(void *opaque, hwaddr addr, uint64_t value, unsigned size)
 
     if (addr == REG_FEATURE_ENABLE) {
         andes_plic->feature_enable = value & (FER_PREEMPT | FER_VECTORED);
+        return;
+    } else if (addr == REG_NUM_IRQ_TARGET) {
+        qemu_log_mask(LOG_GUEST_ERROR,
+                      "%s: Invalid register write at 0x%" HWADDR_PRIx "\n",
+                      __func__, addr);
         return;
     } else if (addr_between(addr, REG_TRIGGER_TYPE_BASE,
                 riscv_plic->num_sources >> 3)) { /* 1 bit per source */
@@ -466,6 +473,8 @@ DeviceState *andes_plic_create(hwaddr plic_base,
 
     AndesPLICState *andes_plic = ANDES_PLIC(dev);
     RISCVPLICState *riscv_plic = RISCV_PLIC(andes_plic);
+
+    andes_plic->num_irq_target = (riscv_plic->num_addrs << 16) | num_sources;
 
     for (int i = 0; i < riscv_plic->num_addrs; i++) {
         int cpu_num = riscv_plic->addr_config[i].hartid;

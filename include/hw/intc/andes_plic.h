@@ -111,6 +111,7 @@ typedef struct AndesPLICState {
     /* registers */
     uint32_t feature_enable;
     uint32_t *trigger_type;
+    uint32_t num_irq_target;
 
     /* interface */
     void (*andes_plic_update)(void *plic);
