@@ -69,6 +69,12 @@ enum {
     CNTR_SEC = 0,
 };
 
+/* ATCRTC100_DAY_BITS 5 */
+#define CNTR_DAY_MASK  0x1F
+#define CNTR_HOUR_MASK 0x1F
+#define CNTR_MIN_MASK  0x3F
+#define CNTR_SEC_MASK  0x3F
+
 enum {
     CTRL_FREQ_TEST_EN = 8,
     CTRL_HSEC = 7,
@@ -77,9 +83,13 @@ enum {
     CTRL_HOUR = 4,
     CTRL_DAY = 3,
     CTRL_ALARM_INT = 2,
-    CTRL_ALARM_WACKUP = 1,
+    CTRL_ALARM_WAKEUP = 1,
     CTRL_RTC_EN = 0,
 };
+
+/* CTRL_INT: CTRL_ALARM_INT ~ CTRL_HSEC */
+#define CTRL_INT      CTRL_ALARM_INT
+#define CTRL_INT_MASK 0x3F
 
 enum {
     ST_WRITEDONE = 16,
@@ -90,6 +100,13 @@ enum {
     ST_DAY = 3,
     ST_ALARM_INT = 2,
 };
+
+/* ST_PERIOD: ST_DAY ~ ST_HSEC*/
+#define ST_PERIOD          ST_DAY
+#define ST_PERIOD_MASK     0x1F
+#define ST_ALARM_INT_MASK  0x1
+
+#define NANOSECONDS_PER_HALFSECOND (NANOSECONDS_PER_SECOND / 2)
 
 static inline uint64_t
 tm2ns(struct tm tm)
@@ -117,10 +134,10 @@ static inline struct tm
 cntr2tm(uint32_t cntr)
 {
     struct tm tm;
-    tm.tm_mday = (cntr >> CNTR_DAY);
-    tm.tm_hour = (cntr >> CNTR_HOUR) & 0x3f;
-    tm.tm_min = (cntr >> CNTR_MIN) & 0x3f;
-    tm.tm_sec = cntr & 0x3f;
+    tm.tm_mday = (cntr >> CNTR_DAY) & CNTR_DAY_MASK;
+    tm.tm_hour = (cntr >> CNTR_HOUR) & CNTR_HOUR_MASK;
+    tm.tm_min = (cntr >> CNTR_MIN) & CNTR_MIN_MASK;
+    tm.tm_sec = (cntr >> CNTR_SEC) & CNTR_SEC_MASK;
     return tm;
 }
 
@@ -183,24 +200,28 @@ write_atcrtc100_cntr(Atcrtc100State *s, uint64_t value)
 static inline uint64_t
 next_half_second_ns(uint64_t ns)
 {
-    return (((ns + (NANOSECONDS_PER_SECOND / 2)) / NANOSECONDS_PER_SECOND))
-           * NANOSECONDS_PER_SECOND;
+    return ((ns + (NANOSECONDS_PER_HALFSECOND)) / NANOSECONDS_PER_HALFSECOND)
+           * NANOSECONDS_PER_HALFSECOND;
 }
 
 static void
 write_atcrtc100_ctrl(Atcrtc100State *s, uint64_t value)
 {
+    /* RTC time = qemu_clock_get_ns - ref_rtc_start_ns */
     if (value & (1 << CTRL_RTC_EN) && !(s->ctrl & (1 << CTRL_RTC_EN))) {
-        /* resume */
+        /*
+         * Resume, modify ref_rtc_start_ns to make resumed RTC time start
+         * from pause_ns
+         */
         s->ref_rtc_start_ns = qemu_clock_get_ns(QEMU_CLOCK_REALTIME)
                               - s->pause_ns;
     } else if ((!(value & (1 << CTRL_RTC_EN))) &&
                (s->ctrl & (1 << CTRL_RTC_EN))) {
-        /* pause */
+        /* Pause, record current RTC time to pause_ns */
         s->pause_ns = qemu_clock_get_ns(QEMU_CLOCK_REALTIME)
                       - s->ref_rtc_start_ns;
     }
-    if (value & (1 << CTRL_RTC_EN) && value & (0xFE)) {
+    if (value & (1 << CTRL_RTC_EN) && value & (CTRL_INT_MASK << CTRL_INT)) {
         uint64_t ns = qemu_clock_get_ns(QEMU_CLOCK_REALTIME)
                       - s->ref_rtc_start_ns;
         timer_mod(s->rtc_timer, next_half_second_ns(ns) + s->ref_rtc_start_ns);
@@ -274,6 +295,12 @@ atcrtc100_write(void *opaque, hwaddr addr, uint64_t value, unsigned size)
             break;
         case REG_ST:
             s->st &= ~(value & 0xFC);
+            if (!(s->st & (ST_PERIOD_MASK << ST_PERIOD))) {
+                qemu_irq_lower(s->period_irq);
+            }
+            if (!(s->st & (ST_ALARM_INT_MASK << ST_ALARM_INT))) {
+                qemu_irq_lower(s->alarm_irq);
+            }
             break;
         case REG_TRIM:
             s->trim = value;
@@ -300,33 +327,26 @@ atcrtc100_timer_cb(void *opaque)
                        - s->ref_rtc_start_ns;
     struct tm curr_tm = ns2tm(curr_ns);
     timer_mod(s->rtc_timer, next_half_second_ns(curr_ns) + s->ref_rtc_start_ns);
-    unsigned int period_level = 0;
-    unsigned int alarm_level = 0;
     if (s->ctrl & (1 << CTRL_HSEC)) {
-        period_level |= 1;
         s->st |= (1 << ST_HSEC);
     }
     if (s->ctrl & (1 << CTRL_SEC)) {
         if (curr_tm.tm_sec != s->period_tm.tm_sec) {
-            period_level |= 1;
             s->st |= (1 << ST_SEC);
         }
     }
     if (s->ctrl & (1 << CTRL_MIN)) {
         if (curr_tm.tm_min != s->period_tm.tm_min) {
-            period_level |= 1;
             s->st |= (1 << ST_MIN);
         }
     }
     if (s->ctrl & (1 << CTRL_HOUR)) {
         if (curr_tm.tm_hour != s->period_tm.tm_hour) {
-            period_level |= 1;
             s->st |= (1 << ST_HOUR);
         }
     }
     if (s->ctrl & (1 << CTRL_DAY)) {
         if (curr_tm.tm_mday != s->period_tm.tm_mday) {
-            period_level |= 1;
             s->st |= (1 << ST_DAY);
         }
     }
@@ -336,15 +356,14 @@ atcrtc100_timer_cb(void *opaque)
         /* Only trigger alarm in first half second */
         if (tm2cntr(curr_tm) == s->alarm && (curr_ns % NANOSECONDS_PER_SECOND)
             < NANOSECONDS_PER_SECOND / 2) {
-            alarm_level = 1;
             s->st |= (1 << ST_ALARM_INT);
         }
     }
-    if (period_level) {
-        qemu_set_irq(s->period_irq, period_level);
+    if (s->st & (ST_PERIOD_MASK << ST_PERIOD)) {
+        qemu_irq_raise(s->period_irq);
     }
-    if (alarm_level) {
-        qemu_set_irq(s->alarm_irq, alarm_level);
+    if (s->st & (ST_ALARM_INT_MASK << ST_ALARM_INT)) {
+        qemu_irq_raise(s->alarm_irq);
     }
 }
 
