@@ -852,7 +852,7 @@ AndesCsrConfigInfo csr_mmsc_cfg_map[] = {
     {CONFIG_NUMBER, MASK_MMSC_CFG_VCCTL, "cctl-version"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_PPI, "ppi"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_EDSP, "isa-dsp"},
-    {CONFIG_BOOL,   MASK_MMSC_CFG_PPMA, NULL},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_PPMA, "ppma"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_MSC_EXT, "msc-ext"},
 #ifdef TARGET_RISCV64
     /* bits:[32] */
