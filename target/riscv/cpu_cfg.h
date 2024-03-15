@@ -146,6 +146,7 @@ struct RISCVCPUConfig {
     char *XAndesAceLib;
     char *XAndesAceExtLibPath;
     char *XAndesAceLibDbg;
+    uint16_t XAndesBiuAddrWidth;
     uint16_t vlen;
     uint16_t elen;
     uint16_t cbom_blocksize;

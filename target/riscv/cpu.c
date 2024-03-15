@@ -2401,6 +2401,7 @@ static Property andes_cpu_property[] = {
     DEFINE_PROP_STRING("xandesaceextlibpath", RISCVCPU,
                        cfg.XAndesAceExtLibPath),
     DEFINE_PROP_STRING("xandesacelibdbg", RISCVCPU, cfg.XAndesAceLibDbg),
+    DEFINE_PROP_UINT16("xandesbiuaddrwidth", RISCVCPU, cfg.XAndesBiuAddrWidth, 64),
     DEFINE_PROP_END_OF_LIST(),
 };
 

@@ -534,7 +534,13 @@ void pmpaddr_csr_write(CPURISCVState *env, uint32_t addr_index,
 
         if (!pmp_is_locked(env, addr_index)) {
             if (env->pmp_state.pmp[addr_index].addr_reg != val) {
-                env->pmp_state.pmp[addr_index].addr_reg = val;
+                ArchCPU *archcpu = env_archcpu(env);
+                if (archcpu->cfg.ext_XAndesV5Ops) {
+                    env->pmp_state.pmp[addr_index].addr_reg = val &
+                        ((1ULL << (archcpu->cfg.XAndesBiuAddrWidth - 2)) - 1);
+                } else {
+                    env->pmp_state.pmp[addr_index].addr_reg = val;
+                }
                 pmp_update_rule_addr(env, addr_index);
                 if (is_next_cfg_tor) {
                     pmp_update_rule_addr(env, addr_index + 1);
