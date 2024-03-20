@@ -512,7 +512,18 @@ static RISCVException write_mpft_ctl(CPURISCVState *env, int csrno,
 static RISCVException write_mhsp_ctl(CPURISCVState *env, int csrno,
                                      target_ulong val)
 {
-    env->andes_csr.csrno[CSR_MHSP_CTL] = val & WRITE_MASK_CSR_MHSP_CTL;
+    target_ulong wmask = MASK_MHSP_CTL_OVF_EN | MASK_MHSP_CTL_UDF_EN |
+                         MASK_MHSP_CTL_SCHM;
+    if (riscv_has_ext(env, RVU)) {
+        wmask |= MASK_MHSP_CTL_U;
+    }
+    if (riscv_has_ext(env, RVS)) {
+        wmask |= MASK_MHSP_CTL_S;
+    }
+    if (riscv_has_ext(env, RVM)) {
+        wmask |= MASK_MHSP_CTL_M;
+    }
+    env->andes_csr.csrno[CSR_MHSP_CTL] = val & wmask;
     return RISCV_EXCP_NONE;
 }
 

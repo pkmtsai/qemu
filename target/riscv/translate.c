@@ -366,6 +366,15 @@ static TCGv dest_gpr(DisasContext *ctx, int reg_num)
     if (reg_num == 0 || get_olen(ctx) < TARGET_LONG_BITS) {
         return tcg_temp_new();
     }
+    /*
+     * andes hardware stack protection(hsp) will check any sp update.
+     * if an overflow or underflow exception occurs, sp should NOT be updated.
+     * so we retrun a temp variable to make sure the update will NOT occur
+     * before gen_set_gpr().
+     */
+    if (reg_num == 2 && ctx->cfg_ptr->ext_XAndesV5Ops) {
+        return tcg_temp_new();
+    }
     return cpu_gpr[reg_num];
 }
 

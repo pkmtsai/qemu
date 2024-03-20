@@ -184,7 +184,8 @@ void helper_andes_v5_hsp_check(CPURISCVState *env, target_ulong val)
             if ((mhsp_ctl & MASK_MHSP_CTL_OVF_EN) != 0) {
                 /* overflow mode */
                 if (val < msp_bound) {
-                    mhsp_ctl = set_field(mhsp_ctl, MASK_MHSP_CTL_OVF_EN, 0);
+                    mhsp_ctl = set_field(mhsp_ctl,
+                        MASK_MHSP_CTL_OVF_EN | MASK_MHSP_CTL_UDF_EN, 0);
                     csr_ops[CSR_MHSP_CTL].write(env, CSR_MHSP_CTL, mhsp_ctl);
                     riscv_raise_exception(env, RISCV_EXCP_ANDES_STACK_OVERFLOW,
                                           GETPC());
@@ -193,7 +194,8 @@ void helper_andes_v5_hsp_check(CPURISCVState *env, target_ulong val)
             if ((mhsp_ctl & MASK_MHSP_CTL_UDF_EN) != 0) {
                 /* underflow mode */
                 if (val > msp_base) {
-                    mhsp_ctl = set_field(mhsp_ctl, MASK_MHSP_CTL_UDF_EN, 0);
+                    mhsp_ctl = set_field(mhsp_ctl,
+                        MASK_MHSP_CTL_OVF_EN | MASK_MHSP_CTL_UDF_EN, 0);
                     csr_ops[CSR_MHSP_CTL].write(env, CSR_MHSP_CTL, mhsp_ctl);
                     riscv_raise_exception(env, RISCV_EXCP_ANDES_STACK_UNDERFLOW,
                                           GETPC());
