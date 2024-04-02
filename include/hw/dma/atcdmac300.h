@@ -26,6 +26,8 @@
 #define TYPE_ATCDMAC300 "atcdmac300"
 OBJECT_DECLARE_SIMPLE_TYPE(ATCDMAC300State, ATCDMAC300)
 
+/* DMAC ID and Revision Register (Offset 0x0) */
+#define ATCDMAC300_DMA_IDREV            0x0
 #define ATCDMAC300_PRODUCT_ID           0x010230
 #define ATCDMAC300_REV_MAJOR            0x0
 #define ATCDMAC300_REV_MINOR            0x1

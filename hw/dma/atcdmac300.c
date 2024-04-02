@@ -57,6 +57,9 @@ static uint64_t atcdmac300_read(void *opaque, hwaddr offset, unsigned size)
     }
 
     switch (offset) {
+    case ATCDMAC300_DMA_IDREV:
+        result = s->IdRev;
+        break;
     case ATCDMAC300_DMA_CFG:
         result = s->DMACfg;
         break;
@@ -255,8 +258,8 @@ static Property atcdmac300_properties[] = {
     DEFINE_PROP_UINT32("mmio-size", ATCDMAC300State, mmio_size, 0x100000),
     DEFINE_PROP_UINT32("id-and-revision", ATCDMAC300State, IdRev,
                     (ATCDMAC300_PRODUCT_ID  << 8) |
-                    ((ATCDMAC300_PRODUCT_ID & 0x7) << 4) |
-                    ((ATCDMAC300_PRODUCT_ID & 0x7))),
+                    ((ATCDMAC300_REV_MAJOR & 0xF) << 4) |
+                    ((ATCDMAC300_REV_MINOR & 0xF))),
     DEFINE_PROP_UINT32("inturrupt-status", ATCDMAC300State, IntStatus, 0),
     DEFINE_PROP_UINT32("dmac-configuration", ATCDMAC300State,
                             DMACfg, 0xc3404108),
