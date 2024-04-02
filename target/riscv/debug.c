@@ -1188,6 +1188,39 @@ target_ulong tinfo_csr_read(CPURISCVState *env)
     return tinfo;
 }
 
+static int get_hit_breakpoint_idx(CPUState *cs, vaddr pc, int mask)
+{
+    RISCVCPU *cpu = RISCV_CPU(cs);
+    CPURISCVState *env = &cpu->env;
+    CPUBreakpoint *bp;
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(env->cpu_breakpoint); i++) {
+        bp = env->cpu_breakpoint[i];
+        if (bp && bp->pc == pc && (bp->flags & mask)) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+static int get_hit_watchpoint_idx(CPUState *cs)
+{
+    RISCVCPU *cpu = RISCV_CPU(cs);
+    CPURISCVState *env = &cpu->env;
+    CPUWatchpoint *wp = cs->watchpoint_hit;
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(env->cpu_watchpoint); i++) {
+        if (wp == env->cpu_watchpoint[i]) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 void riscv_cpu_debug_excp_handler(CPUState *cs)
 {
     RISCVCPU *cpu = RISCV_CPU(cs);
@@ -1195,11 +1228,11 @@ void riscv_cpu_debug_excp_handler(CPUState *cs)
 
     if (cs->watchpoint_hit) {
         if (cs->watchpoint_hit->flags & BP_CPU) {
-            do_trigger_action(env, DBG_ACTION_BP);
+            do_trigger_action(env, get_hit_watchpoint_idx(cs));
         }
     } else {
         if (cpu_breakpoint_test(cs, env->pc, BP_CPU)) {
-            do_trigger_action(env, DBG_ACTION_BP);
+            do_trigger_action(env, get_hit_breakpoint_idx(cs, env->pc, BP_CPU));
         }
     }
 }
