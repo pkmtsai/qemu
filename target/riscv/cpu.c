@@ -1150,7 +1150,13 @@ static void rv32_andes_a25_cpu_init(Object *obj)
                                          BIT(V5_MMSC_CFG_EFHW) |
                                          BIT(V5_MMSC_CFG_VCCTL) |
                                          BIT(V5_MMSC_CFG_EDSP) |
-                                         BIT(V5_MMSC_CFG_MSC_EXT);
+                                         BIT(V5_MMSC_CFG_MSC_EXT) |
+                                         /*
+                                          * enable this bit for linux PMA check
+                                          * should remove it after the
+                                          * implementation of MSB-bit mechanism
+                                          */
+                                         BIT(V5_MMSC_CFG_PPMA);
 }
 
 static void rv32_andes_a27_cpu_init(Object *obj)
