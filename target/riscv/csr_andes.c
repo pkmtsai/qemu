@@ -850,6 +850,7 @@ typedef struct AndesCsrConfigInfo {
 } AndesCsrConfigInfo;
 
 AndesCsrConfigInfo csr_mmsc_cfg_map[] = {
+    {CONFIG_BOOL,   MASK_MMSC_CFG_ECC, "ecc"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_ECD, "isa-codense"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_PFT, "powerbrake"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_HSP, "stack-protection"},
