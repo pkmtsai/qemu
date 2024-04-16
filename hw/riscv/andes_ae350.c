@@ -425,7 +425,8 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
 
     /* SMU */
     andes_atcsmu_create(&s->atcsmu, memmap[ANDES_AE350_SMU].base,
-                        memmap[ANDES_AE350_SMU].size);
+                        memmap[ANDES_AE350_SMU].size,
+                        machine->smp.cpus);
 
     /* SMC */
     create_unimplemented_device("riscv.andes.ae350.smc",

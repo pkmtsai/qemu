@@ -78,6 +78,18 @@ andes_atcsmu_read(void *opaque, hwaddr addr, unsigned size)
     AndesATCSMUState *smu = ANDES_ATCSMU(opaque);
     unsigned int idx;
     switch (addr) {
+    case ATCSMU_SYSTEMVER:
+        return smu->systemver;
+        break;
+    case ATCSMU_BOARDVER:
+        return smu->boardver;
+        break;
+    case ATCSMU_SYSTEMCFG:
+        return smu->systemcfg;
+        break;
+    case ATCSMU_SMUVER:
+        return smu->smuver;
+        break;
     case ATCSMU_WRSR:
         return smu->wrsr;
         break;
@@ -179,6 +191,16 @@ static const MemoryRegionOps andes_atcsmu_ops = {
 static Property andes_atcsmu_properties[] = {
     DEFINE_PROP_UINT32("smu-base-addr", AndesATCSMUState, smu_base_addr, 0),
     DEFINE_PROP_UINT32("smu-base-size", AndesATCSMUState, smu_base_size, 0),
+    DEFINE_PROP_UINT32("systemver", AndesATCSMUState, systemver,
+                       (SYSTEMVER_ID << 8) |
+                       ((SYSTEMVER_MAJOR & 0xF) << 4) |
+                       ((SYSTEMVER_MINOR & 0xF))),
+    DEFINE_PROP_UINT32("boardver", AndesATCSMUState, boardver,
+                       (BOARDVER_ID << 8) |
+                       ((BOARDVER_MAJOR & 0xF) << 4) |
+                       ((BOARDVER_MINOR & 0xF))),
+    DEFINE_PROP_UINT32("systemcfg", AndesATCSMUState, systemcfg, 0),
+    DEFINE_PROP_UINT32("smuver", AndesATCSMUState, smuver, SMUVER_SAMPLE),
     DEFINE_PROP_END_OF_LIST(),
 };
 
@@ -215,10 +237,12 @@ type_init(andes_atcsmu_register_types)
  * Create ATCSMU device.
  */
 void
-andes_atcsmu_create(AndesATCSMUState *dev, hwaddr addr, hwaddr size)
+andes_atcsmu_create(AndesATCSMUState *dev, hwaddr addr, hwaddr size,
+                    int num_harts)
 {
     qdev_prop_set_uint32(DEVICE(dev), "smu-base-addr", addr);
     qdev_prop_set_uint32(DEVICE(dev), "smu-base-size", size);
+    qdev_prop_set_uint32(DEVICE(dev), "systemcfg", num_harts & 0xFF);
     sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
     sysbus_mmio_map(SYS_BUS_DEVICE(dev), 0, addr);
 }

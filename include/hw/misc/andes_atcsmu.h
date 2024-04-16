@@ -38,10 +38,18 @@ typedef struct AndesATCSMUState {
     /* config */
     uint32_t smu_base_addr;
     uint32_t smu_base_size;
+    uint32_t systemver;
+    uint32_t boardver;
+    uint32_t systemcfg;
+    uint32_t smuver;
     uint32_t scratch;
     pcs_registers pcs_regs[8];
 } AndesATCSMUState;
 
+#define ATCSMU_SYSTEMVER    0x00
+#define ATCSMU_BOARDVER     0x04
+#define ATCSMU_SYSTEMCFG    0x08
+#define ATCSMU_SMUVER       0x0C
 #define ATCSMU_WRSR         0x10
 #define ATCSMU_SMUCR        0x14
 #define ATCSMU_SCRATCH      0x40
@@ -72,12 +80,27 @@ typedef struct AndesATCSMUState {
 #define ATCSMU_HART6_RESET_VECTOR_HI 0x218
 #define ATCSMU_HART7_RESET_VECTOR_HI 0x21C
 
+/* SYSTEMVER */
+#define SYSTEMVER_MINOR     0x0
+#define SYSTEMVER_MAJOR     0x0
+#define SYSTEMVER_ID        0x414535
+
+/* BOARDVER */
+#define BOARDVER_MINOR      0x0
+#define BOARDVER_MAJOR      0x1
+#define BOARDVER_ID         0x0174b0
+
+/* SMUVER */
+#define SMUVER_LEGACY       0x0000
+#define SMUVER_SAMPLE       0x0100
+
 /* SMUCR */
 #define SMUCMD_RESET        0x3c
 #define SMUCMD_POWEROFF     0x5a
 #define SMUCMD_STANDBY      0x55
 
 void
-andes_atcsmu_create(AndesATCSMUState *dev, hwaddr addr, hwaddr size);
+andes_atcsmu_create(AndesATCSMUState *dev, hwaddr addr, hwaddr size,
+                    int num_harts);
 
 #endif
