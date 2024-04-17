@@ -534,6 +534,19 @@ static RISCVException write_mcounter(CPURISCVState *env, int csrno,
     return RISCV_EXCP_NONE;
 }
 
+static RISCVException write_mcounterovf(CPURISCVState *env, int csrno,
+                                        target_ulong val)
+{
+    if (env_archcpu(env)->cfg.marchid == ANDES_CPUID_N25) {
+        /* write 1 to clear a bit */
+        env->andes_csr.csrno[csrno] &= ~val & WRITE_MASK_CSR_COUNTER;
+    } else {
+        /* write 0 to clear a bit */
+        env->andes_csr.csrno[csrno] &= val & WRITE_MASK_CSR_COUNTER;
+    }
+    return RISCV_EXCP_NONE;
+}
+
 static RISCVException write_mxstatus(CPURISCVState *env, int csrno,
                                      target_ulong val)
 {
@@ -1127,7 +1140,7 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MCOUNTERMASK_U] = { "mcountermask_u",    pmnds_u, read_csr,
                                                          write_mcounter   },
     [CSR_MCOUNTEROVF]    = { "mcounterovf",       pmnds, read_csr,
-                                                         write_mcounter   },
+                                                         write_mcounterovf},
 
     /* Enhanced CLIC CSRs */
     [CSR_MIRQ_ENTRY]   = { "mirq_entry",          any, read_csr, write_csr},

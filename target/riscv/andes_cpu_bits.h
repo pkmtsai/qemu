@@ -123,3 +123,20 @@
 #define CSR_SLEEPVALUE          0x811
 #define CSR_TXEVT               0x812
 #define CSR_UMISC_CTL           0x813
+
+/* ========= AndeStar V5 CPUID definitions ========= */
+#define ANDES_CPUID_MSB_32      (1 << 31)
+#define ANDES_CPUID_MSB_64      (1ULL << 63)
+#define ANDES_CPUID_A25         (ANDES_CPUID_MSB_32 | 0x0a25)
+#define ANDES_CPUID_A27         (ANDES_CPUID_MSB_32 | 0x0a27)
+#define ANDES_CPUID_A45         (ANDES_CPUID_MSB_32 | 0x0a45)
+#define ANDES_CPUID_D23         (ANDES_CPUID_MSB_32 | 0x0023)
+#define ANDES_CPUID_N25         (ANDES_CPUID_MSB_32 | 0x0025)
+#define ANDES_CPUID_N45         (ANDES_CPUID_MSB_32 | 0x0045)
+#define ANDES_CPUID_AX25        (ANDES_CPUID_MSB_64 | 0x8a25)
+#define ANDES_CPUID_AX27        (ANDES_CPUID_MSB_64 | 0x8a27)
+#define ANDES_CPUID_AX45        (ANDES_CPUID_MSB_64 | 0x8a45)
+#define ANDES_CPUID_AX65        (ANDES_CPUID_MSB_64 | 0x8a65)
+#define ANDES_CPUID_NX25        (ANDES_CPUID_MSB_64 | 0x8025)
+#define ANDES_CPUID_NX27V       (ANDES_CPUID_MSB_64 | 0x8027)
+#define ANDES_CPUID_NX45        (ANDES_CPUID_MSB_64 | 0x8045)
