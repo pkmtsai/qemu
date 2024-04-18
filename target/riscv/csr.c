@@ -4625,7 +4625,11 @@ RISCVException riscv_csrrw_debug(CPURISCVState *env, int csrno,
 #if !defined(CONFIG_USER_ONLY)
     env->debugger = true;
 #endif
-    ret = riscv_csrrw(env, csrno, ret_value, new_value, write_mask);
+    if (!write_mask) {
+        ret = riscv_csrr(env, csrno, ret_value);
+    } else {
+        ret = riscv_csrrw(env, csrno, ret_value, new_value, write_mask);
+    }
 #if !defined(CONFIG_USER_ONLY)
     env->debugger = false;
 #endif
