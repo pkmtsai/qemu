@@ -38,7 +38,8 @@ static bool trans_lui(DisasContext *ctx, arg_lui *a)
 
 static bool trans_auipc(DisasContext *ctx, arg_auipc *a)
 {
-    TCGv target_pc = dest_gpr(ctx, a->rd);
+    /* andes hsp: use tmep to make sure update will occur in gen_set_gpr() */
+    TCGv target_pc = tcg_temp_new();
     gen_pc_plus_diff(target_pc, ctx, a->imm);
     gen_set_gpr(ctx, a->rd, target_pc);
     return true;
