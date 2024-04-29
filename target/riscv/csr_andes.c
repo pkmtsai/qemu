@@ -1021,13 +1021,13 @@ void andes_cpu_do_interrupt_post(CPUState *cs)
      *       interrupt pending conditions
      */
     if (csr->csrno[CSR_MMISC_CTL] & (1UL << V5_MMISC_CTL_VEC_PLIC)) {
-        int interrupt = env->mcause >> ((sizeof(env->mcause) << 3) - 1);
         /*
          * Only in interrupt need to process pc with mtvec since
          * this case should get handler PC by mtvec with source ID
          */
-        if (interrupt) {
-            if (env->priv == PRV_M) {
+        if (env->priv == PRV_M) {
+            /* check the MSB of mcause */
+            if (env->mcause >> ((sizeof(env->mcause) << 3) - 1)) {
                 int irq_id = vec->vectored_irq_m;
                 vec->vectored_irq_m = 0;
                 target_ulong base = env->mtvec;
@@ -1043,7 +1043,10 @@ void andes_cpu_do_interrupt_post(CPUState *cs)
                     riscv_cpu_update_mip(env, MIP_MEIP, 0);
                 }
                 return;
-            } else if (env->priv == PRV_S) {
+            }
+        } else if (env->priv == PRV_M) {
+            /* check the MSB of scause */
+            if (env->scause >> ((sizeof(env->scause) << 3) - 1)) {
                 int irq_id = vec->vectored_irq_s;
                 vec->vectored_irq_s = 0;
                 target_ulong base = env->stvec;
