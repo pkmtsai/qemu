@@ -1374,8 +1374,15 @@ static RISCVException write_mstatus(CPURISCVState *env, int csrno,
     if ((val ^ mstatus) & MSTATUS_MXR) {
         tlb_flush(env_cpu(env));
     }
-    mask = MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_MIE | MSTATUS_MPIE |
-        MSTATUS_SPP | MSTATUS_MPRV | MSTATUS_SUM |
+
+    if (env_archcpu(env)->cfg.ext_XAndesV5Ops) {
+        if (riscv_has_ext(env, RVS)) {
+            mask |= MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_SPP | MSTATUS_SUM;
+        }
+    } else {
+        mask |= MSTATUS_SIE | MSTATUS_SPIE | MSTATUS_SPP | MSTATUS_SUM;
+    }
+    mask |= MSTATUS_MIE | MSTATUS_MPIE | MSTATUS_MPRV |
         MSTATUS_MPP | MSTATUS_MXR | MSTATUS_TVM | MSTATUS_TSR |
         MSTATUS_TW | MSTATUS_VS;
 
