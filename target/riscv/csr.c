@@ -1544,7 +1544,9 @@ static RISCVException write_medeleg(CPURISCVState *env, int csrno,
          * From debug specification section 5.4:
          * If tcontrol is implemented, medeleg[3] is hard-wired to 0.
          */
-        env->medeleg &= ~(1ULL << RISCV_EXCP_BREAKPOINT);
+        if (!env_archcpu(env)->cfg.ext_XAndesV5Ops) {
+            env->medeleg &= ~(1ULL << RISCV_EXCP_BREAKPOINT);
+        }
     }
 
     return RISCV_EXCP_NONE;
