@@ -344,6 +344,7 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_LOCAL_IRQ_ACCERR               (0x1 << 24)
 
 /* write masks */
+#define WRITE_MASK_CSR_MCOUNTEREN           0x7F
 #define WRITE_MASK_CSR_MECC_CODE_32         0x7F
 #define WRITE_MASK_CSR_MECC_CODE_64         0xFF
 #define WRITE_MASK_CSR_UITB_32              0xFFFFFFFC

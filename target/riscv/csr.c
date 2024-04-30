@@ -2007,8 +2007,12 @@ static RISCVException write_mcounteren(CPURISCVState *env, int csrno,
     RISCVCPU *cpu = env_archcpu(env);
 
     /* WARL register - disable unavailable counters */
-    env->mcounteren = val & (cpu->pmu_avail_ctrs | COUNTEREN_CY | COUNTEREN_TM |
-                             COUNTEREN_IR);
+    if (riscv_cpu_cfg(env)->ext_XAndesV5Ops) {
+        env->mcounteren = val & WRITE_MASK_CSR_MCOUNTEREN;
+    } else {
+        env->mcounteren = val & (cpu->pmu_avail_ctrs | COUNTEREN_CY | COUNTEREN_TM |
+                                COUNTEREN_IR);
+    }
     return RISCV_EXCP_NONE;
 }
 
