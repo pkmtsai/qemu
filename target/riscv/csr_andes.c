@@ -896,6 +896,7 @@ AndesCsrConfigInfo csr_mmsc_cfg_map[] = {
     {CONFIG_BOOL,   MASK_MMSC_CFG_HSPO, "stack-protection-only"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_RVARCH, "mmsc-cfg-rvarch"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_ALT_FP_FMT, "alt-fp-fmt"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_RVARCH2, "mmsc-cfg-rvarch2"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_MSC_EXT3, "msc-ext3"},
 #endif
 };
@@ -915,6 +916,7 @@ AndesCsrConfigInfo csr_mmsc_cfg2_map[]  = {
     {CONFIG_BOOL,   MASK_MMSC_CFG2_HSPO, "stack-protection-only"},
     {CONFIG_BOOL,   MASK_MMSC_CFG2_RVARCH, "mmsc-cfg-rvarch"},
     {CONFIG_BOOL,   MASK_MMSC_CFG2_ALT_FP_FMT, "alt-fp-fmt"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG2_RVARCH2, "mmsc-cfg-rvarch2"},
     {CONFIG_BOOL,   MASK_MMSC_CFG2_MSC_EXT3, "msc-ext3"},
 };
 
