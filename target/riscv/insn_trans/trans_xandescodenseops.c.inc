@@ -134,6 +134,11 @@ static bool andes_v5_gen_codense_exec_it(DisasContext *ctx,
         insn = cpu_ldl_code(env, vaddr);
     }
 
+    /* 16-bit instruction is not allowed in the instruction table */
+    if ((insn & 0x3) != 0x3) {
+        gen_exception_illegal(ctx);
+    }
+
     /*
      * Execute(insn)
      * do as the replaced instruction, even exceptions,
@@ -149,7 +154,7 @@ static bool andes_v5_gen_codense_exec_it(DisasContext *ctx,
         imm = next_pc - ctx->base.pc_next;
         gen_jal(ctx, rd, imm);
     } else {
-        /* JARL done as SPEC already */
+        /* JALR done as SPEC already */
         /* presume ctx->pc_succ_insn not changed in any ISA extension */
         return decode_opc_andes(env, ctx, insn);
     }
