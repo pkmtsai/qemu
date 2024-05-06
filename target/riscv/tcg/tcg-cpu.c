@@ -198,6 +198,35 @@ static void riscv_cpu_validate_priv_spec(RISCVCPU *cpu, Error **errp)
     }
 }
 
+static void riscv_cpu_validate_p(CPURISCVState *env, RISCVCPUConfig *cfg,
+                                 Error **errp)
+{
+    if (cfg->ext_zvknha || cfg->ext_zvknhb) {
+        error_setg(errp, "The Zvknh"
+                         "sub-extension is conflict with RVP.");
+        return;
+    }
+    if (cfg->pext_spec) {
+        if (!g_strcmp0(cfg->pext_spec, "v0.5.2")) {
+                    env->pext_ver = PEXT_VERSION_0_05_2;
+        } else {
+            error_setg(errp, "Unsupported packed spec version '%s'",
+                       cfg->pext_spec);
+            return;
+        }
+    } else {
+            qemu_log("packed verison is not specified, "
+                     "use the default value v0.9.4\n");
+    }
+    if (riscv_cpu_mxl(env) == MXL_RV64) {
+        if (!cfg->ext_psfoperand) {
+            error_setg(errp, "The Zpsfoperand"
+                             "sub-extensions is required for RV64P.");
+            return;
+        }
+    }
+}
+
 static void riscv_cpu_validate_v(CPURISCVState *env, RISCVCPUConfig *cfg,
                                  Error **errp)
 {
@@ -370,6 +399,14 @@ void riscv_cpu_validate_set_extensions(RISCVCPU *cpu, Error **errp)
     if (riscv_has_ext(env, RVD) && !riscv_has_ext(env, RVF)) {
         error_setg(errp, "D extension requires F extension");
         return;
+    }
+
+    if (riscv_has_ext(env, RVP)) {
+        riscv_cpu_validate_p(env, &cpu->cfg, &local_err);
+        if (local_err != NULL) {
+            error_propagate(errp, local_err);
+            return;
+        }
     }
 
     if (riscv_has_ext(env, RVV)) {
@@ -1023,6 +1060,7 @@ static void riscv_init_max_cpu_extensions(Object *obj)
 
     /* set vector version */
     env->vext_ver = VEXT_VERSION_1_00_0;
+    env->pext_ver = PEXT_VERSION_0_05_2;
 
     /* Zfinx is not compatible with F. Disable it */
     isa_ext_update_enabled(cpu, CPU_CFG_OFFSET(ext_zfinx), false);

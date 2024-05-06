@@ -732,6 +732,7 @@ static void rv64_andes_common_cpu_init(Object *obj,
     cfg->ext_zbb = true;
     cfg->ext_zbc = true;
     cfg->ext_zbs = true;
+    cfg->ext_psfoperand = true;
 
     /* Enable Andes Custom extension */
     cfg->ext_XAndesV5Ops = true;
@@ -746,6 +747,8 @@ static void rv64_andes_ax25_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
+    riscv_cpu_set_misa(env, MXL_RV64,
+             RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU | RVP | RVX);
     rv64_andes_common_cpu_init(obj, VM_1_10_SV48, NULL);
 
     /* Set CPU ID */
@@ -1126,6 +1129,7 @@ static void rv32_andes_common_cpu_init(Object *obj,
     cfg->ext_zbb = true;
     cfg->ext_zbc = true;
     cfg->ext_zbs = true;
+    cfg->ext_psfoperand = true;
 
     /* Enable Andes Custom extension */
     cfg->ext_XAndesV5Ops = true;
@@ -1140,6 +1144,8 @@ static void rv32_andes_a25_cpu_init(Object *obj)
     RISCVCPUConfig *cfg = &RISCV_CPU(obj)->cfg;
     CPURISCVState *env = &RISCV_CPU(obj)->env;
 
+    riscv_cpu_set_misa(env, MXL_RV32,
+             RVI | RVM | RVA | RVF | RVD | RVC | RVS | RVU | RVP | RVX);
     rv32_andes_common_cpu_init(obj, VM_1_10_SV32, NULL);
 
     /* Set CPU ID */
@@ -2203,6 +2209,7 @@ const RISCVCPUMultiExtConfig riscv_cpu_extensions[] = {
     MULTI_EXT_CFG_BOOL("zve32f", ext_zve32f, false),
     MULTI_EXT_CFG_BOOL("zve64f", ext_zve64f, false),
     MULTI_EXT_CFG_BOOL("zve64d", ext_zve64d, false),
+    MULTI_EXT_CFG_BOOL("psfoperand", ext_psfoperand, true),
     MULTI_EXT_CFG_BOOL("sstc", ext_sstc, true),
 
     MULTI_EXT_CFG_BOOL("smepmp", ext_smepmp, false),

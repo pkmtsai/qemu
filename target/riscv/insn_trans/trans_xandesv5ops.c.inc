@@ -293,7 +293,7 @@ static bool trans_find_first_x(DisasContext *ctx, int rd,
     TCGv src1, src2, dest, tmp;
     src1 = get_gpr(ctx, rs1, EXT_NONE);
     src2 = get_gpr(ctx, rs2, EXT_NONE);
-    dest = get_gpr(ctx, rd,  EXT_NONE);
+    dest = dest_gpr(ctx, rd);
     tmp = tcg_constant_tl(func);
     gen_helper_andes_v5_fb_x(dest, src1, src2, tmp);
     return true;
@@ -326,11 +326,8 @@ static void gen_store_legacy(DisasContext *ctx, uint32_t opc, int rs1,
         [0] = MO_SB,
         [1] = MO_TESW,
         [2] = MO_TESL,
-        [4] = MO_UB,
-        [5] = MO_TEUW,
     #ifdef TARGET_RISCV64
         [3] = MO_TESQ,
-        [6] = MO_TEUL,
     #endif
     };
 
@@ -382,11 +379,11 @@ static void gen_load_legacy(DisasContext *ctx, uint32_t opc, int rd,
 
 static bool trans_addigp(DisasContext *ctx, arg_addigp *a)
 {
-    TCGv gp, v0;
+    TCGv gp, dst;
     gp = get_gpr(ctx, GP, EXT_NONE);
-    v0 = tcg_temp_new();
-    tcg_gen_addi_tl(v0, gp, a->imm);
-    gen_set_gpr(ctx, a->rd, v0);
+    dst = dest_gpr(ctx, a->rd);
+    tcg_gen_addi_tl(dst, gp, a->imm);
+    gen_set_gpr(ctx, a->rd, dst);
     return true;
 }
 

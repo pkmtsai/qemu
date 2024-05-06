@@ -2,6 +2,7 @@
 gen = [
   decodetree.process('insn16.decode', extra_args: ['--static-decode=decode_insn16', '--insnwidth=16']),
   decodetree.process('insn32.decode', extra_args: '--static-decode=decode_insn32'),
+  decodetree.process('insn32_rvp.decode', extra_args: '--static-decode=decode_insn32_rvp'),
   decodetree.process('xthead.decode', extra_args: '--static-decode=decode_xthead'),
   decodetree.process('XVentanaCondOps.decode', extra_args: '--static-decode=decode_XVentanaCodeOps'),
   decodetree.process('XAndesV5Ops.decode', extra_args: ['--static-decode=decode_XAndesV5Ops']),
@@ -22,6 +23,7 @@ riscv_ss.add(files(
   'vector_helper.c',
   'vector_internals.c',
   'bitmanip_helper.c',
+  'packed_helper.c',
   'translate.c',
   'm128_helper.c',
   'crypto_helper.c',
