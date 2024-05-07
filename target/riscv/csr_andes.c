@@ -1016,54 +1016,51 @@ void andes_cpu_do_interrupt_post(CPUState *cs)
     AndesCsr *csr = &env->andes_csr;
     AndesVec *vec = &env->andes_vec;
 
-    /*
-     * ToDo: Should check CSR mtvec spec for VEC_PLIC enabled for
-     *       different mode configurations
-     *       Also need to check csr mmisc_ctl for mtvec and stvec for
-     *       interrupt pending conditions
-     */
+    /* TODO: handle other external interrupt cases, refer to [m|s]tvec spec */
+    /* If VEC_PLIC is enabled, we need to adjust PC and mcause. */
     if (csr->csrno[CSR_MMISC_CTL] & (1UL << V5_MMISC_CTL_VEC_PLIC)) {
-        /*
-         * Only in interrupt need to process pc with mtvec since
-         * this case should get handler PC by mtvec with source ID
-         */
-        if (env->priv == PRV_M) {
-            /* check the MSB of mcause */
-            if (env->mcause >> ((sizeof(env->mcause) << 3) - 1)) {
+        target_ulong m_cause = env->mcause & (((target_ulong)-1) >> 1);
+        target_ulong s_cause = env->scause & (((target_ulong)-1) >> 1);
+        bool m_interrupt = env->mcause >> ((sizeof(env->mcause) << 3) - 1);
+        bool s_interrupt = env->scause >> ((sizeof(env->scause) << 3) - 1);
+        bool ext_int = (m_interrupt && (m_cause == IRQ_M_EXT)) ||
+                       (s_interrupt && (s_cause == IRQ_S_EXT));
+
+        if (ext_int) {
+            /*
+             * External interrupts jump to [m|s]tvec[N] and
+             * mcause is set to the interrupt source ID.
+             */
+            if (env->priv == PRV_M) {
                 int irq_id = vec->vectored_irq_m;
                 vec->vectored_irq_m = 0;
+                /* adjust pc */
                 target_ulong base = env->mtvec;
                 env->pc = ((uint64_t)env->pc >> 32) << 32;
                 env->pc |= cpu_ldl_data(env, base + (irq_id << 2));
-                target_ulong cause = env->mcause & (((target_ulong)-1) >> 1);
-                /*
-                 * If in PLIC vector mode and is an external interrupt,
-                 * set mcause to source ID
-                 */
-                if (cause == IRQ_M_EXT) {
-                    env->mcause = irq_id;
-                    riscv_cpu_update_mip(env, MIP_MEIP, 0);
-                }
+                /* adjust mcause */
+                env->mcause = irq_id;
+                riscv_cpu_update_mip(env, MIP_MEIP, 0);
                 return;
-            }
-        } else if (env->priv == PRV_M) {
-            /* check the MSB of scause */
-            if (env->scause >> ((sizeof(env->scause) << 3) - 1)) {
+            } else if (env->priv == PRV_S) {
                 int irq_id = vec->vectored_irq_s;
                 vec->vectored_irq_s = 0;
+                /* adjust pc */
                 target_ulong base = env->stvec;
                 env->pc = ((uint64_t)env->pc >> 32) << 32;
                 env->pc |= cpu_ldl_data(env, base + (irq_id << 2));
-                target_ulong cause = env->scause & (((target_ulong)-1) >> 1);
-                /*
-                 * If in PLIC vector mode and is an external interrupt,
-                 * set scause to source ID
-                 */
-                if (cause == IRQ_S_EXT) {
-                    env->scause = irq_id;
-                    riscv_cpu_update_mip(env, MIP_SEIP, 0);
-                }
+                /* adjust scause */
+                env->scause = irq_id;
+                riscv_cpu_update_mip(env, MIP_SEIP, 0);
                 return;
+            }
+        } else {
+            /* Exceptions and non-external interrupts jump to [m|s]tvec[0] */
+            env->pc = ((uint64_t)env->pc >> 32) << 32;
+            if (env->priv == PRV_M) {
+                env->pc |= cpu_ldl_data(env, env->mtvec);
+            } else if (env->priv == PRV_S) {
+                env->pc |= cpu_ldl_data(env, env->stvec);
             }
         }
     }
