@@ -19,23 +19,41 @@
 #ifndef HW_ANDES_PLMT_H
 #define HW_ANDES_PLMT_H
 
-#include "hw/intc/riscv_aclint.h"
-
 #define TYPE_ANDES_PLMT "riscv.andes.plmt"
 
-#define AndesPLMTState RISCVAclintMTimerState
 #define ANDES_PLMT(obj) \
     OBJECT_CHECK(AndesPLMTState, (obj), TYPE_ANDES_PLMT)
 
+typedef struct AndesPLMTState {
+    /*< private >*/
+    SysBusDevice parent_obj;
+    uint64_t time_delta;
+    uint64_t *timecmp;
+    QEMUTimer **timers;
+
+    /*< public >*/
+    MemoryRegion mmio;
+    uint32_t hartid_base;
+    uint32_t num_harts;
+    uint32_t timecmp_base;
+    uint32_t time_base;
+    uint32_t aperture_size;
+    uint32_t timebase_freq;
+    uint32_t hart_base;
+    qemu_irq *timer_irqs;
+} AndesPLMTState;
+
 DeviceState *
 andes_plmt_create(hwaddr addr, hwaddr size, uint32_t num_harts,
-    uint32_t time_base, uint32_t timecmp_base, uint32_t timebase_freq);
+                  uint32_t time_base, uint32_t timecmp_base,
+                  uint32_t timebase_freq, uint32_t hart_base);
 
 enum {
     ANDES_PLMT_TIME_BASE = 0,
     ANDES_PLMT_TIMECMP_BASE = 8,
     ANDES_PLMT_MMIO_SIZE = 0x100000,
     ANDES_PLMT_TIMEBASE_FREQ = 0x3938700, /* 60MHZ */
+    ANDES_PLMT_HART_BASE = 0,
 };
 
 #endif

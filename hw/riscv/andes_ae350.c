@@ -392,7 +392,8 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
                       machine->smp.cpus,
                       ANDES_PLMT_TIME_BASE,
                       ANDES_PLMT_TIMECMP_BASE,
-                      ANDES_PLMT_TIMEBASE_FREQ);
+                      ANDES_PLMT_TIMEBASE_FREQ,
+                      ANDES_PLMT_HART_BASE);
 
     plic_hart_config =
         init_hart_config(ANDES_PLIC_HART_CONFIG, machine->smp.cpus);

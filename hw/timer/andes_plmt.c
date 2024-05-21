@@ -97,7 +97,7 @@ andes_plmt_read(void *opaque, hwaddr addr, unsigned size)
     if ((addr >= (plmt->timecmp_base)) &&
         (addr < (plmt->timecmp_base + (plmt->num_harts << 3)))) {
         /* %8=0:timecmp_lo, %8=4:timecmp_hi */
-        size_t hartid = (addr - plmt->timecmp_base) >> 3;
+        size_t hartid = plmt->hart_base + ((addr - plmt->timecmp_base) >> 3);
         CPUState *cpu = qemu_get_cpu(hartid);
         CPURISCVState *env = cpu_env(cpu);
         if (!env) {
@@ -132,7 +132,7 @@ andes_plmt_write(void *opaque, hwaddr addr, uint64_t value, unsigned size)
     if ((addr >= (plmt->timecmp_base)) &&
         (addr < (plmt->timecmp_base + (plmt->num_harts << 3)))) {
         /* %8=0:timecmp_lo, %8=4:timecmp_hi */
-        size_t hartid = (addr - plmt->timecmp_base) >> 3;
+        size_t hartid = plmt->hart_base + ((addr - plmt->timecmp_base) >> 3);
         CPUState *cpu = qemu_get_cpu(hartid);
         CPURISCVState *env = cpu_env(cpu);
         if (!env) {
@@ -179,6 +179,7 @@ static Property andes_plmt_properties[] = {
     DEFINE_PROP_UINT32("timecmp-base", AndesPLMTState, timecmp_base, 0),
     DEFINE_PROP_UINT32("aperture-size", AndesPLMTState, aperture_size, 0),
     DEFINE_PROP_UINT32("timebase-freq", AndesPLMTState, timebase_freq, 0),
+    DEFINE_PROP_UINT32("hart-base", AndesPLMTState, hart_base, 0),
     DEFINE_PROP_END_OF_LIST(),
 };
 
@@ -223,7 +224,8 @@ type_init(andes_plmt_register_types)
  */
 DeviceState*
 andes_plmt_create(hwaddr addr, hwaddr size, uint32_t num_harts,
-    uint32_t time_base, uint32_t timecmp_base, uint32_t timebase_freq)
+    uint32_t time_base, uint32_t timecmp_base, uint32_t timebase_freq,
+    uint32_t hart_base)
 {
     int i;
     DeviceState *dev = qdev_new(TYPE_ANDES_PLMT);
@@ -234,6 +236,7 @@ andes_plmt_create(hwaddr addr, hwaddr size, uint32_t num_harts,
     qdev_prop_set_uint32(dev, "timecmp-base", timecmp_base);
     qdev_prop_set_uint32(dev, "aperture-size", size);
     qdev_prop_set_uint32(dev, "timebase-freq", timebase_freq);
+    qdev_prop_set_uint32(dev, "hart-base", hart_base);
     sysbus_realize_and_unref(SYS_BUS_DEVICE(dev), &error_fatal);
 
     for (i = 0; i < num_harts; i++) {
