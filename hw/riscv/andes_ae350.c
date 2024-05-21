@@ -642,6 +642,7 @@ static void andes_ae350_machine_init(MachineState *machine)
     MemoryRegion *main_mem = g_new(MemoryRegion, 1);
     MemoryRegion *mask_rom = g_new(MemoryRegion, 1);
     MemoryRegion *mask_nor = g_new(MemoryRegion, 1);
+    MemoryRegion *mask_hvm = g_new(MemoryRegion, 1);
     MemoryRegion *mask_l2c = g_new(MemoryRegion, 1);
     target_ulong start_addr = memmap[ANDES_AE350_DRAM].base;
     target_ulong firmware_end_addr, kernel_start_addr;
@@ -671,6 +672,12 @@ static void andes_ae350_machine_init(MachineState *machine)
                            memmap[ANDES_AE350_NOR].size, &error_fatal);
     memory_region_add_subregion(system_memory, memmap[ANDES_AE350_NOR].base,
                                 mask_nor);
+
+    /* HVM */
+    memory_region_init_ram(mask_hvm, NULL, "riscv.andes.ae350.hvm",
+                           1 << bs->soc.hvm_size_pow_2, &error_fatal);
+    memory_region_add_subregion(system_memory, bs->soc.hvm_base,
+                                mask_hvm);
 
     /* L2C */
     memory_region_init_ram(mask_l2c, NULL, "riscv.andes.ae350.l2c",
@@ -802,6 +809,10 @@ static Property andes_ae350_soc_property[] = {
                      ilm_default_enable, false),
     DEFINE_PROP_BOOL("dlm_default_enable", AndesAe350SocState,
                      dlm_default_enable, false),
+    DEFINE_PROP_UINT64("hvm_base", AndesAe350SocState, hvm_base,
+                       ANDES_HVM_BASE_DEFAULT),
+    DEFINE_PROP_UINT64("hvm_size_pow_2", AndesAe350SocState, hvm_size_pow_2,
+                       ANDES_HVM_SIZE_POW_2_DEFAULT),
     DEFINE_PROP_END_OF_LIST(),
 };
 

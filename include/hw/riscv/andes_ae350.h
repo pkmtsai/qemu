@@ -55,6 +55,9 @@ typedef struct AndesAe350SocState {
     bool ilm_default_enable;
     bool dlm_default_enable;
 
+    uint64_t hvm_base;
+    uint64_t hvm_size_pow_2;
+
 } AndesAe350SocState;
 
 #define TYPE_ANDES_AE350_MACHINE MACHINE_TYPE_NAME("andes_ae350")
@@ -127,6 +130,10 @@ enum {
 /* LM size range in AndeStar_V5_SPA v1.6. Size 0 for unconnected LM */
 #define ANDES_LM_SIZE_MIN 0x400
 #define ANDES_LM_SIZE_MAX 0x20000000
+
+/* HVM defalut configs */
+#define ANDES_HVM_BASE_DEFAULT       0x90000000
+#define ANDES_HVM_SIZE_POW_2_DEFAULT 0x0
 
 #if defined(TARGET_RISCV32)
 #define VIRT_CPU TYPE_RISCV_CPU_BASE32

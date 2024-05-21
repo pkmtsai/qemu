@@ -1079,6 +1079,8 @@ riscv_csr_operations andes_csr_ops[CSR_TABLE_SIZE] = {
     [CSR_MRVARCH_CFG]       = { "mrvarch_cfg",       rvarch,  read_csr },
     [CSR_MRVARCH_CFG2]      = { "mrvarch_cfg2",      rvarch2, read_csr },
     [CSR_MCCACHE_CTL_BASE]  = { "mccache_ctl_base",  ccache,  read_csr },
+    [CSR_MHVM_CFG]          = { "mhvm_cfg",          any,     read_csr },
+    [CSR_MHVMB]             = { "mhvmb",             any,     read_csr },
 
     /* Crash Debug CSRs */
     [CSR_MCRASH_STATESAVE]  = { "mcrash_statesave",  any, read_csr },

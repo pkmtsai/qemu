@@ -327,6 +327,12 @@ typedef void (*fp_spec_csr_init_fn)(AndesCsr *);
 #define MASK_MSLIDELEG_IMECCDMR             (0x1 << 19)
 #define MASK_MSLIDELEG_ACEERR               (0x1 << 24)
 
+/* mhvm_cfg */
+#define MASK_MHVM_CFG_SZ                    (0x3F)
+#define MASK_MHVM_CFG_BANK                  (0x1  << 8)
+#define MASK_MHVM_CFG_BSEL                  (0x1F << 16)
+#define MASK_MHVM_CFG_SUBP                  (0x1  << 24)
+
 /* counters */
 #define MASK_COUNTER_CY                     (0x1)
 #define MASK_COUNTER_TM                     (0x1 << 1)

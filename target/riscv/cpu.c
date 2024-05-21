@@ -28,6 +28,9 @@
 #include "exec/exec-all.h"
 #include "qapi/error.h"
 #include "qapi/visitor.h"
+#include "qapi/qmp/qobject.h"
+#include "qapi/qmp/qnum.h"
+#include "qom/qom-qobject.h"
 #include "qemu/error-report.h"
 #include "hw/qdev-properties.h"
 #include "migration/vmstate.h"
@@ -437,6 +440,30 @@ static void andes_set_mmsc_cfg_l2c(AndesCsr *andes_csr)
 }
 
 #ifndef CONFIG_USER_ONLY
+static QObject *get_prop_qobj_from_soc(const char *name)
+{
+    Object *soc = object_resolve_path("/machine/soc", NULL);
+    if (soc == NULL) {
+        return NULL;
+    }
+
+    Error *err = NULL;
+    QObject *prop_qobj = object_property_get_qobject(soc, name, &err);
+    return prop_qobj;
+}
+
+static bool get_uint64_from_soc_prop(const char *name, uint64_t *val)
+{
+    QObject *prop_qobj = get_prop_qobj_from_soc(name);
+    QNum *qnum = qobject_to(QNum, prop_qobj);
+    if (qnum == NULL) {
+        return false;
+    }
+
+    *val = qnum->u.u64;
+    return true;
+}
+
 static uint64_t memory_region_local_mem_read(void *opaque,
                                               hwaddr addr, unsigned size)
 {
@@ -1525,6 +1552,18 @@ static void andes_csr_reset_common(CPURISCVState *env)
     env->andes_csr.csrno[CSR_MDCM_CFG] = (3 << V5_MDCM_CFG_DSZ);
 
 #ifndef CONFIG_USER_ONLY
+    uint64_t hvm_base;
+    uint64_t hvm_size_pow_2;
+    if (get_uint64_from_soc_prop("hvm_base", &hvm_base)) {
+        env->andes_csr.csrno[CSR_MHVMB] = hvm_base;
+    } else {
+        env->andes_csr.csrno[CSR_MHVMB] = 0;
+    }
+    env->andes_csr.csrno[CSR_MHVM_CFG] &= ~MASK_MHVM_CFG_SZ;
+    if (get_uint64_from_soc_prop("hvm_size_pow_2", &hvm_size_pow_2)) {
+        env->andes_csr.csrno[CSR_MHVM_CFG] |= hvm_size_pow_2 & MASK_MHVM_CFG_SZ;
+    }
+
     int ilmsz = 0, dlmsz = 0;
     /*
      * Initialize local memory csr for LM size > 0. LMB csr is not exist if
