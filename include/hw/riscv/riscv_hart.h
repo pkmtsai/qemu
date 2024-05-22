@@ -39,13 +39,6 @@ struct RISCVHartArrayState {
     char *cpu_type;
     uint64_t resetvec;
     RISCVCPU *harts;
-
-    uint64_t ilm_base;
-    uint64_t dlm_base;
-    uint32_t ilm_size;
-    uint32_t dlm_size;
-    bool ilm_default_enable;
-    bool dlm_default_enable;
 };
 
 #endif

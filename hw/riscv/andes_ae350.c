@@ -350,20 +350,6 @@ static void andes_ae350_soc_realize(DeviceState *dev_soc, Error **errp)
         }
     }
 
-    /* Set riscv_harts properties for Local Memory */
-    qdev_prop_set_bit(DEVICE(&s->cpus), "ilm_default_enable",
-                        s->ilm_default_enable);
-    qdev_prop_set_bit(DEVICE(&s->cpus), "dlm_default_enable",
-                        s->dlm_default_enable);
-    qdev_prop_set_uint64(DEVICE(&s->cpus), "ilm_base",
-                        s->ilm_base);
-    qdev_prop_set_uint64(DEVICE(&s->cpus), "dlm_base",
-                        s->dlm_base);
-    qdev_prop_set_uint64(DEVICE(&s->cpus), "ilm_size",
-                        s->ilm_size);
-    qdev_prop_set_uint64(DEVICE(&s->cpus), "dlm_size",
-                        s->dlm_size);
-
     sysbus_realize(SYS_BUS_DEVICE(&s->cpus), &error_abort);
 
     plicsw_hart_config =

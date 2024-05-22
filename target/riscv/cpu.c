@@ -29,6 +29,7 @@
 #include "qapi/error.h"
 #include "qapi/visitor.h"
 #include "qapi/qmp/qobject.h"
+#include "qapi/qmp/qbool.h"
 #include "qapi/qmp/qnum.h"
 #include "qom/qom-qobject.h"
 #include "qemu/error-report.h"
@@ -452,6 +453,18 @@ static QObject *get_prop_qobj_from_soc(const char *name)
     return prop_qobj;
 }
 
+static bool get_bool_from_soc_prop(const char *name, bool *val)
+{
+    QObject *prop_qobj = get_prop_qobj_from_soc(name);
+    QBool *qbool = qobject_to(QBool, prop_qobj);
+    if (qbool == NULL) {
+        return false;
+    }
+
+    *val = qbool->value;
+    return true;
+}
+
 static bool get_uint64_from_soc_prop(const char *name, uint64_t *val)
 {
     QObject *prop_qobj = get_prop_qobj_from_soc(name);
@@ -530,6 +543,18 @@ static void andes_cpu_lm_init(Object *obj)
 {
     CPURISCVState *env = &RISCV_CPU(obj)->env;
     CPUState *cs = CPU(obj);
+
+    /* get soc lm properties */
+    uint64_t isize, dsize;
+    get_bool_from_soc_prop("ilm_default_enable", &env->ilm_default_enable);
+    get_bool_from_soc_prop("dlm_default_enable", &env->dlm_default_enable);
+    get_uint64_from_soc_prop("ilm_base", &env->ilm_base);
+    get_uint64_from_soc_prop("dlm_base", &env->dlm_base);
+    get_uint64_from_soc_prop("ilm_size", &isize);
+    get_uint64_from_soc_prop("dlm_size", &dsize);
+    env->ilm_size = isize & (uint32_t)-1;
+    env->dlm_size = dsize & (uint32_t)-1;
+
     env->cpu_as_root = g_new(MemoryRegion, 1);
     env->cpu_as_mem = g_new(MemoryRegion, 1);
     /* Outer container... */
