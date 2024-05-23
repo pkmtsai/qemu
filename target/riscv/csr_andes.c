@@ -862,7 +862,36 @@ typedef struct AndesCsrConfigInfo {
     const char *key;
 } AndesCsrConfigInfo;
 
-AndesCsrConfigInfo csr_mmsc_cfg_map[] = {
+static AndesCsrConfigInfo csr_misa_map[] = {
+    {CONFIG_BOOL,   RV('A'), "isa-a"},
+    {CONFIG_BOOL,   RV('B'), "isa-b"},
+    {CONFIG_BOOL,   RV('C'), "isa-c"},
+    {CONFIG_BOOL,   RV('D'), "isa-d"},
+    {CONFIG_BOOL,   RV('E'), "isa-e"},
+    {CONFIG_BOOL,   RV('F'), "isa-f"},
+    {CONFIG_BOOL,   RV('G'), "isa-g"},
+    {CONFIG_BOOL,   RV('H'), "isa-h"},
+    {CONFIG_BOOL,   RV('I'), "isa-i"},
+    {CONFIG_BOOL,   RV('J'), "isa-j"},
+    {CONFIG_BOOL,   RV('K'), "isa-k"},
+    {CONFIG_BOOL,   RV('L'), "isa-l"},
+    {CONFIG_BOOL,   RV('M'), "isa-m"},
+    {CONFIG_BOOL,   RV('N'), "isa-n"},
+    {CONFIG_BOOL,   RV('O'), "isa-o"},
+    {CONFIG_BOOL,   RV('P'), "isa-p"},
+    {CONFIG_BOOL,   RV('Q'), "isa-q"},
+    {CONFIG_BOOL,   RV('R'), "isa-r"},
+    {CONFIG_BOOL,   RV('S'), "isa-s"},
+    {CONFIG_BOOL,   RV('T'), "isa-t"},
+    {CONFIG_BOOL,   RV('U'), "isa-u"},
+    {CONFIG_BOOL,   RV('V'), "isa-v"},
+    {CONFIG_BOOL,   RV('W'), "isa-w"},
+    {CONFIG_BOOL,   RV('X'), "isa-x"},
+    {CONFIG_BOOL,   RV('Y'), "isa-y"},
+    {CONFIG_BOOL,   RV('Z'), "isa-z"},
+};
+
+static AndesCsrConfigInfo csr_mmsc_cfg_map[] = {
     {CONFIG_BOOL,   MASK_MMSC_CFG_ECC, "ecc"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_ECD, "isa-codense"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_PFT, "powerbrake"},
@@ -884,7 +913,7 @@ AndesCsrConfigInfo csr_mmsc_cfg_map[] = {
     {CONFIG_BOOL,   MASK_MMSC_CFG_BF16CVT, "isa-bf16cvt"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_ZFH, "isa-zfh"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_VL4, "isa-vl4"},
-    {CONFIG_BOOL,   MASK_MMSC_CFG_CRASHSAVE, "crash-save"},
+    {CONFIG_BOOL,   MASK_MMSC_CFG_CRASHSAVE, "crashsave"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_VECCFG, "veccfg"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_PP16, "isa-pp16"},
     {CONFIG_BOOL,   MASK_MMSC_CFG_VSIH, "isa-vsih"},
@@ -900,7 +929,7 @@ AndesCsrConfigInfo csr_mmsc_cfg_map[] = {
     {CONFIG_BOOL,   MASK_MMSC_CFG_MSC_EXT3, "msc-ext3"},
 #endif
 };
-AndesCsrConfigInfo csr_mmsc_cfg2_map[]  = {
+static AndesCsrConfigInfo csr_mmsc_cfg2_map[]  = {
     {CONFIG_BOOL,   MASK_MMSC_CFG2_BF16CVT, "isa-bf16cvt"},
     {CONFIG_BOOL,   MASK_MMSC_CFG2_ZFH, "isa-zfh"},
     {CONFIG_BOOL,   MASK_MMSC_CFG2_VL4, "isa-vl4"},
@@ -919,10 +948,37 @@ AndesCsrConfigInfo csr_mmsc_cfg2_map[]  = {
     {CONFIG_BOOL,   MASK_MMSC_CFG2_RVARCH2, "mmsc-cfg-rvarch2"},
     {CONFIG_BOOL,   MASK_MMSC_CFG2_MSC_EXT3, "msc-ext3"},
 };
+static AndesCsrConfigInfo csr_mmsc_cfg3_map[]  = {
+    {CONFIG_BOOL,   MASK_MMSC_CFG3_HVMCSR, "mmsc-cfg-hvmcsr"},
+};
 
-AndesCsrConfigInfo csr_mvec_cfg_map[]  = {
+static AndesCsrConfigInfo csr_mrvarch_cfg_map[] = {
+#ifdef TARGET_RISCV64
+    /* bits:[32] */
+    {CONFIG_BOOL,   MASK_MRVARCH_CFG_ZVQMAC, "isa-zvqmac"},
+    {CONFIG_BOOL,   MASK_MRVARCH_CFG_ZVLSSEG, "isa-zvlsseg"},
+#endif
+};
+static AndesCsrConfigInfo csr_mrvarch_cfg2_map[]  = {
+    {CONFIG_BOOL,   MASK_MRVARCH_CFG2_ZVQMAC, "isa-zvqmac"},
+    {CONFIG_BOOL,   MASK_MRVARCH_CFG2_ZVLSSEG, "isa-zvlsseg"},
+};
+
+static AndesCsrConfigInfo csr_mvec_cfg_map[]  = {
+    {CONFIG_NUMBER, MASK_MVEC_CFG_MINOR, "mvec-cfg-minor"},
+    {CONFIG_NUMBER, MASK_MVEC_CFG_MAJOR, "mvec-cfg-major"},
+    {CONFIG_NUMBER, MASK_MVEC_CFG_DW, "mvec-cfg-dw"},
+    {CONFIG_NUMBER, MASK_MVEC_CFG_MW, "mvec-cfg-mw"},
     {CONFIG_NUMBER, MASK_MVEC_CFG_MISEW, "mvec-cfg-misew"},
     {CONFIG_NUMBER, MASK_MVEC_CFG_MFSEW, "mvec-cfg-mfsew"},
+};
+
+static AndesCsrConfigInfo csr_marchid_map[]  = {
+    {CONFIG_NUMBER, (target_ulong)-1, "marchid"},
+};
+
+static AndesCsrConfigInfo csr_mimpid_map[]  = {
+    {CONFIG_NUMBER, (target_ulong)-1, "mimpid"},
 };
 
 static andes_config_func *const andes_config_fns[2] = {
@@ -949,6 +1005,12 @@ static void andes_csr_from_config(AndesCsrConfigInfo *map, uint32_t size,
 
 void andes_csr_configs(CPURISCVState *env)
 {
+    /* Update misa */
+    target_ulong misa_init_val = env->misa_ext;
+    andes_csr_from_config(csr_misa_map,
+        sizeof(csr_misa_map) / sizeof(AndesCsrConfigInfo), &misa_init_val);
+    env->misa_ext = env->misa_ext_mask = misa_init_val;
+
     /* Update mmsc_cfg */
     target_ulong mmsc_init_val = env->andes_csr.csrno[CSR_MMSC_CFG];
     andes_csr_from_config(csr_mmsc_cfg_map,
@@ -958,6 +1020,7 @@ void andes_csr_configs(CPURISCVState *env)
         env->andes_csr.csrno[CSR_MMSC_CFG] = set_field(
             env->andes_csr.csrno[CSR_MMSC_CFG], MASK_MMSC_CFG_ACE, true);
     }
+
     /* Update mmsc_cfg2 for RV32 */
     if (riscv_cpu_mxl(env) == MXL_RV32) {
         target_ulong mmsc2_init_val = env->andes_csr.csrno[CSR_MMSC_CFG2];
@@ -966,11 +1029,45 @@ void andes_csr_configs(CPURISCVState *env)
             &mmsc2_init_val);
         env->andes_csr.csrno[CSR_MMSC_CFG2] = mmsc2_init_val;
     }
+
+    /* Update mmsc_cfg3 if exists*/
+    if (mcfg3(env, CSR_MMSC_CFG3) == RISCV_EXCP_NONE) {
+        target_ulong mmsc3_init_val = env->andes_csr.csrno[CSR_MMSC_CFG3];
+        andes_csr_from_config(csr_mmsc_cfg3_map,
+            sizeof(csr_mmsc_cfg3_map) / sizeof(AndesCsrConfigInfo),
+            &mmsc3_init_val);
+        env->andes_csr.csrno[CSR_MMSC_CFG3] = mmsc3_init_val;
+    }
+
+    /* Update mrvarch_cfg */
+    target_ulong mrvarch_init_val = env->andes_csr.csrno[CSR_MRVARCH_CFG];
+    andes_csr_from_config(csr_mrvarch_cfg_map,
+        sizeof(csr_mrvarch_cfg_map) / sizeof(AndesCsrConfigInfo),
+        &mrvarch_init_val);
+    env->andes_csr.csrno[CSR_MRVARCH_CFG] = mrvarch_init_val;
+
+    /* Update mrvarch_cfg2 for RV32 */
+    if (riscv_cpu_mxl(env) == MXL_RV32) {
+        target_ulong mrvarch2_init_val = env->andes_csr.csrno[CSR_MRVARCH_CFG2];
+        andes_csr_from_config(csr_mrvarch_cfg2_map,
+            sizeof(csr_mrvarch_cfg2_map) / sizeof(AndesCsrConfigInfo),
+            &mrvarch2_init_val);
+        env->andes_csr.csrno[CSR_MRVARCH_CFG2] = mrvarch2_init_val;
+    }
+
     /* Update mvev_cfg */
     target_ulong mvec_init_val = env->andes_csr.csrno[CSR_MVEC_CFG];
     andes_csr_from_config(csr_mvec_cfg_map,
         sizeof(csr_mvec_cfg_map) / sizeof(AndesCsrConfigInfo), &mvec_init_val);
     env->andes_csr.csrno[CSR_MVEC_CFG] = mvec_init_val;
+
+    /* Update marchid */
+    andes_csr_from_config(csr_marchid_map, 1,
+                          (target_ulong *)&(riscv_cpu_cfg(env)->marchid));
+
+    /* Update mimpid */
+    andes_csr_from_config(csr_mimpid_map, 1,
+                          (target_ulong *)&(riscv_cpu_cfg(env)->mimpid));
 }
 #endif
 

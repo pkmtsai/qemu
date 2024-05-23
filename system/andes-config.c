@@ -68,7 +68,11 @@ bool andes_config_number(const char *id, const char *name, uint64_t *val)
         return false;
     }
     if (andes_config_query(id, name, &value)) {
-        ret = qemu_strtou64(value, NULL, 0, val);
+        if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) {
+            ret = qemu_strtou64(value + 2, NULL, 16, val);
+        } else {
+            ret = qemu_strtou64(value, NULL, 0, val);
+        }
         if (ret == -ERANGE) {
             error_setg(&error_warn,
                 "Value '%s' is too large for parameter '%s'", value, name);
