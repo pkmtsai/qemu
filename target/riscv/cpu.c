@@ -817,7 +817,7 @@ static void rv64_andes_ax25_cpu_init(Object *obj)
                                          BIT(V5_MMSC_CFG_EFHW) |
                                          BIT(V5_MMSC_CFG_VCCTL) |
                                          BIT(V5_MMSC_CFG_EDSP) |
-                                         BIT(V5_MMSC_CFG_RVARCH) |
+                                         BIT_ULL(V5_MMSC_CFG_RVARCH) |
                                          /*
                                           * enable this bit for linux PMA check
                                           * should remove it after the
@@ -876,10 +876,10 @@ static void rv64_andes_ax45_cpu_init(Object *obj)
                                          BIT(V5_MMSC_CFG_VCCTL) |
                                          BIT(V5_MMSC_CFG_EDSP) |
                                          BIT(V5_MMSC_CFG_PPMA) |
-                                         BIT(V5_MMSC_CFG_BF16CVT) |
-                                         BIT(V5_MMSC_CFG_ZFH) |
-                                         BIT(V5_MMSC_CFG_FINV) |
-                                         BIT(V5_MMSC_CFG_TLB_RAM_CMD);
+                                         BIT_ULL(V5_MMSC_CFG_BF16CVT) |
+                                         BIT_ULL(V5_MMSC_CFG_ZFH) |
+                                         BIT_ULL(V5_MMSC_CFG_FINV) |
+                                         BIT_ULL(V5_MMSC_CFG_TLB_RAM_CMD);
 }
 
 static void rv64_andes_ax45mpv_cpu_init(Object *obj)
@@ -916,17 +916,17 @@ static void rv64_andes_ax45mpv_cpu_init(Object *obj)
                                          BIT(V5_MMSC_CFG_CCTLCSR) |
                                          BIT(V5_MMSC_CFG_VCCTL) |
                                          BIT(V5_MMSC_CFG_PPMA) |
-                                         BIT(V5_MMSC_CFG_BF16CVT) |
-                                         BIT(V5_MMSC_CFG_ZFH) |
-                                         BIT(V5_MMSC_CFG_VL4) |
-                                         BIT(V5_MMSC_CFG_VECCFG) |
-                                         BIT(V5_MMSC_CFG_VSIH) |
-                                         BIT(V5_MMSC_CFG_VDOT) |
-                                         BIT(V5_MMSC_CFG_VPFH) |
-                                         BIT(V5_MMSC_CFG_L2CMP_CFG) |
-                                         BIT(V5_MMSC_CFG_L2C) |
-                                         BIT(V5_MMSC_CFG_RVARCH) |
-                                         BIT(V5_MMSC_CFG_MSC_EXT3);
+                                         BIT_ULL(V5_MMSC_CFG_BF16CVT) |
+                                         BIT_ULL(V5_MMSC_CFG_ZFH) |
+                                         BIT_ULL(V5_MMSC_CFG_VL4) |
+                                         BIT_ULL(V5_MMSC_CFG_VECCFG) |
+                                         BIT_ULL(V5_MMSC_CFG_VSIH) |
+                                         BIT_ULL(V5_MMSC_CFG_VDOT) |
+                                         BIT_ULL(V5_MMSC_CFG_VPFH) |
+                                         BIT_ULL(V5_MMSC_CFG_L2CMP_CFG) |
+                                         BIT_ULL(V5_MMSC_CFG_L2C) |
+                                         BIT_ULL(V5_MMSC_CFG_RVARCH) |
+                                         BIT_ULL(V5_MMSC_CFG_MSC_EXT3);
 }
 
 static void rv64_andes_ax65_cpu_init(Object *obj)
@@ -980,15 +980,15 @@ static void rv64_andes_ax65_cpu_init(Object *obj)
                                          BIT(V5_MMSC_CFG_CCTLCSR) |
                                          BIT(V5_MMSC_CFG_VCCTL2) |
                                          BIT(V5_MMSC_CFG_PPMA) |
-                                         BIT(V5_MMSC_CFG_BF16CVT) |
-                                         BIT(V5_MMSC_CFG_ZFH) |
-                                         BIT(V5_MMSC_CFG_L2CMP_CFG) |
-                                         BIT(V5_MMSC_CFG_L2C) |
-                                         BIT(V5_MMSC_CFG_IOCP) |
-                                         BIT(V5_MMSC_CFG_RVARCH) |
-                                         BIT(V5_MMSC_CFG_TLB_RAM_CMD) |
-                                         BIT(V5_MMSC_CFG_CCTL_FL_UL) |
-                                         BIT(V5_MMSC_CFG_HSPO);
+                                         BIT_ULL(V5_MMSC_CFG_BF16CVT) |
+                                         BIT_ULL(V5_MMSC_CFG_ZFH) |
+                                         BIT_ULL(V5_MMSC_CFG_L2CMP_CFG) |
+                                         BIT_ULL(V5_MMSC_CFG_L2C) |
+                                         BIT_ULL(V5_MMSC_CFG_IOCP) |
+                                         BIT_ULL(V5_MMSC_CFG_RVARCH) |
+                                         BIT_ULL(V5_MMSC_CFG_TLB_RAM_CMD) |
+                                         BIT_ULL(V5_MMSC_CFG_CCTL_FL_UL) |
+                                         BIT_ULL(V5_MMSC_CFG_HSPO);
 }
 
 static void rv64_andes_nx25_cpu_init(Object *obj)
