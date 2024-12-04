@@ -1019,7 +1019,6 @@ atfmac100_receive(NetClientState *nc, const uint8_t *buf, size_t len)
         buf_len = bd.des1 & 0x7ff;
         buf_len = (size < buf_len) ? size : buf_len;
         bd.des0 = (bd.des0 & ~0x7ff) | size; /* RFL */
-        bd.des1 = (bd.des1 & ~0x7ff) | buf_len; /* RXBUF_SIZE */
         size -= buf_len;
 
         /* The last 4 bytes are the CRC.  */
